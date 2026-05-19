@@ -965,15 +965,14 @@
 
     try {
       if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL !== 'https://script.google.com/macros/s/AKfycbxhbDCy2s1nhtvimGFl5ioW3yvTgnO4p_x4mZElzXjUqaXHzu72NQrD3vFcAzhy0WQmrg/exec') {
-        await fetch(SHEET_WEBHOOK_URL, {
-          method: 'POST',
-          mode: 'no-cors', // Apps Script requires no-cors from external origins
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            timestamp: new Date().toISOString(),
-            source
-          })
+        const params = new URLSearchParams({
+          email,
+          timestamp: new Date().toISOString(),
+          source
+        });
+        await fetch(`${SHEET_WEBHOOK_URL}?${params}`, { 
+          method: 'GET',
+          mode: 'no-cors'
         });
       } else {
         // Webhook not yet configured — log locally so you don't lose signups
