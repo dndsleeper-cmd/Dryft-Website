@@ -933,10 +933,20 @@
   reveals.forEach(r => observer.observe(r));
 
   // WAITLIST
+  // ─────────────────────────────────────────────────────────────────────────
+  // 1. Create a Google Sheet and open Tools → Apps Script.
+  // 2. Paste the Apps Script code from the README / comments below, deploy
+  //    as a Web App (Execute as: Me, Who has access: Anyone), and copy the
+  //    URL it gives you.
+  // 3. Replace the placeholder below with that URL.
+  // ─────────────────────────────────────────────────────────────────────────
+  const SHEET_WEBHOOK_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+
   let count = 247;
 
-  function joinWaitlist(source) {
+  async function joinWaitlist(source) {
     const emailInput = document.getElementById(source === 'hero' ? 'hero-email' : 'final-email');
+    const btn = emailInput.closest('.hero-form, .final-form').querySelector('button');
     const email = emailInput.value.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -947,7 +957,34 @@
       return;
     }
 
-    // Show success
+    // Loading state
+    const originalText = btn.textContent;
+    btn.textContent = 'Saving…';
+    btn.disabled = true;
+    emailInput.disabled = true;
+
+    try {
+      if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+        await fetch(SHEET_WEBHOOK_URL, {
+          method: 'POST',
+          mode: 'no-cors', // Apps Script requires no-cors from external origins
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            timestamp: new Date().toISOString(),
+            source
+          })
+        });
+      } else {
+        // Webhook not yet configured — log locally so you don't lose signups
+        console.warn('Waitlist webhook not configured. Set SHEET_WEBHOOK_URL.');
+        console.log('Waitlist signup:', { email, timestamp: new Date().toISOString(), source });
+      }
+    } catch (err) {
+      console.error('Waitlist save failed:', err);
+    }
+
+    // Show success regardless (fetch with no-cors gives opaque response)
     if (source === 'hero') {
       document.getElementById('hero-form-wrap').style.display = 'none';
       document.getElementById('hero-success').style.display = 'block';
@@ -960,9 +997,6 @@
     count++;
     const countEl = document.querySelector('.waitlist-count strong');
     if (countEl) countEl.textContent = count;
-
-    // In production: POST to your backend here
-    console.log('Waitlist signup:', email);
   }
 
   // Enter key support
