@@ -3,12 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dryft — Financial Accountability That Actually Works</title>
+<title>Dryft | AI Personal Finance Accountability App</title>
+<meta name="description" content="Join the Dryft waitlist for an AI personal finance accountability app that watches real spending, catches budget drift early, and helps you make clearer money decisions.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0a0a08">
+<link rel="canonical" href="https://dryft.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Dryft">
+<meta property="og:title" content="Dryft | AI Personal Finance Accountability App">
+<meta property="og:description" content="AI-powered budgeting accountability that catches spending drift before small habits become expensive problems.">
+<meta property="og:url" content="https://dryft.app/">
+<meta property="og:image" content="https://dryft.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Dryft AI personal finance accountability app">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dryft | AI Personal Finance Accountability App">
+<meta name="twitter:description" content="Join the waitlist for an AI personal finance app built around spending accountability, cashflow alerts, and calmer budget decisions.">
+<meta name="twitter:image" content="https://dryft.app/og-image.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230a0a08'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia%2C serif' font-weight='700' font-style='italic' font-size='46' fill='%23e8c97a'%3ED%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 <link rel="stylesheet" href="assets/css/styles.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://dryft.app/#organization",
+      "name": "Dryft",
+      "url": "https://dryft.app/",
+      "description": "Dryft builds AI-powered personal finance accountability tools that help people notice spending drift earlier."
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://dryft.app/#website",
+      "url": "https://dryft.app/",
+      "name": "Dryft",
+      "publisher": {
+        "@id": "https://dryft.app/#organization"
+      },
+      "description": "Join the Dryft waitlist for AI-powered budgeting accountability and spending drift alerts."
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://dryft.app/#software",
+      "name": "Dryft",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web",
+      "url": "https://dryft.app/",
+      "description": "An AI personal finance accountability app that watches spending, flags cashflow risk, and helps people adjust budgets before small habits compound."
+    }
+  ]
+}
+</script>
 </head>
 <body>
 
@@ -25,11 +76,13 @@
     <div class="hero-copy">
       <div class="eyebrow">Private Beta — Limited Spots</div>
       <h1>You're not bad with money.<br>You just <em>dryft</em>.</h1>
-      <p class="hero-sub">An AI accountability coach that watches your real spending, catches drift before it compounds, and helps you adjust — before small habits become expensive problems.</p>
+      <p class="hero-sub">An AI personal finance accountability coach that watches your real spending, catches budget drift before it compounds, and helps you adjust before small habits become expensive problems.</p>
       <div class="hero-form" id="hero-form-wrap">
-        <input type="email" id="hero-email" placeholder="your@email.com" />
+        <label class="sr-only" for="hero-email">Email address</label>
+        <input type="email" id="hero-email" name="email" placeholder="your@email.com" autocomplete="email" inputmode="email" required aria-describedby="hero-email-note" />
         <button onclick="joinWaitlist('hero')">Notify Me</button>
       </div>
+      <p class="sr-only" id="hero-email-note">Enter your email address to join the Dryft private beta waitlist.</p>
       <div class="success-msg" id="hero-success">✓ You're on the list. We'll be in touch.</div>
       <p class="waitlist-count">Join others who are done with dashboards that don't help.</p>
     </div>
@@ -181,11 +234,11 @@
   <div class="section-label">The Problem</div>
   <div class="pain-grid">
     <div class="pain-card reveal" data-n="01" >
-      <h3>Dashboards tell you what happened. </br> Not what to do next.</h3>
+      <h3>Dashboards tell you what happened.<br>Not what to do next.</h3>
       <p>You've seen the charts. Your spending is $400 over in "dining." Great. Now what? Most apps stop there — leaving you with guilt but no guidance.</p>
     </div>
     <div class="pain-card reveal" data-n="02">
-      <h3>Notifications fire too late.</br>After the damage is done.</h3>
+      <h3>Notifications fire too late.<br>After the damage is done.</h3>
       <p>An "over budget" notification at the end of the month is a post-mortem, not accountability. The money is already gone. You needed the warning on day 8.</p>
     </div>
     <div class="pain-card reveal" data-n="03">
@@ -293,16 +346,66 @@
   </div>
 </section>
 
+<!-- TRUST + FAQ -->
+<section class="trust" aria-labelledby="trust-heading">
+  <div class="trust-header reveal">
+    <div class="section-label">Trust & Clarity</div>
+    <h2 id="trust-heading">Personal finance accountability, without pretending to be your financial advisor.</h2>
+    <p>Dryft is built for budgeting, spending insights, cashflow planning, and everyday course-correction. It helps you understand patterns and tradeoffs, but it does not replace professional investment, tax, legal, or financial advice.</p>
+  </div>
+  <div class="trust-grid reveal">
+    <div class="trust-card">
+      <span>Data use</span>
+      <h3>Only what helps your plan</h3>
+      <p>Dryft is designed to use spending and cashflow context to spot drift, explain tradeoffs, and support your budget decisions. Waitlist emails are used for early access updates.</p>
+    </div>
+    <div class="trust-card">
+      <span>Security</span>
+      <h3>Built around permissioned access</h3>
+      <p>Bank connection workflows are intended to use secure, permissioned providers so Dryft can read transactions without asking you to hand over bank credentials directly.</p>
+    </div>
+    <div class="trust-card">
+      <span>Boundaries</span>
+      <h3>Advice stays in its lane</h3>
+      <p>Dryft can help you notice spending drift, plan around bills, and understand budget impact. It does not guarantee savings or provide investment recommendations.</p>
+    </div>
+  </div>
+
+  <div class="faq reveal" aria-labelledby="faq-heading">
+    <h2 id="faq-heading">Questions people ask before joining.</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <h3>What is Dryft?</h3>
+        <p>Dryft is an AI personal finance app focused on accountability: spending alerts, budget adjustments, cashflow risk detection, and plain-language explanations of where your plan is drifting.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Who is it for?</h3>
+        <p>Dryft is for people who already know budgets matter, but need earlier nudges and more practical guidance than charts at the end of the month.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Does Dryft give financial advice?</h3>
+        <p>No. Dryft is built for budgeting support and personal spending accountability. It is not investment, tax, legal, or professional financial advice.</p>
+      </div>
+      <div class="faq-item">
+        <h3>When will early access open?</h3>
+        <p>Private beta spots will open to the waitlist first. Joining the waitlist lets Dryft reach out when early access is ready.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- FINAL CTA -->
 <section class="final-cta" id="waitlist">
   <div class="cta-glow"></div>
   <div class="final-cta-inner">
-    <h2>Be among the first </br> to use <em>Dryft.</em></h2>
-    <p>Early access opens to the waitlist first. Drop your email </br> — we'll reach out before launch. No spam, ever.</p>
+    <h2>Be among the first <br> to use <em>Dryft.</em></h2>
+    <p>Early access opens to the waitlist first. Drop your email <br> and we'll reach out before launch. No spam, ever.</p>
     <div class="final-form" id="final-form-wrap">
-      <input type="email" id="final-email" placeholder="your@email.com" />
+      <label class="sr-only" for="final-email">Email address</label>
+      <input type="email" id="final-email" name="email" placeholder="your@email.com" autocomplete="email" inputmode="email" required aria-describedby="final-email-note" />
       <button onclick="joinWaitlist('final')">Get Early Access</button>
     </div>
+    <p class="sr-only" id="final-email-note">Enter your email address to join the Dryft early access waitlist.</p>
     <div class="final-success" id="final-success">✓ You're on the list. We'll reach out before launch.</div>
   </div>
 </section>
