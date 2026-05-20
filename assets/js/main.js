@@ -102,6 +102,13 @@
     },
     {
       app: 'Dryft',
+      time: 'just now',
+      body: 'Plan is back on track. <strong>Savings buffer secured</strong> for May.',
+      tag: { label: 'On plan', cls: 'ok' },
+      extra: 'Time to Celebrate!',
+    },
+    {
+      app: 'Dryft',
       time: '2m ago',
       body: 'Netflix and Equinox <strong>renew before rent</strong>. Want a safer cashflow path?',
       tag: { label: 'Cashflow', cls: '' },
@@ -113,13 +120,6 @@
       body: '<strong>Coach mode: direct.</strong> Course-correct today, not at month-end. One $64 move fixes it.',
       tag: { label: 'Coach', cls: 'ok' },
       extra: 'Suggested move',
-    },
-    {
-      app: 'Dryft',
-      time: 'just now',
-      body: 'Plan is back on track. <strong>Savings buffer secured</strong> for May.',
-      tag: { label: 'On plan', cls: 'ok' },
-      extra: 'Good morning ☀',
     },
   ];
 
@@ -216,7 +216,7 @@
       response: 'Takeout is up 38% vs last month. Two delivery apps drove it.',
       streamSpeed: 20,
       showImpact: true,
-      followup: 'Move $64 into bills now and cap delivery this week — plan stays green.',
+      followup: 'Add $64 budget for bills and cap delivery this week — plan stays green.',
       followupSpeed: 16,
       afterPause: 2400,
     },
@@ -290,7 +290,7 @@
       <div class="impact-labels">
         <span>Rent</span><span>Food</span><span>Subs</span><span>Gas</span><span>Save</span>
       </div>
-      <div class="impact-action">Move $64 → Bills</div>
+      <div class="impact-action">Add $64 → Bills</div>
     `;
     feed.appendChild(card);
     requestAnimationFrame(() => card.classList.add('show'));
