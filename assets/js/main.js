@@ -101,6 +101,13 @@
     extra: '+ $112 over pace',
   },
   {
+    app: 'Dryft - Direct',
+    time: '2d ago',
+    body: '<strong>Subscriptions hit before rent.</strong> Netflix + Equinox. Cut or delay one.',
+    tag: { label: 'Risk ⚠️', cls: '' },
+    extra: '2 renewals',
+  },
+  {
     app: 'Dryft - Understanding',
     time: '1w ago',
     body: '<strong>Good news — you’re back on track 🎯</strong> Savings buffer for May is now secured.',
@@ -114,13 +121,7 @@
     tag: { label: 'Adjustment ⚙️', cls: 'ok' },
     extra: '$64',
   },
-  {
-    app: 'Dryft - Strict',
-    time: '3w ago',
-    body: '<strong>Subscriptions hit before rent.</strong> Netflix + Equinox. Cut or delay one.',
-    tag: { label: 'Risk ⚠️', cls: '' },
-    extra: '2 renewals',
-  },
+  
 ];
 
   function makeNotifNode({ app, time, body, tag, extra }) {
