@@ -92,36 +92,36 @@
   const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
   // ---------- NOTIFICATIONS (bottom-up cascade) ----------
-  const NOTIFICATIONS = [
-    {
-      app: 'Dryft',
-      time: 'now',
-      body: '<strong>Dining drift detected.</strong> You\'re 6 days ahead of plan. Skip one delivery, rent week stays safe.',
-      tag: { label: 'Drift', cls: 'warn' },
-      extra: '+ $112 over pace',
-    },
-    {
-      app: 'Dryft',
-      time: 'just now',
-      body: 'Plan is back on track. <strong>Savings buffer secured</strong> for May.',
-      tag: { label: 'On plan', cls: 'ok' },
-      extra: 'Time to Celebrate!',
-    },
-    {
-      app: 'Dryft',
-      time: '2m ago',
-      body: 'Netflix and Equinox <strong>renew before rent</strong>. Want a safer cashflow path?',
-      tag: { label: 'Cashflow', cls: '' },
-      extra: 'Action needed',
-    },
-    {
-      app: 'Dryft',
-      time: '14m ago',
-      body: '<strong>Coach mode: direct.</strong> Course-correct today, not at month-end. One $64 move fixes it.',
-      tag: { label: 'Coach', cls: 'ok' },
-      extra: 'Suggested move',
-    },
-  ];
+ const NOTIFICATIONS = [
+  {
+    app: 'Dryft - Strict',
+    time: 'now',
+    body: '<strong>Dining spend is over plan.</strong> 6 days ahead ⚠️ Skip a delivery today. No negotiation.',
+    tag: { label: 'Dryft ⚠️', cls: 'warn' },
+    extra: '+ $112 over pace',
+  },
+  {
+    app: 'Dryft - Understanding',
+    time: '1w ago',
+    body: '<strong>Good news — you’re back on track 🎯</strong> Savings buffer for May is now secured.',
+    tag: { label: 'On plan ✓', cls: 'ok' },
+    extra: 'Nice recovery 🎉',
+  },
+  {
+    app: 'Dryft - Direct',
+    time: '2w ago',
+    body: '<strong>$64 adjustment restores balance.</strong> Execute when ready.',
+    tag: { label: 'Adjustment ⚙️', cls: 'ok' },
+    extra: '$64',
+  },
+  {
+    app: 'Dryft - Strict',
+    time: '3w ago',
+    body: '<strong>Subscriptions hit before rent.</strong> Netflix + Equinox. Cut or delay one.',
+    tag: { label: 'Risk ⚠️', cls: '' },
+    extra: '2 renewals',
+  },
+];
 
   function makeNotifNode({ app, time, body, tag, extra }) {
     const el = document.createElement('div');
