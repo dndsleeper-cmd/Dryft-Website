@@ -184,7 +184,7 @@
           setTimeout(() => old.remove(), 600);
         }
 
-        await wait(2400);
+        await wait(3500);
       }
 
       // Hold then reset

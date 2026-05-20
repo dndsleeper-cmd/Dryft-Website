@@ -319,14 +319,14 @@
     will-change: transform;
   }
 
-  .dryft-phone.phone-notif {
+  .dryft-phone.phone-chat {
     left: 0;
     top: 16px;
     transform: rotateY(8deg) rotateZ(-4deg);
     z-index: 1;
     animation: notifPhoneFloat 9s ease-in-out infinite;
   }
-  .dryft-phone.phone-chat {
+  .dryft-phone.phone-notif {
     right: 0;
     top: 48px;
     transform: rotateY(-8deg) rotateZ(4deg);
@@ -545,7 +545,7 @@
   }
   .lw-icon { color: var(--accent); font-size: 0.7rem; }
 
-  .notif-strip-label {
+  /* .notif-strip-label {
     position: absolute;
     top: 235px;
     left: 16px; right: 16px;
@@ -565,8 +565,8 @@
     font-family: 'DM Mono', monospace;
     font-size: 0.5rem;
     letter-spacing: 0.18em;
-    text-transform: uppercase;
-  }
+    text-transform: uppercase; */
+  /* } */
 
   .notif-stack {
     position: absolute;
@@ -1655,8 +1655,8 @@
     .demo-label { margin-left: 0; }
     .demo-stage { height: 580px; }
     .dryft-phone { width: 240px; }
-    .dryft-phone.phone-notif { left: -10px; top: 16px; }
-    .dryft-phone.phone-chat { right: -10px; top: 50px; }
+    .dryft-phone.phone-chat { left: -10px; top: 16px; }
+    .dryft-phone.phone-notif { right: -10px; top: 50px; }
   }
 
   @media (max-width: 768px) {
@@ -1688,12 +1688,12 @@
       width: min(280px, 80vw);
       animation: none !important;
     }
-    .dryft-phone.phone-notif {
+    .dryft-phone.hone-chat {
       left: 50%;
       top: 0;
       transform: translateX(-50%) rotateY(0) rotateZ(-2deg);
     }
-    .dryft-phone.phone-chat {
+    .dryft-phone.phone-notif {
       left: 50%;
       right: auto;
       top: 540px;
