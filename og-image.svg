@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Dryft AI personal finance accountability app</title>
+  <desc id="desc">A dark editorial social preview for Dryft, an AI personal finance accountability app.</desc>
+  <rect width="1200" height="630" fill="#0a0a08"/>
+  <path d="M0 500 C180 430 300 475 450 390 C600 305 710 300 850 235 C980 175 1070 120 1200 150 L1200 630 L0 630 Z" fill="#111110"/>
+  <g opacity="0.28">
+    <path d="M100 460 C265 418 370 410 520 350 C680 285 825 255 1060 190" fill="none" stroke="#e8c97a" stroke-width="3"/>
+    <path d="M720 272 C785 250 825 210 865 168 C910 122 955 110 1010 98" fill="none" stroke="#e05c4b" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="855" cy="178" r="9" fill="#e05c4b"/>
+  </g>
+  <rect x="72" y="70" width="1056" height="490" rx="28" fill="none" stroke="#2a2a26" stroke-width="2"/>
+  <text x="96" y="148" fill="#e8c97a" font-family="Georgia, 'Times New Roman', serif" font-size="58" font-weight="700" font-style="italic">Dryft</text>
+  <text x="96" y="276" fill="#f0ede6" font-family="Georgia, 'Times New Roman', serif" font-size="74" font-weight="700">AI accountability</text>
+  <text x="96" y="356" fill="#f0ede6" font-family="Georgia, 'Times New Roman', serif" font-size="74" font-weight="700">for your money.</text>
+  <text x="98" y="432" fill="#b8b3a8" font-family="Arial, Helvetica, sans-serif" font-size="30">Catch spending drift early. Adjust before it compounds.</text>
+  <text x="98" y="500" fill="#e8c97a" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" letter-spacing="4">JOIN THE PRIVATE BETA WAITLIST</text>
+</svg>
