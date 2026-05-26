@@ -13,13 +13,13 @@
   "categories": ["finance", "lifestyle", "productivity"],
   "icons": [
     {
-      "src": "assets/favicon.svg",
+      "src": "assets/favicon.svg?v=20260527b",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "assets/favicon.svg",
+      "src": "assets/favicon.svg?v=20260527b",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
