@@ -1448,6 +1448,17 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   border-radius: 999px;
   white-space: nowrap;
 }
+/* Touch devices can't hover — swap the hint copy to "Tap" via pseudo-element
+   so the original "Hover" text stays in the source for desktop pointer users. */
+@media (hover: none) {
+  .overplan-hint { font-size: 0; }
+  .overplan-hint::before {
+    content: 'Tap a profile →';
+    font-size: 0.62rem;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.16em;
+  }
+}
 
 /* side-by-side layout — persona cards stacked on left, chart on right */
 .overplan-layout {
