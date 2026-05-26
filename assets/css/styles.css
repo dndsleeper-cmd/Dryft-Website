@@ -1000,7 +1000,8 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   .nav-cta { font-size: 0.8rem; padding: 0.5rem 0.9rem; }
   .brand-word { font-size: 1.2rem; }
   .brand-mark { width: 22px; height: 22px; }
-  .statement { padding: 5rem 1.2rem 4rem; }
+  /* Note: .statement padding is already overridden in the scroll-cue block above
+     (4rem 1.2rem 2.5rem) — do not re-set it here. */
   .statement-h1 { font-size: clamp(2.4rem, 9vw, 3.6rem); }
   .hero { padding: 4.5rem 1.1rem 2.5rem; }
   .hero-copy { max-width: 100%; }
@@ -1061,21 +1062,17 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   .hero-inner { gap: 1.6rem; }
 }
 
-/* Very narrow phones — slightly smaller phones + softer overlap so neither clips the edge */
-@media (max-width: 380px) {
-  .dryft-phone { width: min(195px, 62vw); }
-  .dryft-phone.phone-notif { transform: rotate(-4deg) !important; }
-  .dryft-phone.phone-chat  { transform: rotate(4deg) !important; margin-top: -24%; }
-}
-
-/* Very small phones */
+/* Very small phones — typography + phone composition tuning */
 @media (max-width: 380px) {
   .brand-word { font-size: 1.1rem; }
   .nav-cta { font-size: 0.75rem; padding: 0.45rem 0.75rem; }
   .statement-h1 { font-size: clamp(2.1rem, 10vw, 3rem); }
   .hero .demo-h2 { font-size: clamp(1.55rem, 7vw, 2rem); letter-spacing: -0.02em; }
   .section-head h2, .diff-head h2 { font-size: clamp(1.7rem, 7vw, 2.2rem); }
-  .dryft-phone { width: min(240px, 84vw); }
+  /* Phone composition — smaller + softer overlap so neither clips the edge */
+  .dryft-phone { width: min(195px, 62vw); }
+  .dryft-phone.phone-notif { transform: rotate(-4deg) !important; }
+  .dryft-phone.phone-chat  { transform: rotate(4deg) !important; margin-top: -24%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
