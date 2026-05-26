@@ -307,8 +307,8 @@ if (surveyModal && surveyForm) {
   // Even though the values are set by us via button clicks on data-value attributes,
   // a curious user could modify the hidden inputs via devtools. These allowlists
   // make sure nothing other than the expected values reaches the server.
+  // App is 18+; "High school student" intentionally omitted.
   const VALID_STAGES = new Set([
-    'High school student',
     'University / college student',
     'Early career professional',
     'Mid-career professional',
