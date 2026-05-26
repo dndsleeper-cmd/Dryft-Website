@@ -246,6 +246,7 @@ function resetSurvey() {
   surveyForm.querySelectorAll('.survey-q.unanswered').forEach(q => q.classList.remove('unanswered'));
   document.getElementById('survey-missing-notice')?.remove();
   document.getElementById('survey-sending-notice')?.remove();
+  surveyForm.querySelector('.survey-actions')?.classList.remove('has-notice');
   const sub = surveyForm.querySelector('.survey-submit');
   if (sub) { sub.disabled = false; sub.textContent = 'Send answers'; }
 }
@@ -270,7 +271,14 @@ function bindSelectGroup(container, hiddenName) {
       // module scope and the validation helpers live inside the survey IIFE block.
       const stillMissing = [...surveyForm.querySelectorAll('input[type="hidden"]')]
         .some(i => !i.value);
-      if (!stillMissing) document.getElementById('survey-missing-notice')?.remove();
+      if (!stillMissing) {
+        document.getElementById('survey-missing-notice')?.remove();
+        // Drop the column-layout flag on .survey-actions if nothing's using it
+        const actions = surveyForm.querySelector('.survey-actions');
+        if (actions && !actions.querySelector('.survey-sending-notice, .survey-missing-notice')) {
+          actions.classList.remove('has-notice');
+        }
+      }
     });
   });
 }
@@ -348,13 +356,18 @@ if (surveyModal && surveyForm) {
   }
   function showMissingNotice() {
     let n = document.getElementById('survey-missing-notice');
+    const actions = surveyForm.querySelector('.survey-actions');
     if (!n) {
       n = document.createElement('div');
       n.id = 'survey-missing-notice';
       n.className = 'survey-missing-notice';
       n.setAttribute('role', 'alert');
-      const actions = surveyForm.querySelector('.survey-actions');
-      if (actions) actions.parentNode.insertBefore(n, actions);
+      // Same pattern as the sending-notice: live INSIDE the sticky actions row so
+      // mobile users always see it regardless of where they scrolled.
+      if (actions) {
+        actions.classList.add('has-notice');
+        actions.insertBefore(n, actions.firstChild);
+      }
     }
     n.textContent = 'Please answer all questions.';
   }
@@ -427,9 +440,13 @@ if (surveyModal && surveyForm) {
     if (surveySuccess) surveySuccess.hidden = false;
   });
 
-  // Toggle the inline "don't close this tab" notice that appears beside the submit row
+  // Toggle the inline "don't close this tab" notice. We insert the notice INSIDE
+  // the sticky .survey-actions bar (above the button) so it stays visible on mobile
+  // where the actions row floats over the scrolling form content. Adding `.has-notice`
+  // switches the actions row to flex-column so the notice sits on its own line.
   function showSurveySendingNotice(on) {
     let notice = document.getElementById('survey-sending-notice');
+    const actions = surveyForm.querySelector('.survey-actions');
     if (on) {
       if (notice) return;
       notice = document.createElement('div');
@@ -438,10 +455,16 @@ if (surveyModal && surveyForm) {
       notice.setAttribute('role', 'status');
       notice.setAttribute('aria-live', 'polite');
       notice.innerHTML = '<span class="survey-sending-dot" aria-hidden="true"></span><span>Saving your answers — please don’t close this tab.</span>';
-      const actions = surveyForm.querySelector('.survey-actions');
-      if (actions) actions.parentNode.insertBefore(notice, actions);
+      if (actions) {
+        actions.classList.add('has-notice');
+        actions.insertBefore(notice, actions.firstChild);
+      }
     } else if (notice) {
       notice.remove();
+      // Only drop the column layout if no other notice is using the slot
+      if (actions && !actions.querySelector('.survey-sending-notice, .survey-missing-notice')) {
+        actions.classList.remove('has-notice');
+      }
     }
   }
 }

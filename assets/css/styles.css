@@ -1735,6 +1735,16 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   padding-top: 0.9rem;
   border-top: 1px solid var(--border);
 }
+/* When a notice (missing-answer or sending) lives inside the actions bar, switch
+   to column layout so the notice sits ABOVE the submit button. This guarantees
+   the notice is visible on mobile, where the actions row is sticky at viewport
+   bottom and overlays whatever's underneath it in the scroll flow. */
+.survey-actions.has-notice {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+}
+.survey-actions.has-notice .survey-submit { align-self: flex-end; }
 .survey-submit {
   font-family: inherit; font-size: 0.92rem; font-weight: 500;
   color: var(--bg); background: var(--ink);
@@ -1747,12 +1757,12 @@ footer p:last-child { text-align: right; color: var(--subtle); }
 .survey-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 .survey-submit:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
-/* Missing-answer notice — appears above the submit row if the user tries to
-   send before answering every question. Companion to .survey-q.unanswered. */
+/* Missing-answer notice — appears INSIDE the sticky .survey-actions bar (above
+   the submit button) if the user tries to send before answering every question. */
 .survey-missing-notice {
   display: flex; align-items: center; gap: 0.6rem;
-  margin: 0.4rem 0 0;
-  padding: 0.65rem 0.85rem;
+  margin: 0;
+  padding: 0.6rem 0.85rem;
   border-radius: 10px;
   background: rgba(196,77,60,0.08);
   border: 1px solid rgba(196,77,60,0.35);
@@ -1769,13 +1779,13 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   transition: color 0.2s ease;
 }
 
-/* In-flight notice — appears between the last question and the submit row while
-   the POST is in flight. Pairs with a beforeunload prompt to discourage closing
-   the tab before the request finishes leaving the browser. */
+/* In-flight notice — appears INSIDE the sticky .survey-actions bar (above the
+   submit button) while the POST is in flight. Pairs with a beforeunload prompt
+   to discourage closing the tab before the request finishes leaving the browser. */
 .survey-sending-notice {
   display: flex; align-items: center; gap: 0.6rem;
-  margin: 0.4rem 0 0;
-  padding: 0.65rem 0.85rem;
+  margin: 0;
+  padding: 0.6rem 0.85rem;
   border-radius: 10px;
   background: var(--accent-soft);
   border: 1px solid rgba(26,130,148,0.28);
