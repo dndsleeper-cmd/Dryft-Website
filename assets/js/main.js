@@ -176,6 +176,9 @@ async function handleWaitlistSubmit(form, source) {
   }
 
   showSuccess(source);
+  // After the email is captured, prompt the optional product survey.
+  // Email is already saved server-side; survey is purely optional follow-up signal.
+  openSurvey(email, source);
 }
 
 ['hero-form', 'final-form'].forEach((id) => {
@@ -187,10 +190,133 @@ async function handleWaitlistSubmit(form, source) {
 });
 
 /* =================================================================
+   SURVEY MODAL — fired after a successful waitlist submission.
+   Email is already captured; this is purely optional signal collection.
+   Single-select chips (stage) + 6 Likert scales (0-5).
+================================================================= */
+const surveyModal = document.getElementById('survey-modal');
+const surveyForm = document.getElementById('survey-form');
+const surveySuccess = document.getElementById('survey-success');
+let surveyEmail = '';
+let surveySource = '';
+let surveyLastFocus = null;
+
+function openSurvey(email, source) {
+  if (!surveyModal) return;
+  surveyEmail = email;
+  surveySource = source;
+  // Reset selections + form state in case the modal was opened earlier in this session
+  resetSurvey();
+  surveyLastFocus = document.activeElement;
+  surveyModal.hidden = false;
+  // Force reflow before adding .open so the CSS transition fires
+  void surveyModal.offsetWidth;
+  surveyModal.classList.add('open');
+  document.body.classList.add('survey-open');
+  // Focus the close button so ESC + Tab work predictably
+  setTimeout(() => surveyModal.querySelector('.survey-close')?.focus(), 50);
+}
+
+function closeSurvey() {
+  if (!surveyModal) return;
+  surveyModal.classList.remove('open');
+  document.body.classList.remove('survey-open');
+  setTimeout(() => {
+    surveyModal.hidden = true;
+    if (surveyLastFocus && typeof surveyLastFocus.focus === 'function') {
+      try { surveyLastFocus.focus(); } catch (_) {}
+    }
+  }, 320);
+}
+
+function resetSurvey() {
+  if (!surveyForm) return;
+  surveyForm.style.display = '';
+  if (surveySuccess) surveySuccess.hidden = true;
+  surveyForm.querySelectorAll('.survey-chip.selected, .survey-num.selected').forEach(b => {
+    b.classList.remove('selected');
+    b.setAttribute('aria-checked', 'false');
+  });
+  surveyForm.querySelectorAll('input[type="hidden"]').forEach(h => { h.value = ''; });
+  const sub = surveyForm.querySelector('.survey-submit');
+  if (sub) { sub.disabled = false; sub.textContent = 'Send answers'; }
+}
+
+function bindSelectGroup(container, hiddenName) {
+  const buttons = container.querySelectorAll('button');
+  const hidden = surveyForm.querySelector(`input[name="${hiddenName}"]`);
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => {
+        b.classList.remove('selected');
+        b.setAttribute('aria-checked', 'false');
+      });
+      btn.classList.add('selected');
+      btn.setAttribute('aria-checked', 'true');
+      if (hidden) hidden.value = btn.dataset.value;
+    });
+  });
+}
+
+if (surveyModal && surveyForm) {
+  // Chip groups (currently only "stage")
+  surveyForm.querySelectorAll('[data-chip-group]').forEach(group => {
+    bindSelectGroup(group, group.dataset.chipGroup);
+  });
+  // Scale (Likert) groups
+  surveyForm.querySelectorAll('[data-scale]').forEach(group => {
+    bindSelectGroup(group, group.dataset.scale);
+  });
+
+  // All "data-survey-close" elements close the modal (backdrop, X, Skip, Done)
+  surveyModal.querySelectorAll('[data-survey-close]').forEach(el => {
+    el.addEventListener('click', closeSurvey);
+  });
+
+  // ESC closes
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && surveyModal.classList.contains('open')) closeSurvey();
+  });
+
+  // Submit — posts survey data to the same Apps Script endpoint with kind=survey
+  surveyForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = surveyForm.querySelector('.survey-submit');
+    if (!submitBtn) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+
+    const data = new FormData(surveyForm);
+    const body = new URLSearchParams();
+    body.set('kind', 'survey');
+    body.set('email', surveyEmail || '');
+    body.set('source', surveySource || '');
+    body.set('timestamp', new Date().toISOString());
+    body.set('stage', data.get('stage') || '');
+    ['q1','q2','q3','q4','q5','q6'].forEach(k => body.set(k, data.get(k) || ''));
+
+    try {
+      if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL.startsWith('https://')) {
+        const resp = await fetch(SHEET_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body });
+        console.log('[dryft survey] posted', { email: surveyEmail, type: resp.type });
+      } else {
+        console.log('[dryft survey]', Object.fromEntries(body));
+      }
+    } catch (err) {
+      console.error('[dryft survey] save failed:', err);
+    }
+
+    // Always show success — fire-and-forget per the no-cors fetch above
+    surveyForm.style.display = 'none';
+    if (surveySuccess) surveySuccess.hidden = false;
+  });
+}
+
+/* =================================================================
    HERO PHONE — NOTIFICATIONS (lock screen cascade)
 ================================================================= */
 const NOTIFICATIONS = [
-  { app: 'Dryft', time: 'now', body: '<strong>Day 7 catch.</strong> Delivery $112 over. One groceries run gets you back on plan.', tag: { label: 'Fixable', cls: 'warn' }, extra: '+$112 over pace' },
+  { app: 'Dryft', time: 'now', body: '<strong>Day 9 catch.</strong> Delivery $112 over. One groceries run gets you back on plan.', tag: { label: 'Fixable', cls: 'warn' }, extra: '+$112 over pace' },
   { app: 'Dryft', time: '2d ago', body: '<strong>Subscriptions hit before payday.</strong> Move one or delay it.', tag: { label: 'Risk', cls: 'warn' }, extra: '2 renewals' },
   { app: 'Dryft', time: '5d ago', body: '<strong>Back on track.</strong> Buffer for March is secured.', tag: { label: 'On plan', cls: 'ok' }, extra: 'Buffer +$86' },
   { app: 'Dryft', time: '1w ago', body: '<strong>Plan adjusted — $64 moved to bills.</strong> All clear.', tag: { label: 'Adjusted', cls: 'ok' }, extra: '$64 moved' },
@@ -389,6 +515,44 @@ async function runChatLoop(phone) {
     await fadeOutFeed(feed);
     await wait(400);
   }
+}
+
+/* =================================================================
+   PERSONA SCENARIOS — hover/click swap between Maya & Devon visuals
+================================================================= */
+const personaCards = document.querySelectorAll('.persona-card');
+const personaVisuals = document.querySelectorAll('.persona-visual');
+let activePersona = 'maya';
+
+function activatePersona(name) {
+  if (name === activePersona) return;
+  activePersona = name;
+  personaCards.forEach(c => {
+    const on = c.dataset.persona === name;
+    c.classList.toggle('active', on);
+    c.setAttribute('aria-selected', String(on));
+  });
+  personaVisuals.forEach(v => {
+    const on = v.dataset.visual === name;
+    if (on) {
+      // Re-trigger CSS animations by removing then re-adding .active in next frame
+      v.classList.remove('active');
+      // force reflow so animation restarts cleanly
+      void v.offsetWidth;
+      v.classList.add('active');
+    } else {
+      v.classList.remove('active');
+    }
+  });
+}
+
+if (personaCards.length) {
+  personaCards.forEach(card => {
+    const target = card.dataset.persona;
+    card.addEventListener('click', () => activatePersona(target));
+    card.addEventListener('mouseenter', () => activatePersona(target));
+    card.addEventListener('focus', () => activatePersona(target));
+  });
 }
 
 /* =================================================================
