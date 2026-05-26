@@ -157,14 +157,15 @@ async function handleWaitlistSubmit(form, source) {
 
   try {
     if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL.startsWith('https://')) {
-      const body = new FormData();
+      // URLSearchParams → Content-Type: application/x-www-form-urlencoded.
+      // This is what populates Apps Script's e.parameter.email.
+      // FormData would set multipart/form-data, which only fills e.postData.contents.
+      const body = new URLSearchParams();
       body.set('email', email);
       body.set('source', source);
       body.set('timestamp', new Date().toISOString());
       body.set('dwell_ms', String(now - PAGE_LOAD_TS));
       // mode:'no-cors' = fire-and-forget; we can't read the response (opaque).
-      // No credentials/referrerPolicy overrides — Apps Script redirects to
-      // script.googleusercontent.com and any extra fetch options can interfere.
       const resp = await fetch(SHEET_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body });
       console.log('[dryft waitlist] posted', { email, source, type: resp.type });
     } else {

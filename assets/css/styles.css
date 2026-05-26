@@ -314,7 +314,27 @@ body.menu-open { overflow: hidden; }
 }
 
 @media (max-width: 720px) {
-  .hero-side-scroll { display: none; }
+  /* Switch the side-positioned scroll cue to a horizontal stack under the heading */
+  .statement { padding: 4rem 1.2rem 2.5rem; align-items: start; }
+  .statement-content {
+    flex-direction: column;
+    gap: 1.6rem;
+    align-items: center;
+    margin-top: 1rem;
+  }
+  .hero-side-scroll {
+    flex-direction: column;
+    gap: 0.55rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    margin-top: 1.6rem;
+    animation: fadeIn 0.9s 1.2s ease forwards;
+  }
+  .hss-label {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+  .hss-arrow svg { width: 12px; height: 22px; }
 }
 
 /* =========================== HERO =========================== */
@@ -1008,25 +1028,44 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   footer p:last-child { text-align: center; }
 }
 
-/* Phone — stack both phones flat (no 3D), no extreme min-heights */
+/* Phone — offset, overlapping composition (replaces the desktop absolute layout) */
 @media (max-width: 560px) {
   .hero-demo { min-height: 0; width: 100%; }
   .demo-stage {
     height: auto;
-    perspective: none;
-    display: flex; flex-direction: column; align-items: center;
-    gap: 1.6rem;
-    padding: 0.5rem 0 1rem;
+    perspective: 1400px;
+    position: relative;
+    display: block;
+    padding: 1.4rem 0 1.5rem;
   }
   .dryft-phone {
     position: relative !important;
-    left: auto !important; right: auto !important; top: auto !important;
-    width: min(240px, 72vw);
-    margin: 0 auto;
+    top: auto !important; left: auto !important; right: auto !important;
+    width: min(220px, 64vw);
     animation: none !important;
-    transform: rotateY(0) rotateZ(0) !important;
+    transform-origin: center;
+  }
+  /* notif phone: tilted left, sits to the left side, in front */
+  .dryft-phone.phone-notif {
+    margin: 0 auto 0 0;
+    transform: rotate(-5deg) translateZ(0) !important;
+    z-index: 3;
+    box-shadow: none;
+  }
+  /* chat phone: tilted right, peeks up from underneath/behind, sits to the right */
+  .dryft-phone.phone-chat {
+    margin: -28% 0 0 auto;
+    transform: rotate(5deg) translateZ(0) !important;
+    z-index: 2;
   }
   .hero-inner { gap: 1.6rem; }
+}
+
+/* Very narrow phones — slightly smaller phones + softer overlap so neither clips the edge */
+@media (max-width: 380px) {
+  .dryft-phone { width: min(195px, 62vw); }
+  .dryft-phone.phone-notif { transform: rotate(-4deg) !important; }
+  .dryft-phone.phone-chat  { transform: rotate(4deg) !important; margin-top: -24%; }
 }
 
 /* Very small phones */
