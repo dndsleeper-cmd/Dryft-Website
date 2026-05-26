@@ -314,20 +314,18 @@ body.menu-open { overflow: hidden; }
 }
 
 @media (max-width: 720px) {
-  /* Switch the side-positioned scroll cue to a horizontal stack under the heading */
-  .statement { padding: 4rem 1.2rem 2.5rem; align-items: start; }
+  /* Mobile: stack the headline + scroll cue vertically, keep both vertically centered in the viewport */
+  .statement { padding: 5rem 1.2rem 3rem; }
   .statement-content {
     flex-direction: column;
-    gap: 1.6rem;
+    gap: 2rem;
     align-items: center;
-    margin-top: 1rem;
   }
   .hero-side-scroll {
     flex-direction: column;
-    gap: 0.55rem;
+    gap: 0.6rem;
     font-size: 0.78rem;
     letter-spacing: 0.18em;
-    margin-top: 1.6rem;
     animation: fadeIn 0.9s 1.2s ease forwards;
   }
   .hss-label {
@@ -754,13 +752,23 @@ body.menu-open { overflow: hidden; }
   display: block;
   margin-bottom: 0.6rem;
 }
-.diff-chart .pre-line { stroke-dasharray: 200; stroke-dashoffset: 200; animation: drawShort 0.9s 0.4s ease-out forwards; }
-.diff-chart .other-line { stroke-dasharray: 800; stroke-dashoffset: 800; animation: drawLong 2.0s 1.4s ease-out forwards; }
-.diff-chart .dryft-line { stroke-dasharray: 800; stroke-dashoffset: 800; animation: drawLong 2.0s 1.4s ease-out forwards; }
-.diff-chart .other-fill { opacity: 0; animation: fadeIn 1s 2.6s ease-out forwards; }
-.diff-chart .day7 { opacity: 0; animation: popIn 0.55s 1.2s cubic-bezier(.34,1.56,.64,1) forwards; }
-.diff-chart .dryft-end { opacity: 0; animation: fadeIn 0.6s 3.0s ease forwards; }
-.diff-chart .other-end { opacity: 0; animation: fadeIn 0.6s 3.0s ease forwards; }
+/* Initial (hidden) state — animations only fire once the chart's container
+   gets the .visible class from the IntersectionObserver in main.js */
+.diff-chart .pre-line  { stroke-dasharray: 200; stroke-dashoffset: 200; }
+.diff-chart .other-line,
+.diff-chart .dryft-line { stroke-dasharray: 800; stroke-dashoffset: 800; }
+.diff-chart .other-fill,
+.diff-chart .day7,
+.diff-chart .dryft-end,
+.diff-chart .other-end { opacity: 0; }
+
+.diff-grid.visible .diff-chart .pre-line   { animation: drawShort 0.9s 0.4s ease-out forwards; }
+.diff-grid.visible .diff-chart .other-line { animation: drawLong  2.0s 1.4s ease-out forwards; }
+.diff-grid.visible .diff-chart .dryft-line { animation: drawLong  2.0s 1.4s ease-out forwards; }
+.diff-grid.visible .diff-chart .other-fill { animation: fadeIn    1.0s 2.6s ease-out forwards; }
+.diff-grid.visible .diff-chart .day7       { animation: popIn     0.55s 1.2s cubic-bezier(.34,1.56,.64,1) forwards; }
+.diff-grid.visible .diff-chart .dryft-end  { animation: fadeIn    0.6s 3.0s ease forwards; }
+.diff-grid.visible .diff-chart .other-end  { animation: fadeIn    0.6s 3.0s ease forwards; }
 
 .diff-pins { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: auto; padding-top: 0.8rem; }
 .diff-pin { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.85rem 1rem; }
