@@ -473,7 +473,7 @@ if (surveyModal && surveyForm) {
    HERO PHONE — NOTIFICATIONS (lock screen cascade)
 ================================================================= */
 const NOTIFICATIONS = [
-  { app: 'Dryft', time: 'now', body: '<strong>Day 9 catch.</strong> Delivery $112 over. One groceries run gets you back on plan.', tag: { label: 'Fixable', cls: 'warn' }, extra: '+$112 over pace' },
+  { app: 'Dryft', time: 'now', body: '<strong>Dryft caught.</strong> Delivery $112 over. One groceries run gets you back on plan.', tag: { label: 'Fixable', cls: 'warn' }, extra: '+$112 over pace' },
   { app: 'Dryft', time: '2d ago', body: '<strong>Subscriptions hit before payday.</strong> Move one or delay it.', tag: { label: 'Risk', cls: 'warn' }, extra: '2 renewals' },
   { app: 'Dryft', time: '5d ago', body: '<strong>Back on track.</strong> Buffer for March is secured.', tag: { label: 'On plan', cls: 'ok' }, extra: 'Buffer +$86' },
   { app: 'Dryft', time: '1w ago', body: '<strong>Plan adjusted — $64 moved to bills.</strong> All clear.', tag: { label: 'Adjusted', cls: 'ok' }, extra: '$64 moved' },
