@@ -1125,10 +1125,11 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   footer p:last-child { text-align: center; }
 }
 
-/* Mobile composition (<= 560px): hero notif phone + smaller chat phone behind.
-   Pattern borrowed from modern fintech landings (Cleo, Cash App, Step) — one
-   dominant device showcases the core feature, a smaller companion peeks behind.
-   Both phones share a grid cell; transforms place them deliberately. */
+/* Mobile composition (<= 560px): two full-size phones, notif as the hero.
+   Both phones keep their full width so the in-screen text stays at native size
+   and remains readable. Notif sits forward + left, chat is shifted right and
+   tilted away — its right edge bleeds slightly off the viewport for a
+   "there's more" effect (.hero has overflow:hidden so the clip is clean). */
 @media (max-width: 560px) {
   .hero { padding: 3.5rem 1.1rem 2rem; }
   .hero-demo { min-height: 0; width: 100%; }
@@ -1148,30 +1149,108 @@ footer p:last-child { text-align: right; color: var(--subtle); }
     animation: none !important;
     transform-origin: center;
   }
-  /* notif phone — hero: full size, slight up-left lift, soft tilt left */
+  /* notif phone — hero, shifted left, soft tilt */
   .dryft-phone.phone-notif {
     z-index: 3;
-    transform: translate(-10%, -4%) rotate(-5deg) translateZ(0) !important;
+    transform: translate(-16%, 0) rotate(-4deg) translateZ(0) !important;
   }
-  /* chat phone — supporting: scaled to 76% so it reads as "further back",
-     shifted to lower-right, stronger tilt for energy */
+  /* chat phone — full size (text stays readable), shifted right + tilted away */
   .dryft-phone.phone-chat {
     z-index: 2;
-    transform: translate(32%, 24%) rotate(10deg) scale(0.76) translateZ(0) !important;
+    transform: translate(30%, 8%) rotate(8deg) translateZ(0) !important;
   }
   .hero-inner { gap: 1.1rem; }
 }
 
-/* Very small phones (<= 380px) — proportional shrink, same composition. */
+/* Very small phones (<= 380px) — slightly narrower phones to keep the bleed
+   under control on tiny viewports, same composition. */
 @media (max-width: 380px) {
   .brand-word { font-size: 1.1rem; }
   .nav-cta { font-size: 0.75rem; padding: 0.45rem 0.75rem; }
   .statement-h1 { font-size: clamp(2.4rem, 12vw, 3.2rem); }
   .hero .demo-h2 { font-size: clamp(1.55rem, 7vw, 2rem); letter-spacing: -0.02em; }
   .section-head h2, .diff-head h2 { font-size: clamp(1.7rem, 7vw, 2.2rem); }
-  .dryft-phone { width: min(208px, 60vw); }
-  .dryft-phone.phone-notif { transform: translate(-10%, -4%) rotate(-5deg) !important; }
-  .dryft-phone.phone-chat  { transform: translate(32%, 22%) rotate(10deg) scale(0.76) !important; }
+  .dryft-phone { width: min(206px, 60vw); }
+  .dryft-phone.phone-notif { transform: translate(-16%, 0) rotate(-4deg) !important; }
+  .dryft-phone.phone-chat  { transform: translate(28%, 8%) rotate(8deg) !important; }
+}
+
+/* ============================================================
+   PHONE INTERNAL SCALING — mobile only
+   The phone mockup is ~232px wide on mobile vs ~260px on desktop. The internal
+   text/UI was calibrated for desktop, which makes it feel oversized inside the
+   smaller mockup on mobile. These overrides scale the internals down (~75–80%
+   of desktop sizes) so the mockup reads like a real iOS device at small scale —
+   notification bodies fit in 2 lines, lock-screen clock has breathing room,
+   chat bubbles look correctly weighted vs the device chrome.
+   ============================================================ */
+@media (max-width: 560px) {
+  /* Hardware bezel detail */
+  .dynamic-island { width: 78px; height: 22px; top: 7px; }
+  .di-camera { width: 7px; height: 7px; right: 7px; }
+  .status-bar { font-size: 0.52rem; padding: 0 1rem; top: 10px; }
+  .sb-time { padding-left: 0.3rem; }
+  .sb-right { gap: 4px; padding-right: 0.3rem; }
+  .sb-icon { width: 11px; height: 7px; }
+  .sb-batt { width: 18px; height: 8px; }
+
+  /* Lock screen */
+  .lock-clock { margin-top: 30px; padding: 0 0.8rem; }
+  .lock-date { font-size: 0.58rem; margin-bottom: 3px; }
+  .lock-time { font-size: 3rem; }
+
+  /* Notification cards */
+  .notif-stack { left: 10px; right: 10px; bottom: 56px; gap: 5px; }
+  .notif { padding: 7px 9px 8px; border-radius: 14px; }
+  .notif-head { gap: 6px; margin-bottom: 2px; }
+  .notif-app { font-size: 0.46rem; gap: 5px; }
+  .notif-app-icon { width: 14px; height: 14px; border-radius: 4px; }
+  .notif-app-icon svg { width: 9px; height: 9px; }
+  .notif-time { font-size: 0.4rem; }
+  .notif-body { font-size: 0.5rem; line-height: 1.32; }
+  .notif-meta { font-size: 0.38rem; gap: 5px; margin-top: 4px; }
+  .notif-meta .tag { padding: 1px 4px; border-radius: 3px; }
+
+  .lock-bottom { bottom: 11px; left: 11px; right: 11px; gap: 8px; }
+  .lock-action-btn { width: 26px; height: 26px; }
+  .home-indicator { height: 3px; max-width: 80px; }
+
+  /* Chat phone — header */
+  .chat-nav { top: 28px; height: 42px; padding: 0 12px; grid-template-columns: 20px 1fr 20px; }
+  .chat-back { font-size: 1.05rem; }
+  .chat-id { gap: 6px; }
+  .chat-avatar { width: 22px; height: 22px; }
+  .chat-avatar svg { width: 18px; height: 18px; }
+  .chat-id-text strong { font-size: 0.68rem; }
+  .chat-menu { font-size: 0.85rem; }
+
+  /* Chat feed + bubbles */
+  .chat-feed { top: 70px; bottom: 54px; padding: 10px 10px 8px; gap: 5px; }
+  .chat-feed::before { height: 12px; }
+  .bubble { font-size: 0.5rem; padding: 6px 9px; border-radius: 14px; max-width: 86%; line-height: 1.32; }
+  .bubble.user { border-bottom-right-radius: 3px; }
+  .bubble.dryft { border-bottom-left-radius: 3px; }
+  .thinking { padding: 6px 10px; gap: 6px; border-radius: 14px; }
+  .thinking-label { font-size: 0.4rem; }
+  .thinking-dots span { width: 3px; height: 3px; }
+
+  /* Impact card inside chat */
+  .impact-card { padding: 8px 9px 7px; border-radius: 12px; }
+  .impact-head { font-size: 0.4rem; margin-bottom: 5px; }
+  .impact-bars { height: 38px; gap: 5px; }
+  .impact-labels { gap: 5px; margin-top: 3px; }
+  .impact-labels span { font-size: 0.34rem; }
+  .impact-action { font-size: 0.42rem; padding: 4px 7px; border-radius: 7px; margin-top: 6px; }
+  .impact-action::after { font-size: 0.66rem; }
+
+  /* Chat input bar */
+  .chat-input-bar { bottom: 18px; left: 8px; right: 8px; padding: 4px 5px; border-radius: 18px; }
+  .chat-plus { width: 22px; height: 22px; font-size: 0.72rem; }
+  .chat-input { font-size: 0.5rem; padding: 3px 7px; min-height: 18px; }
+  .chat-cursor { height: 9px; }
+  .chat-send { width: 22px; height: 22px; }
+  .chat-send svg { width: 10px; height: 10px; }
+  .chat-home { max-width: 78px; width: 78px; bottom: 4px; height: 3px; }
 }
 
 /* =========================== HOW IT WORKS — engine flow ===========================
