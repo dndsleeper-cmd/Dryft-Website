@@ -278,27 +278,70 @@ if (surveyModal && surveyForm) {
     if (e.key === 'Escape' && surveyModal.classList.contains('open')) closeSurvey();
   });
 
+  // ----- Front-end sanitization helpers -----
+  // Even though the values are set by us via button clicks on data-value attributes,
+  // a curious user could modify the hidden inputs via devtools. These allowlists
+  // make sure nothing other than the expected values reaches the server.
+  const VALID_STAGES = new Set([
+    'High school student',
+    'University / college student',
+    'Early career professional',
+    'Mid-career professional',
+    'Parent / family stage',
+    'Retired'
+  ]);
+  // Likert scale: empty string (unanswered) or "1"–"5"
+  const VALID_SCALE = new Set(['', '1', '2', '3', '4', '5']);
+  // Survey-level throttle to mirror the waitlist anti-abuse posture
+  let surveySubmitCount = 0;
+  let surveyLastSubmitAt = 0;
+  const MAX_SURVEY_SUBMITS = 3;
+
+  function sanitizeStage(v) {
+    const s = String(v == null ? '' : v).trim().slice(0, 64);
+    return VALID_STAGES.has(s) ? s : '';
+  }
+  function sanitizeScale(v) {
+    // Reject anything that isn't exactly "" or "1".."5"
+    const s = String(v == null ? '' : v).trim();
+    return VALID_SCALE.has(s) ? s : '';
+  }
+
   // Submit — posts survey data to the same Apps Script endpoint with kind=survey
   surveyForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitBtn = surveyForm.querySelector('.survey-submit');
     if (!submitBtn) return;
+
+    // Anti-abuse: throttle submits per page-load (3 max). Visible feedback on hit.
+    const nowTs = Date.now();
+    if (nowTs - surveyLastSubmitAt < MIN_SUBMIT_INTERVAL_MS) return;
+    if (surveySubmitCount >= MAX_SURVEY_SUBMITS) {
+      submitBtn.textContent = 'Too many tries';
+      submitBtn.disabled = true;
+      return;
+    }
+    surveyLastSubmitAt = nowTs;
+    surveySubmitCount++;
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'Sending…';
 
     const data = new FormData(surveyForm);
     const body = new URLSearchParams();
     body.set('kind', 'survey');
-    body.set('email', surveyEmail || '');
-    body.set('source', surveySource || '');
+    // Re-sanitize the email here too — surveyEmail came from sanitizeEmail() earlier,
+    // but we re-validate before posting in case the reference was tampered with.
+    body.set('email', sanitizeEmail(surveyEmail || ''));
+    body.set('source', String(surveySource || '').replace(/[^a-z]/gi, '').slice(0, 16));
     body.set('timestamp', new Date().toISOString());
-    body.set('stage', data.get('stage') || '');
-    ['q1','q2','q3','q4','q5','q6'].forEach(k => body.set(k, data.get(k) || ''));
+    body.set('stage', sanitizeStage(data.get('stage')));
+    ['q1','q2','q3','q4','q5','q6'].forEach(k => body.set(k, sanitizeScale(data.get(k))));
 
     try {
       if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL.startsWith('https://')) {
         const resp = await fetch(SHEET_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body });
-        console.log('[dryft survey] posted', { email: surveyEmail, type: resp.type });
+        console.log('[dryft survey] posted', { email: body.get('email'), type: resp.type });
       } else {
         console.log('[dryft survey]', Object.fromEntries(body));
       }
@@ -329,7 +372,7 @@ function makeNotifNode({ app, time, body, tag, extra }) {
     <div class="notif-head">
       <span class="notif-app">
         <span class="notif-app-icon">
-          <svg viewBox="0 0 64 64"><path d="M 14 14 L 14 50 L 30 50 C 42 50, 50 42, 50 32 C 50 22, 42 14, 30 14 Z" fill="currentColor"/></svg>
+          <svg viewBox="0 0 64 64"><path d="M 8 4 L 56 4 C 58 4, 60 6, 60 8 L 60 56 C 60 58, 58 60, 56 60 L 8 60 C 6 60, 4 58, 4 56 L 4 8 C 4 6, 6 4, 8 4 Z M 14 14 L 14 50 L 30 50 C 42 50, 50 42, 50 32 C 50 22, 42 14, 30 14 Z" fill="currentColor" fill-rule="evenodd"/></svg>
         </span>${app}
       </span>
       <span class="notif-time">${time}</span>

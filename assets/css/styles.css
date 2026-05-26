@@ -455,6 +455,18 @@ body.menu-open { overflow: hidden; }
   background: var(--brand); margin-right: 0.55rem;
 }
 
+/* Hero fine-print — centered under the waitlist form, no leading dot */
+.hero-fine {
+  margin-top: 1rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 480px;
+  text-align: center;
+  opacity: 0;
+  animation: fadeUp 0.85s 0.85s ease forwards;
+}
+
 /* =========================== PHONE (shared chrome) =========================== */
 .hero-demo {
   position: relative; justify-self: center;
@@ -632,12 +644,12 @@ body.menu-open { overflow: hidden; }
 .chat-back { color: var(--brand); font-size: 1.3rem; line-height: 1; font-weight: 300; margin-top: -2px; }
 .chat-id { display: flex; align-items: center; gap: 8px; justify-content: center; }
 .chat-avatar {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand), #2a8190);
+  width: 26px; height: 26px;
   display: grid; place-items: center;
 }
-.chat-id-text { line-height: 1.1; }
-.chat-id-text strong { font-size: 0.66rem; color: var(--phone-ink); display: block; font-weight: 600; }
+.chat-id-text { line-height: 1; display: flex; align-items: center; }
+.chat-id-text strong { font-size: 0.85rem; color: var(--phone-ink); font-weight: 600; letter-spacing: -0.01em; }
+/* .chat-id-text em styling kept for legacy "Active" subtext if it ever returns */
 .chat-id-text em { font-style: normal; font-size: 0.5rem; color: var(--phone-muted); font-weight: 500; }
 .chat-menu { color: var(--phone-muted); font-size: 1rem; text-align: right; }
 
@@ -977,6 +989,13 @@ body.menu-open { overflow: hidden; }
 .final-cta h2 .hl { font-style: italic; font-weight: 500; color: var(--brand); }
 .final-cta > .final-cta-inner > p { color: var(--muted); margin-bottom: 1.8rem; font-size: 1rem; }
 .final-cta > .final-cta-inner > p strong { color: var(--ink); font-weight: 600; }
+.final-cta > .final-cta-inner > p em {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  color: var(--brand);
+  font-weight: 500;
+}
+.cta-eyebrow strong { font-family: 'Inter Tight', 'Inter', sans-serif; font-style: normal; color: var(--brand); font-weight: 700; }
 
 .final-form {
   display: flex; gap: 0.5rem; max-width: 500px; margin: 0 auto;
@@ -1583,33 +1602,63 @@ footer p:last-child { text-align: right; color: var(--subtle); }
 .survey-sub {
   font-size: 0.93rem; color: var(--muted); line-height: 1.5;
 }
+.survey-sub strong { color: var(--ink); font-weight: 600; }
+.survey-sub em {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  color: var(--brand);
+  font-weight: 500;
+}
 
 .survey-form { display: flex; flex-direction: column; gap: 1.3rem; }
 
 .survey-q { display: flex; flex-direction: column; gap: 0.55rem; }
-.survey-q-head { display: flex; align-items: flex-start; gap: 0.7rem; }
+/* q-head: num badge on the left (absolute) so the question label can use the full
+   container width and center cleanly. Same layout desktop + mobile = consistent. */
+.survey-q-head {
+  position: relative;
+  min-height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 2.4rem;
+}
 .survey-q-num {
-  flex-shrink: 0;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.62rem; letter-spacing: 0.14em;
   color: var(--brand); font-weight: 600;
   background: var(--accent-soft);
   border: 1px solid rgba(26,130,148,0.3);
   border-radius: 6px;
-  padding: 0.18rem 0.45rem;
-  margin-top: 0.1rem;
+  padding: 0.22rem 0.5rem;
+  line-height: 1;
 }
 .survey-q-label {
   font-family: 'Inter Tight', 'Inter', sans-serif;
-  font-size: 0.98rem; font-weight: 500;
-  color: var(--ink); line-height: 1.35;
-  letter-spacing: -0.01em;
+  /* Auto-adjusts with viewport: small enough on mobile (~12px at 375px) to fit
+     the longest question on one line, scales up to 17px on desktop. clamp keeps
+     min/max sane, vw scales smoothly between them. */
+  font-size: clamp(0.75rem, 2.3vw + 0.1rem, 1.06rem);
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
   margin: 0;
+  text-align: center;
+  /* Enforce one line; if a question is ever too long for the smallest font,
+     overflow ellipsis is the visual fallback (vs. breaking the layout). */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
-/* Stage chips — single-select pills */
+/* Stage chips — single-select pills, centered everywhere */
 .survey-chips {
   display: flex; flex-wrap: wrap;
+  justify-content: center;
   gap: 0.45rem;
   margin-top: 0.25rem;
 }
@@ -1634,11 +1683,11 @@ footer p:last-child { text-align: right; color: var(--subtle); }
 }
 .survey-chip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
-/* Likert scale — 0-5 buttons */
+/* Likert scale — 1-5 buttons */
 .survey-scale {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 0.4rem;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.45rem;
   margin-top: 0.3rem;
 }
 .survey-num {
@@ -1664,9 +1713,9 @@ footer p:last-child { text-align: right; color: var(--subtle); }
 .survey-scale-labels {
   display: flex; justify-content: space-between;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--subtle); font-weight: 500;
-  margin-top: 0.3rem;
+  font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink); font-weight: 700;
+  margin-top: 0.35rem;
   padding: 0 0.15rem;
 }
 
@@ -1736,17 +1785,76 @@ footer p:last-child { text-align: right; color: var(--subtle); }
 body.survey-open { overflow: hidden; }
 
 @media (max-width: 560px) {
-  .survey-modal { padding: 0; }
-  .survey-card {
-    max-height: 100vh; max-width: 100%;
-    border-radius: 0;
-    padding: 1.4rem 1.2rem 1.2rem;
+  /* Modal stretches edge-to-edge; card is the full mobile viewport with its
+     own internal scroll. Submit row sticks to the bottom so it's always reachable. */
+  .survey-modal {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
   }
-  .survey-head h3 { font-size: 1.35rem; }
-  .survey-q-label { font-size: 0.92rem; }
-  .survey-chip { font-size: 0.82rem; padding: 0.5rem 0.85rem; }
+  .survey-card {
+    width: 100%;
+    max-width: 100%;
+    /* dvh = dynamic viewport height; correctly accounts for the mobile URL bar */
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    /* overflow hidden on the card; form below handles its own scroll */
+    overflow: hidden;
+    padding: calc(1.1rem + env(safe-area-inset-top)) 1.1rem 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .survey-close {
+    top: calc(0.8rem + env(safe-area-inset-top));
+    right: 0.8rem;
+  }
+  .survey-head {
+    padding-right: 2.6rem;
+    flex-shrink: 0;
+    margin-bottom: 0.9rem;
+  }
+  .survey-head h3 { font-size: 1.3rem; }
+
+  /* The form takes the remaining vertical space and scrolls internally.
+     Negative horizontal margin lets the sticky submit row reach edge-to-edge. */
+  .survey-form {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -1.1rem;
+    padding: 0 1.1rem;
+    gap: 1.2rem;
+  }
+  /* Mobile: tighter paddings + smaller chips/scale to fit narrow viewport.
+     Question label font-size is handled by clamp() in the base rule (no override needed). */
+  .survey-q-head {
+    padding: 0 1rem;
+    min-height: 26px;
+  }
+  .survey-q-num {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+  }
+  .survey-scale-labels { font-size: 0.55rem; letter-spacing: 0.08em; }
+  .survey-chip { font-size: 0.78rem; padding: 0.5rem 0.85rem; }
   .survey-num { font-size: 0.88rem; padding: 0.6rem 0; }
   .survey-scale { gap: 0.32rem; }
+
+  /* Submit row stays glued to the bottom of the form scroll container,
+     edge-to-edge with a hairline top border and a bg so content scrolling
+     beneath it doesn't bleed through. */
+  .survey-actions {
+    position: sticky;
+    bottom: 0;
+    background: var(--surface);
+    margin: 0 -1.1rem;
+    padding: 0.85rem 1.1rem calc(0.9rem + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+    z-index: 2;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

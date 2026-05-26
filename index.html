@@ -3,10 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dryft — Catch the drift before it costs you.</title>
-<meta name="description" content="Dryft is the AI accountability coach for personal finance. Catches drift on day 9 — when one change can still save the month.">
-<meta name="robots" content="index, follow">
+<title>Dryft — A Plan for Your Money | AI Finance Coach</title>
+<meta name="description" content="Dryft is the AI finance coach that learns your habits and nudges you on day 9 — when one change still saves the month. Private beta · Cohort 01.">
+<meta name="keywords" content="AI finance coach, personal finance app, budgeting app, spending alerts, habit tracker, financial wellness, money management, AI budgeting, Plaid, smart budgeting, predictive finance, accountability coach">
+<meta name="author" content="Dryft">
+<meta name="application-name" content="Dryft">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<meta name="googlebot" content="index, follow">
 <meta name="theme-color" content="#f4f6f7">
+<meta name="color-scheme" content="light">
 
 <!-- SECURITY — these are duplicated in vercel.json as real HTTP headers (authoritative).
      Meta tags act as a fallback if the site is ever served from somewhere without those headers. -->
@@ -18,16 +23,23 @@
 <link rel="canonical" href="https://dryft.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Dryft">
-<meta property="og:title" content="Dryft — Catch the drift before it costs you.">
-<meta property="og:description" content="Catches drift on day 9 — when one change still saves the month.">
+<meta property="og:title" content="Dryft — A Plan for Your Money">
+<meta property="og:description" content="The AI finance coach that learns your habits and nudges you on day 9 — when one change still saves the month.">
 <meta property="og:url" content="https://dryft.app/">
 <meta property="og:image" content="https://dryft.app/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Dryft — A Plan for Your Money">
+<meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Dryft — Catch the drift before it costs you.">
-<meta name="twitter:description" content="The money app that catches you on day 9 — not in a chart on day 30.">
+<meta name="twitter:site" content="@dryftapp">
+<meta name="twitter:title" content="Dryft — A Plan for Your Money">
+<meta name="twitter:description" content="The AI finance coach that learns your habits and nudges you on day 9 — when one change still saves the month.">
+<meta name="twitter:image" content="https://dryft.app/og-image.png">
+<meta name="twitter:image:alt" content="Dryft — A Plan for Your Money">
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="alternate" hreflang="en" href="https://dryft.app/">
+<link rel="alternate" hreflang="x-default" href="https://dryft.app/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Note: SRI is intentionally NOT used on Google Fonts (dynamic UA-conditional CSS)
@@ -35,14 +47,83 @@
      crossorigin + referrerpolicy=no-referrer and constrained by our CSP origin allowlist. -->
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script defer src="https://cdn.vercel-insights.com/v1/script.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<link rel="stylesheet" href="assets/css/styles.css?v=20260526p">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260526y">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@graph": [
-    { "@type": "Organization", "@id": "https://dryft.app/#organization", "name": "Dryft", "url": "https://dryft.app/" },
-    { "@type": "WebSite", "@id": "https://dryft.app/#website", "url": "https://dryft.app/", "name": "Dryft", "publisher": { "@id": "https://dryft.app/#organization" } },
-    { "@type": "SoftwareApplication", "@id": "https://dryft.app/#software", "name": "Dryft", "applicationCategory": "FinanceApplication", "operatingSystem": "iOS, Android", "url": "https://dryft.app/" }
+    {
+      "@type": "Organization",
+      "@id": "https://dryft.app/#organization",
+      "name": "Dryft",
+      "url": "https://dryft.app/",
+      "logo": "https://dryft.app/assets/favicon.svg",
+      "description": "AI finance coach that learns your habits and nudges you before you slip.",
+      "foundingLocation": "Waterloo, Ontario, Canada"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://dryft.app/#website",
+      "url": "https://dryft.app/",
+      "name": "Dryft",
+      "description": "A Plan for Your Money — an AI finance coach that nudges you before you drift.",
+      "publisher": { "@id": "https://dryft.app/#organization" },
+      "inLanguage": "en-US"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://dryft.app/#software",
+      "name": "Dryft",
+      "applicationCategory": "FinanceApplication",
+      "applicationSubCategory": "Personal Finance",
+      "operatingSystem": "iOS, Android",
+      "url": "https://dryft.app/",
+      "description": "An AI accountability coach for personal finance. Predicts spending slips with a reinforcement-learning habit model and nudges you on day 9 — when one change still saves the month.",
+      "publisher": { "@id": "https://dryft.app/#organization" },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/PreOrder"
+      },
+      "featureList": [
+        "Reinforcement-learning habit model",
+        "Predictive slip detection",
+        "Personalized nudge timing",
+        "Read-only bank access via Plaid",
+        "Three coach personalities (Drill Sergeant, Hype Friend, Deadpan)"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://dryft.app/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How is Dryft different from Mint, YNAB, or Copilot?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Those apps report what already happened. Dryft intervenes on day 9 — when one change still saves the month — by predicting your spending slips before they cost you."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Will Dryft make me budget every receipt?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The whole point is not over-optimization. Dryft watches the math and only speaks up when one change still matters."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can Dryft move my money?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Dryft has read-only access to your accounts via Plaid. It never holds your login and cannot move money."
+          }
+        }
+      ]
+    }
   ]
 }
 </script>
@@ -125,11 +206,7 @@
       </form>
       <div class="success-msg" id="hero-success">You're in. We'll be in touch...</div>
 
-      <div class="hero-perks">
-        <span class="perk">Simple setup</span>
-        <span class="perk">Read-only bank access</span>
-        <span class="perk">Cancel anytime</span>
-      </div>
+      <p class="hero-fine">Cohort 01 is capped at 100 — survey takers get priority access.</p>
     </div>
 
     <div class="hero-demo" aria-hidden="true">
@@ -195,11 +272,10 @@
                 <span class="chat-back">‹</span>
                 <div class="chat-id">
                   <div class="chat-avatar" aria-hidden="true">
-                    <svg viewBox="0 0 64 64" width="18" height="18"><path d="M 14 14 L 14 50 L 30 50 C 42 50, 50 42, 50 32 C 50 22, 42 14, 30 14 Z" fill="#f4f0e6"/></svg>
+                    <svg viewBox="0 0 64 64" width="22" height="22"><path d="M 8 4 L 56 4 C 58 4, 60 6, 60 8 L 60 56 C 60 58, 58 60, 56 60 L 8 60 C 6 60, 4 58, 4 56 L 4 8 C 4 6, 6 4, 8 4 Z M 14 14 L 14 50 L 30 50 C 42 50, 50 42, 50 32 C 50 22, 42 14, 30 14 Z" fill="#0e4754" fill-rule="evenodd"/></svg>
                   </div>
                   <div class="chat-id-text">
                     <strong>Dryft</strong>
-                    <em>Active</em>
                   </div>
                 </div>
                 <span class="chat-menu">⋯</span>
@@ -377,7 +453,7 @@
             </div>
             <div class="hiw-label">01 · Watches</div>
             <h4>Reads your spending.</h4>
-            <p>Quiet, read-only — via Plaid.</p>
+            <p>Quiet, read-only via Plaid.</p>
           </div>
           <div class="hiw-connect" aria-hidden="true">
             <svg viewBox="0 0 60 14" xmlns="http://www.w3.org/2000/svg"><path d="M 2 7 L 52 7 M 46 2 L 52 7 L 46 12" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -410,7 +486,7 @@
             </div>
             <div class="hiw-label">03 · Nudges</div>
             <h4>Nudges at the right moment.</h4>
-            <p>Right before the slip<br>while one change saves the month.</p>
+            <p>While one change saves the month.</p>
           </div>
         </div>
       </div>
@@ -692,9 +768,9 @@
 <!-- FINAL CTA -->
 <section class="final-cta" id="waitlist">
   <div class="final-cta-inner">
-    <p class="cta-eyebrow">Cohort 01 · 250 spots.</p>
+    <p class="cta-eyebrow">Cohort 01 · <strong>100 spots only</strong>.</p>
     <h2>Get in <span class="hl">first</span>.</h2>
-    <p>The first beta cohort opens within weeks. Waitlist gets in first.</p>
+    <p>Our first private beta opens within weeks — <strong>only 100 spots in Cohort 01</strong>. Waitlist gets in first, and <em>survey takers get preference</em>.</p>
     <form class="final-form" id="final-form" autocomplete="on" novalidate>
       <label class="sr-only" for="final-email">Your email</label>
       <input type="email" id="final-email" name="email" placeholder="you@example.com" autocomplete="email" inputmode="email" maxlength="254" required spellcheck="false" />
@@ -704,7 +780,7 @@
       <button type="submit">Claim my spot</button>
     </form>
     <div class="final-success" id="final-success">You're in. We'll email you when Cohort 01 opens.</div>
-    <p class="cta-fine">Release updates. Feedback loop. User guided improvements</p>
+    <p class="cta-fine">Cohort 01 is capped at 100 — survey takers get priority access.</p>
   </div>
 </section>
 
@@ -729,7 +805,7 @@
     <div class="survey-head">
       <p class="survey-eyebrow">Optional · 60 seconds</p>
       <h3 id="survey-title">Help shape the product.</h3>
-      <p class="survey-sub">Your spot is saved. If you have a minute, your answers help us build for people like you.</p>
+      <p class="survey-sub"><strong>Preference for Cohort 01 — only 100 spots</strong>.</p>
     </div>
 
     <form class="survey-form" id="survey-form" novalidate>
@@ -737,7 +813,7 @@
       <div class="survey-q" data-q="stage">
         <div class="survey-q-head">
           <span class="survey-q-num">01</span>
-          <p class="survey-q-label">Which stage best describes you right now?</p>
+          <p class="survey-q-label">Which stage describes you now?</p>
         </div>
         <div class="survey-chips" data-chip-group="stage" role="radiogroup" aria-label="Life stage">
           <button type="button" class="survey-chip" data-value="High school student" role="radio" aria-checked="false">High school student</button>
@@ -753,10 +829,9 @@
       <div class="survey-q" data-q="q1">
         <div class="survey-q-head">
           <span class="survey-q-num">02</span>
-          <p class="survey-q-label">&ldquo;Small purchases add up before I realize it.&rdquo;</p>
+          <p class="survey-q-label">&ldquo;Small purchases add up before I realize.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q1" role="radiogroup" aria-label="Small purchases">
-          <button type="button" class="survey-num" data-value="0" role="radio" aria-checked="false">0</button>
           <button type="button" class="survey-num" data-value="1" role="radio" aria-checked="false">1</button>
           <button type="button" class="survey-num" data-value="2" role="radio" aria-checked="false">2</button>
           <button type="button" class="survey-num" data-value="3" role="radio" aria-checked="false">3</button>
@@ -770,10 +845,9 @@
       <div class="survey-q" data-q="q2">
         <div class="survey-q-head">
           <span class="survey-q-num">03</span>
-          <p class="survey-q-label">&ldquo;I usually notice overspending after the damage is already done.&rdquo;</p>
+          <p class="survey-q-label">&ldquo;I notice overspending after the damage is done.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q2" role="radiogroup" aria-label="Notice overspending late">
-          <button type="button" class="survey-num" data-value="0" role="radio" aria-checked="false">0</button>
           <button type="button" class="survey-num" data-value="1" role="radio" aria-checked="false">1</button>
           <button type="button" class="survey-num" data-value="2" role="radio" aria-checked="false">2</button>
           <button type="button" class="survey-num" data-value="3" role="radio" aria-checked="false">3</button>
@@ -787,10 +861,9 @@
       <div class="survey-q" data-q="q3">
         <div class="survey-q-head">
           <span class="survey-q-num">04</span>
-          <p class="survey-q-label">&ldquo;Budgeting apps help me track spending, but don&rsquo;t really change my habits.&rdquo;</p>
+          <p class="survey-q-label">&ldquo;Other budgeting apps don&rsquo;t help control spending.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q3" role="radiogroup" aria-label="Budgeting apps habits">
-          <button type="button" class="survey-num" data-value="0" role="radio" aria-checked="false">0</button>
           <button type="button" class="survey-num" data-value="1" role="radio" aria-checked="false">1</button>
           <button type="button" class="survey-num" data-value="2" role="radio" aria-checked="false">2</button>
           <button type="button" class="survey-num" data-value="3" role="radio" aria-checked="false">3</button>
@@ -801,30 +874,12 @@
         <input type="hidden" name="q3" value="">
       </div>
 
-      <div class="survey-q" data-q="q4">
-        <div class="survey-q-head">
-          <span class="survey-q-num">05</span>
-          <p class="survey-q-label">&ldquo;I&rsquo;d want a system that warns me when my spending patterns start drifting.&rdquo;</p>
-        </div>
-        <div class="survey-scale" data-scale="q4" role="radiogroup" aria-label="Warning system interest">
-          <button type="button" class="survey-num" data-value="0" role="radio" aria-checked="false">0</button>
-          <button type="button" class="survey-num" data-value="1" role="radio" aria-checked="false">1</button>
-          <button type="button" class="survey-num" data-value="2" role="radio" aria-checked="false">2</button>
-          <button type="button" class="survey-num" data-value="3" role="radio" aria-checked="false">3</button>
-          <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
-          <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
-        </div>
-        <div class="survey-scale-labels"><span>Not interested</span><span>Extremely interested</span></div>
-        <input type="hidden" name="q4" value="">
-      </div>
-
       <div class="survey-q" data-q="q5">
         <div class="survey-q-head">
           <span class="survey-q-num">06</span>
-          <p class="survey-q-label">&ldquo;I want financial guidance that adapts to me instead of strict budgeting rules.&rdquo;</p>
+          <p class="survey-q-label">&ldquo;I want finances that adapts to me, not strict rules.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q5" role="radiogroup" aria-label="Adaptive guidance preference">
-          <button type="button" class="survey-num" data-value="0" role="radio" aria-checked="false">0</button>
           <button type="button" class="survey-num" data-value="1" role="radio" aria-checked="false">1</button>
           <button type="button" class="survey-num" data-value="2" role="radio" aria-checked="false">2</button>
           <button type="button" class="survey-num" data-value="3" role="radio" aria-checked="false">3</button>
@@ -838,22 +893,20 @@
       <div class="survey-q" data-q="q6">
         <div class="survey-q-head">
           <span class="survey-q-num">07</span>
-          <p class="survey-q-label">&ldquo;I&rsquo;d be comfortable with AI identifying patterns in my spending habits.&rdquo;</p>
+          <p class="survey-q-label">&ldquo;Real-time warnings influence my decisions.&rdquo;</p>
         </div>
-        <div class="survey-scale" data-scale="q6" role="radiogroup" aria-label="AI comfort">
-          <button type="button" class="survey-num" data-value="0" role="radio" aria-checked="false">0</button>
+        <div class="survey-scale" data-scale="q6" role="radiogroup" aria-label="Real-time warnings influence decisions">
           <button type="button" class="survey-num" data-value="1" role="radio" aria-checked="false">1</button>
           <button type="button" class="survey-num" data-value="2" role="radio" aria-checked="false">2</button>
           <button type="button" class="survey-num" data-value="3" role="radio" aria-checked="false">3</button>
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
-        <div class="survey-scale-labels"><span>Not comfortable</span><span>Comfortable</span></div>
+        <div class="survey-scale-labels"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q6" value="">
       </div>
 
       <div class="survey-actions">
-        <button type="button" class="survey-skip" data-survey-close>Skip</button>
         <button type="submit" class="survey-submit">Send answers</button>
       </div>
     </form>
@@ -869,6 +922,6 @@
   </div>
 </div>
 
-<script defer src="assets/js/main.js?v=20260526c"></script>
+<script defer src="assets/js/main.js?v=20260526e"></script>
 </body>
 </html>
