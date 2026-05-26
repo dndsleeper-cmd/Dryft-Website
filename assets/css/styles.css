@@ -23,7 +23,7 @@
   --accent:       #2a8190;
   --accent-soft:  #d4e7eb;
 
-  --drift:   #c4631e;
+  --dryft:   #c4631e;
   --damage:  #c44d3c;
   --good:    #1a8294;
 
@@ -64,6 +64,31 @@ body {
 ::selection { background: var(--ink); color: var(--bg); }
 img, svg { display: block; max-width: 100%; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* Skip-to-content link — invisible until a keyboard user focuses it (Tab key).
+   Keyboard accessibility + a small SEO bonus (semantic landmark navigation). */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0.6rem;
+  z-index: 1000;
+  padding: 0.65rem 1rem;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 999px;
+  box-shadow: var(--shadow-md);
+  transition: top 0.2s ease;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 0.6rem;
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
 .hp-field { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; opacity: 0 !important; pointer-events: none !important; }
 .section-wrap { max-width: 1180px; margin: 0 auto; padding: 0 1.6rem; }
 
@@ -441,20 +466,6 @@ body.menu-open { overflow: hidden; }
   max-width: 480px;
 }
 
-.hero-perks {
-  display: flex; flex-wrap: wrap; gap: 0.4rem 1.4rem;
-  margin-top: 1rem;
-  opacity: 0; animation: fadeUp 0.85s 0.85s ease forwards;
-}
-.perk {
-  font-size: 0.84rem; color: var(--muted); font-weight: 500;
-  display: inline-flex; align-items: center;
-}
-.perk::before {
-  content: ''; width: 4px; height: 4px; border-radius: 50%;
-  background: var(--brand); margin-right: 0.55rem;
-}
-
 /* Hero fine-print — centered under the waitlist form, no leading dot */
 .hero-fine {
   margin-top: 1rem;
@@ -608,7 +619,7 @@ body.menu-open { overflow: hidden; }
 .notif-time { font-family: 'JetBrains Mono', monospace; font-size: 0.5rem; color: var(--phone-muted); letter-spacing: 0.05em; }
 .notif-body { font-size: 0.62rem; line-height: 1.34; color: var(--phone-ink); font-weight: 400; }
 .notif-body strong { color: var(--brand); font-weight: 600; }
-.notif-body strong.warn { color: var(--drift); }
+.notif-body strong.warn { color: var(--dryft); }
 .notif-meta {
   display: flex; align-items: center; gap: 6px; margin-top: 5px;
   font-family: 'JetBrains Mono', monospace;
@@ -616,7 +627,7 @@ body.menu-open { overflow: hidden; }
   letter-spacing: 0.08em; text-transform: uppercase;
 }
 .notif-meta .tag { padding: 1px 5px; border-radius: 4px; background: rgba(26,130,148,0.12); color: var(--brand); border: 1px solid rgba(26,130,148,0.28); }
-.notif-meta .tag.warn { background: rgba(196,99,30,0.10); color: var(--drift); border-color: rgba(196,99,30,0.28); }
+.notif-meta .tag.warn { background: rgba(196,99,30,0.10); color: var(--dryft); border-color: rgba(196,99,30,0.28); }
 .notif-meta .tag.ok { background: rgba(26,130,148,0.12); color: var(--brand); border-color: rgba(26,130,148,0.28); }
 
 .lock-bottom {
@@ -649,8 +660,6 @@ body.menu-open { overflow: hidden; }
 }
 .chat-id-text { line-height: 1; display: flex; align-items: center; }
 .chat-id-text strong { font-size: 0.85rem; color: var(--phone-ink); font-weight: 600; letter-spacing: -0.01em; }
-/* .chat-id-text em styling kept for legacy "Active" subtext if it ever returns */
-.chat-id-text em { font-style: normal; font-size: 0.5rem; color: var(--phone-muted); font-weight: 500; }
 .chat-menu { color: var(--phone-muted); font-size: 1rem; text-align: right; }
 
 .chat-feed {
@@ -1066,8 +1075,7 @@ footer p:last-child { text-align: right; color: var(--subtle); }
 @media (max-width: 980px) {
   .hero-inner { grid-template-columns: 1fr; gap: 2.2rem; }
   .hero-copy { max-width: 680px; margin: 0 auto; text-align: center; }
-  .hero-copy .hero-form, .hero-copy .hero-perks { margin-left: auto; margin-right: auto; }
-  .hero-copy .hero-perks { justify-content: center; }
+  .hero-copy .hero-form, .hero-copy .hero-fine { margin-left: auto; margin-right: auto; }
   .hero-sub { margin-left: auto; margin-right: auto; }
   .hero-demo { width: min(100%, 560px); min-height: 560px; }
   .diff-grid { grid-template-columns: 1fr; gap: 1.2rem; }
@@ -1106,8 +1114,7 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   .coach-card h3 { font-size: 1.3rem; }
   .coach-quote { font-size: 0.9rem; padding: 0.8rem 0.95rem; }
   .trust { padding: 2rem 0; }
-  .trust-grid { margin-bottom: 1.8rem; }
-  .trust-card { padding: 1.3rem; }
+  .trust-strip { margin-bottom: 1.8rem; }
   .final-cta { padding: 2.8rem 1.1rem 3rem; }
   .final-cta h2 { font-size: clamp(2rem, 7vw, 2.8rem); }
   footer { grid-template-columns: 1fr; text-align: center; gap: 0.7rem; padding: 2rem 1.1rem; }
@@ -1600,7 +1607,14 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   margin-bottom: 0.4rem;
 }
 .survey-sub {
-  font-size: 0.93rem; color: var(--muted); line-height: 1.5;
+  /* Scales down on narrow viewports so it fits on a single line on mobile
+     alongside the eyebrow + title block (no awkward wrap to two lines). */
+  font-size: clamp(0.7rem, 1.4vw + 0.42rem, 0.93rem);
+  color: var(--muted);
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .survey-sub strong { color: var(--ink); font-weight: 600; }
 .survey-sub em {
@@ -1637,21 +1651,15 @@ footer p:last-child { text-align: right; color: var(--subtle); }
 }
 .survey-q-label {
   font-family: 'Inter Tight', 'Inter', sans-serif;
-  /* Auto-adjusts with viewport: small enough on mobile (~12px at 375px) to fit
-     the longest question on one line, scales up to 17px on desktop. clamp keeps
-     min/max sane, vw scales smoothly between them. */
-  font-size: clamp(0.75rem, 2.3vw + 0.1rem, 1.06rem);
+  /* Readable at every viewport. Allowed to wrap to 2 lines on narrow widths;
+     we prioritize legibility over forcing one line. */
+  font-size: clamp(0.92rem, 1.2vw + 0.6rem, 1.1rem);
   font-weight: 500;
   color: var(--ink);
-  line-height: 1.3;
-  letter-spacing: -0.015em;
+  line-height: 1.35;
+  letter-spacing: -0.012em;
   margin: 0;
   text-align: center;
-  /* Enforce one line; if a question is ever too long for the smallest font,
-     overflow ellipsis is the visual fallback (vs. breaking the layout). */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   max-width: 100%;
 }
 
@@ -1727,15 +1735,6 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   padding-top: 0.9rem;
   border-top: 1px solid var(--border);
 }
-.survey-skip {
-  font-family: inherit; font-size: 0.9rem; font-weight: 500;
-  color: var(--muted); background: transparent;
-  border: 1px solid transparent;
-  padding: 0.7rem 1.1rem; border-radius: 999px;
-  cursor: pointer;
-  transition: color 0.18s ease, background 0.18s ease;
-}
-.survey-skip:hover { color: var(--ink); background: var(--bg-alt); }
 .survey-submit {
   font-family: inherit; font-size: 0.92rem; font-weight: 500;
   color: var(--bg); background: var(--ink);
@@ -1746,7 +1745,54 @@ footer p:last-child { text-align: right; color: var(--subtle); }
 }
 .survey-submit:hover { background: var(--brand); border-color: var(--brand); }
 .survey-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-.survey-submit:focus-visible, .survey-skip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.survey-submit:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* Missing-answer notice — appears above the submit row if the user tries to
+   send before answering every question. Companion to .survey-q.unanswered. */
+.survey-missing-notice {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin: 0.4rem 0 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: rgba(196,77,60,0.08);
+  border: 1px solid rgba(196,77,60,0.35);
+  color: var(--damage);
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.4;
+  animation: noticeIn 0.3s ease;
+}
+/* Unanswered question — only the number digit flips red. The badge background
+   and border stay the brand teal so the rest of the question card is undisturbed. */
+.survey-q.unanswered .survey-q-num {
+  color: var(--damage);
+  transition: color 0.2s ease;
+}
+
+/* In-flight notice — appears between the last question and the submit row while
+   the POST is in flight. Pairs with a beforeunload prompt to discourage closing
+   the tab before the request finishes leaving the browser. */
+.survey-sending-notice {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin: 0.4rem 0 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(26,130,148,0.28);
+  color: var(--brand);
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.35;
+  animation: noticeIn 0.3s ease;
+}
+.survey-sending-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--brand);
+  flex-shrink: 0;
+  animation: noticeDot 1s ease-in-out infinite;
+}
+@keyframes noticeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes noticeDot { 0%, 100% { opacity: 0.45; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.15); } }
 
 /* Success state */
 .survey-success {
@@ -1827,12 +1873,14 @@ body.survey-open { overflow: hidden; }
     gap: 1.2rem;
   }
   /* Mobile: tighter paddings + smaller chips/scale to fit narrow viewport.
-     Question label font-size is handled by clamp() in the base rule (no override needed). */
+     Asymmetric padding leaves clearance between the absolute-positioned number
+     badge on the left and the centered question text. */
   .survey-q-head {
-    padding: 0 1rem;
+    padding: 0 1.2rem 0 3rem;
     min-height: 26px;
   }
   .survey-q-num {
+    left: 0.4rem; /* slight inset from card edge */
     padding: 0.2rem 0.4rem;
     font-size: 0.58rem;
     letter-spacing: 0.12em;
@@ -1860,7 +1908,7 @@ body.survey-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
-  .eyebrow, .hero h1, .hero-sub, .hero-form, .hero-perks, .hero-demo,
+  .eyebrow, .hero h1, .hero-sub, .hero-form, .hero-fine, .hero-demo,
   .dryft-phone, .notif, .bubble, .thinking, .impact-card, .impact-bar-fill,
   .chat-cursor, .hero-side-scroll, .hss-arrow { animation: none !important; opacity: 1; }
   .diff-chart .pre-line, .diff-chart .dryft-line, .diff-chart .other-line { stroke-dashoffset: 0; }

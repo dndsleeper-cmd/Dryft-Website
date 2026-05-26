@@ -1,7 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /logo-options.html
+Disallow: /logo-options-v2.html
 Disallow: /.well-known/
+Disallow: /docs/
 
 # AI crawlers — explicit policy (we control our content; ask before training)
 User-agent: GPTBot

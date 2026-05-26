@@ -155,30 +155,30 @@ async function handleWaitlistSubmit(form, source) {
   btn.disabled = true;
   emailInput.disabled = true;
 
-  try {
-    if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL.startsWith('https://')) {
-      // URLSearchParams → Content-Type: application/x-www-form-urlencoded.
-      // This is what populates Apps Script's e.parameter.email.
-      // FormData would set multipart/form-data, which only fills e.postData.contents.
-      const body = new URLSearchParams();
-      body.set('email', email);
-      body.set('source', source);
-      body.set('timestamp', new Date().toISOString());
-      body.set('dwell_ms', String(now - PAGE_LOAD_TS));
-      // mode:'no-cors' = fire-and-forget; we can't read the response (opaque).
-      const resp = await fetch(SHEET_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body });
-      console.log('[dryft waitlist] posted', { email, source, type: resp.type });
-    } else {
-      console.log('[dryft waitlist]', { email, source });
-    }
-  } catch (err) {
-    console.error('[dryft waitlist] save failed:', err);
-  }
-
+  // Show success + open the survey IMMEDIATELY. The Apps Script POST is fired
+  // below as fire-and-forget — we don't make the user wait on network latency.
+  // mode:'no-cors' means we can't read the response anyway, so awaiting it
+  // would just block the UI without any benefit.
   showSuccess(source);
-  // After the email is captured, prompt the optional product survey.
-  // Email is already saved server-side; survey is purely optional follow-up signal.
   openSurvey(email, source);
+
+  if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL.startsWith('https://')) {
+    // URLSearchParams → Content-Type: application/x-www-form-urlencoded.
+    // This is what populates Apps Script's e.parameter.email.
+    // FormData would set multipart/form-data, which only fills e.postData.contents.
+    const body = new URLSearchParams();
+    body.set('email', email);
+    body.set('source', source);
+    body.set('timestamp', new Date().toISOString());
+    body.set('dwell_ms', String(now - PAGE_LOAD_TS));
+    // Background POST — does not block the modal. Errors are reported quietly;
+    // we don't log success because no-cors returns opaque responses anyway.
+    fetch(SHEET_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body })
+      .catch(err => console.error('[dryft waitlist] save failed:', err));
+  } else if (typeof console !== 'undefined') {
+    // Dev-only path when no webhook is configured — shows the payload locally.
+    console.info('[dryft waitlist · dev]', { email, source });
+  }
 }
 
 ['hero-form', 'final-form'].forEach((id) => {
@@ -213,6 +213,11 @@ function openSurvey(email, source) {
   void surveyModal.offsetWidth;
   surveyModal.classList.add('open');
   document.body.classList.add('survey-open');
+  // Always open at the top question — both the form (internal scroll on mobile)
+  // and the card (internal scroll on desktop) are rewound to 0.
+  if (surveyForm) surveyForm.scrollTop = 0;
+  const card = surveyModal.querySelector('.survey-card');
+  if (card) card.scrollTop = 0;
   // Focus the close button so ESC + Tab work predictably
   setTimeout(() => surveyModal.querySelector('.survey-close')?.focus(), 50);
 }
@@ -238,6 +243,9 @@ function resetSurvey() {
     b.setAttribute('aria-checked', 'false');
   });
   surveyForm.querySelectorAll('input[type="hidden"]').forEach(h => { h.value = ''; });
+  surveyForm.querySelectorAll('.survey-q.unanswered').forEach(q => q.classList.remove('unanswered'));
+  document.getElementById('survey-missing-notice')?.remove();
+  document.getElementById('survey-sending-notice')?.remove();
   const sub = surveyForm.querySelector('.survey-submit');
   if (sub) { sub.disabled = false; sub.textContent = 'Send answers'; }
 }
@@ -245,6 +253,7 @@ function resetSurvey() {
 function bindSelectGroup(container, hiddenName) {
   const buttons = container.querySelectorAll('button');
   const hidden = surveyForm.querySelector(`input[name="${hiddenName}"]`);
+  const qBlock = container.closest('.survey-q');
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
       buttons.forEach(b => {
@@ -254,6 +263,14 @@ function bindSelectGroup(container, hiddenName) {
       btn.classList.add('selected');
       btn.setAttribute('aria-checked', 'true');
       if (hidden) hidden.value = btn.dataset.value;
+      // Clear missing-state for this question
+      if (qBlock) qBlock.classList.remove('unanswered');
+      // Auto-dismiss the global "missing" notice if every question now has a value.
+      // Inlined here (rather than calling a helper) because bindSelectGroup is at
+      // module scope and the validation helpers live inside the survey IIFE block.
+      const stillMissing = [...surveyForm.querySelectorAll('input[type="hidden"]')]
+        .some(i => !i.value);
+      if (!stillMissing) document.getElementById('survey-missing-notice')?.remove();
     });
   });
 }
@@ -297,6 +314,18 @@ if (surveyModal && surveyForm) {
   let surveyLastSubmitAt = 0;
   const MAX_SURVEY_SUBMITS = 3;
 
+  // In-flight guard: when true, prompt the user before they close/refresh the tab.
+  // Set true the moment the POST starts; cleared when the fetch settles (success or fail).
+  let isSurveySubmitting = false;
+  window.addEventListener('beforeunload', (e) => {
+    if (!isSurveySubmitting) return;
+    // Modern browsers ignore custom strings for security; just trigger the prompt.
+    // Setting returnValue (legacy) + preventDefault covers all browser variants.
+    e.preventDefault();
+    e.returnValue = 'Your survey answers are still saving — please wait a moment before closing.';
+    return e.returnValue;
+  });
+
   function sanitizeStage(v) {
     const s = String(v == null ? '' : v).trim().slice(0, 64);
     return VALID_STAGES.has(s) ? s : '';
@@ -307,11 +336,47 @@ if (surveyModal && surveyForm) {
     return VALID_SCALE.has(s) ? s : '';
   }
 
+  // Derive the question list from the form itself — one hidden input per question.
+  // This auto-adapts if questions are added or removed from the HTML.
+  function getQuestionInputs() {
+    return [...surveyForm.querySelectorAll('input[type="hidden"]')];
+  }
+  function getMissingQuestions() {
+    return getQuestionInputs()
+      .filter(input => !input.value)
+      .map(input => input.name);
+  }
+  function showMissingNotice() {
+    let n = document.getElementById('survey-missing-notice');
+    if (!n) {
+      n = document.createElement('div');
+      n.id = 'survey-missing-notice';
+      n.className = 'survey-missing-notice';
+      n.setAttribute('role', 'alert');
+      const actions = surveyForm.querySelector('.survey-actions');
+      if (actions) actions.parentNode.insertBefore(n, actions);
+    }
+    n.textContent = 'Please answer all questions.';
+  }
+
   // Submit — posts survey data to the same Apps Script endpoint with kind=survey
   surveyForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitBtn = surveyForm.querySelector('.survey-submit');
     if (!submitBtn) return;
+
+    // Completeness gate — every question must have an answer before we POST.
+    // We mark each unanswered question, scroll to the first one, and show a notice.
+    const missing = getMissingQuestions();
+    if (missing.length > 0) {
+      surveyForm.querySelectorAll('.survey-q').forEach(q => {
+        q.classList.toggle('unanswered', missing.includes(q.dataset.q));
+      });
+      showMissingNotice();
+      const firstBlock = surveyForm.querySelector(`.survey-q[data-q="${missing[0]}"]`);
+      if (firstBlock) firstBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
 
     // Anti-abuse: throttle submits per page-load (3 max). Visible feedback on hit.
     const nowTs = Date.now();
@@ -326,6 +391,9 @@ if (surveyModal && surveyForm) {
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Sending…';
+    // Mark in-flight + show the inline "don't close this tab" notice
+    isSurveySubmitting = true;
+    showSurveySendingNotice(true);
 
     const data = new FormData(surveyForm);
     const body = new URLSearchParams();
@@ -340,19 +408,42 @@ if (surveyModal && surveyForm) {
 
     try {
       if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL.startsWith('https://')) {
-        const resp = await fetch(SHEET_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body });
-        console.log('[dryft survey] posted', { email: body.get('email'), type: resp.type });
-      } else {
-        console.log('[dryft survey]', Object.fromEntries(body));
+        await fetch(SHEET_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body });
+      } else if (typeof console !== 'undefined') {
+        // Dev-only path when no webhook is configured.
+        console.info('[dryft survey · dev]', Object.fromEntries(body));
       }
     } catch (err) {
       console.error('[dryft survey] save failed:', err);
+    } finally {
+      // Clear the guard whether the POST succeeded or failed — request has at
+      // least left the browser by this point with no-cors mode.
+      isSurveySubmitting = false;
+      showSurveySendingNotice(false);
     }
 
     // Always show success — fire-and-forget per the no-cors fetch above
     surveyForm.style.display = 'none';
     if (surveySuccess) surveySuccess.hidden = false;
   });
+
+  // Toggle the inline "don't close this tab" notice that appears beside the submit row
+  function showSurveySendingNotice(on) {
+    let notice = document.getElementById('survey-sending-notice');
+    if (on) {
+      if (notice) return;
+      notice = document.createElement('div');
+      notice.id = 'survey-sending-notice';
+      notice.className = 'survey-sending-notice';
+      notice.setAttribute('role', 'status');
+      notice.setAttribute('aria-live', 'polite');
+      notice.innerHTML = '<span class="survey-sending-dot" aria-hidden="true"></span><span>Saving your answers — please don’t close this tab.</span>';
+      const actions = surveyForm.querySelector('.survey-actions');
+      if (actions) actions.parentNode.insertBefore(notice, actions);
+    } else if (notice) {
+      notice.remove();
+    }
+  }
 }
 
 /* =================================================================

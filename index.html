@@ -8,7 +8,7 @@
 <meta name="keywords" content="AI finance coach, personal finance app, budgeting app, spending alerts, habit tracker, financial wellness, money management, AI budgeting, Plaid, smart budgeting, predictive finance, accountability coach">
 <meta name="author" content="Dryft">
 <meta name="application-name" content="Dryft">
-<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, noai, noimageai">
 <meta name="googlebot" content="index, follow">
 <meta name="theme-color" content="#f4f6f7">
 <meta name="color-scheme" content="light">
@@ -38,8 +38,25 @@
 <meta name="twitter:image" content="https://dryft.app/og-image.png">
 <meta name="twitter:image:alt" content="Dryft — A Plan for Your Money">
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="apple-touch-icon" href="assets/favicon.svg">
+<link rel="mask-icon" href="assets/favicon.svg" color="#0e4754">
+<link rel="manifest" href="manifest.json">
+<link rel="sitemap" type="application/xml" href="/sitemap.xml">
 <link rel="alternate" hreflang="en" href="https://dryft.app/">
 <link rel="alternate" hreflang="x-default" href="https://dryft.app/">
+<!-- iOS / Android installable PWA + tile hints (competitive parity with Cleo, Monarch, Origin, etc.) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Dryft">
+<meta name="msapplication-TileColor" content="#0e4754">
+<meta name="msapplication-TileImage" content="assets/favicon.svg">
+<meta name="msapplication-config" content="none">
+<meta name="format-detection" content="telephone=no, email=no, address=no">
+<link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="dns-prefetch" href="https://fonts.gstatic.com">
+<link rel="dns-prefetch" href="https://cdn.vercel-insights.com">
+<link rel="dns-prefetch" href="https://script.google.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Note: SRI is intentionally NOT used on Google Fonts (dynamic UA-conditional CSS)
@@ -47,7 +64,7 @@
      crossorigin + referrerpolicy=no-referrer and constrained by our CSP origin allowlist. -->
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script defer src="https://cdn.vercel-insights.com/v1/script.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<link rel="stylesheet" href="assets/css/styles.css?v=20260526y">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260527e">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -66,7 +83,7 @@
       "@id": "https://dryft.app/#website",
       "url": "https://dryft.app/",
       "name": "Dryft",
-      "description": "A Plan for Your Money — an AI finance coach that nudges you before you drift.",
+      "description": "A Plan for Your Money — an AI finance coach that nudges you before you dryft.",
       "publisher": { "@id": "https://dryft.app/#organization" },
       "inLanguage": "en-US"
     },
@@ -93,6 +110,22 @@
         "Read-only bank access via Plaid",
         "Three coach personalities (Drill Sergeant, Hype Friend, Deadpan)"
       ]
+    },
+    {
+      "@type": "Service",
+      "@id": "https://dryft.app/#service",
+      "name": "Dryft — Predictive Finance Coaching",
+      "serviceType": "Personal Finance Coaching",
+      "provider": { "@id": "https://dryft.app/#organization" },
+      "areaServed": [
+        { "@type": "Country", "name": "Canada" },
+        { "@type": "Country", "name": "United States" }
+      ],
+      "audience": {
+        "@type": "Audience",
+        "audienceType": "Students and early-career professionals"
+      },
+      "description": "Predictive personal-finance coaching. A reinforcement-learning habit model forecasts spending slips and nudges users on day 9 — when one change still saves the month."
     },
     {
       "@type": "FAQPage",
@@ -130,6 +163,9 @@
 </head>
 <body>
 
+<!-- Accessibility: skip-to-content link, only visible when focused via keyboard -->
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
 <!-- NAV -->
 <nav id="nav">
   <a href="#top" class="brand" aria-label="Dryft home">
@@ -144,7 +180,7 @@
     <a href="#difference">What's Different?</a>
     <a href="#how-it-works">How it works</a>
     <a href="#overplan">Overspending?</a>
-    <a href="#coaches">Coaches</a>
+    <!-- <a href="#coaches">Coaches</a> --> <!-- hidden with the .coaches section -->
     <a href="#faq">FAQ</a>
   </div>
   <div class="nav-right">
@@ -160,10 +196,12 @@
   <a href="#difference">What's Different?</a>
   <a href="#how-it-works">How it works</a>
   <a href="#overplan">Overspending?</a>
-  <a href="#coaches">Coaches</a>
+  <!-- <a href="#coaches">Coaches</a> --> <!-- hidden with the .coaches section -->
   <a href="#faq">FAQ</a>
   <a href="#waitlist" class="mobile-menu-cta">Join waitlist</a>
 </div>
+
+<main id="main-content">
 
 <!-- STATEMENT — full viewport, ocean bg + dark overlay -->
 <section class="statement" id="top">
@@ -193,7 +231,7 @@
         Dryft saw it coming on <span class="hl">day 9</span>.
       </h2>
       <p class="hero-sub">
-        Dryft learns you, notices habits and<br><strong>nudges you at the exact moment you need it most</strong>.
+        Dryft learns you, notices habits and<br><strong>nudges you at the moment you need it most</strong>.
       </p>
 
       <form class="hero-form" id="hero-form" autocomplete="on" novalidate>
@@ -307,7 +345,7 @@
   <div class="section-wrap">
     <div class="diff-head reveal">
       <p class="section-label">The proof.</p>
-      <h2>Same person. Same drift.<br>One <span class="hl">changes the month</span>.</h2>
+      <h2>Same person. Same dryft.<br>One <span class="hl">changes the month</span>.</h2>
     </div>
 
     <div class="diff-grid reveal">
@@ -316,7 +354,7 @@
           <span class="dc-eyebrow">Spending vs plan · March</span>
         </div>
 
-        <svg class="diff-chart" viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart: Dryft catches drift on day 9 and the user returns to plan; without Dryft, the line keeps climbing">
+        <svg class="diff-chart" viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart: Dryft catches dryft on day 9 and the user returns to plan; without Dryft, the line keeps climbing">
           <defs>
             <linearGradient id="otherFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#c44d3c" stop-opacity="0.16"/>
@@ -469,7 +507,7 @@
             </div>
             <div class="hiw-label">02 · Forecasts</div>
             <h4>Predicts your next slip.</h4>
-            <p>Learns when <em>you</em> drift<br>not the calendar.</p>
+            <p>Learns when <em>you</em> dryft<br>not the calendar.</p>
           </div>
           <div class="hiw-connect" aria-hidden="true">
             <svg viewBox="0 0 60 14" xmlns="http://www.w3.org/2000/svg"><path d="M 2 7 L 52 7 M 46 2 L 52 7 L 46 12" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -513,7 +551,7 @@
           <dl class="persona-meta">
             <div><dt>Income</dt><dd>$1,600/mo · lumpy</dd></div>
             <div><dt>Goal</dt><dd>Survive to April 30</dd></div>
-            <div><dt>Drift</dt><dd>+$104 over on eating out</dd></div>
+            <div><dt>Dryft</dt><dd>+$104 over on eating out</dd></div>
           </dl>
         </button>
 
@@ -527,7 +565,7 @@
           <dl class="persona-meta">
             <div><dt>Income</dt><dd>$4,200/mo · stable</dd></div>
             <div><dt>Goal</dt><dd>Save $200/mo avg</dd></div>
-            <div><dt>Drift</dt><dd>Saved $0 this month</dd></div>
+            <div><dt>Dryft</dt><dd>Saved $0 this month</dd></div>
           </dl>
         </button>
       </div>
@@ -572,7 +610,7 @@
             </g>
 
             <g font-family="JetBrains Mono, monospace" font-size="10" fill="#5b5d65" letter-spacing="0.08em" font-weight="500">
-              <text x="155" y="240" text-anchor="middle">MARCH · DRIFT</text>
+              <text x="155" y="240" text-anchor="middle">MARCH · DRYFT</text>
               <text x="325" y="240" text-anchor="middle">APRIL · CAP -50%</text>
               <text x="495" y="240" text-anchor="middle">MAY · EASING</text>
             </g>
@@ -642,7 +680,7 @@
             </g>
 
             <g font-family="JetBrains Mono, monospace" font-size="10" fill="#5b5d65" letter-spacing="0.08em" font-weight="500">
-              <text x="122" y="240" text-anchor="middle">MONTH 1 · DRIFT</text>
+              <text x="122" y="240" text-anchor="middle">MONTH 1 · DRYFT</text>
               <text x="252" y="240" text-anchor="middle">MONTH 2</text>
               <text x="382" y="240" text-anchor="middle">MONTH 3</text>
               <text x="512" y="240" text-anchor="middle">MONTH 4</text>
@@ -672,7 +710,10 @@
 </section>
 
 <!-- COACHES -->
-<section class="coaches" id="coaches">
+<!-- COACHES — hidden for now (not core to the v1 product story).
+     Markup is intact; remove the `hidden` attribute below to re-enable.
+     Also uncomment the two <a href="#coaches"> nav entries in the nav + mobile-menu. -->
+<section class="coaches" id="coaches" hidden>
   <div class="section-wrap">
     <div class="section-head reveal">
       <p class="section-label">Pick your voice.</p>
@@ -725,7 +766,7 @@
           <span class="trust-cat">Your data</span>
         </div>
         <h3>Yours. Never sold.</h3>
-        <p>Transactions stay yours — used only to spot drift, never shared, never resold.</p>
+        <p>Transactions stay yours — used only to spot dryft, never shared, never resold.</p>
       </div>
       <div class="trust-row">
         <div class="trust-row-tag">
@@ -770,7 +811,7 @@
   <div class="final-cta-inner">
     <p class="cta-eyebrow">Cohort 01 · <strong>100 spots only</strong>.</p>
     <h2>Get in <span class="hl">first</span>.</h2>
-    <p>Our first private beta opens within weeks — <strong>only 100 spots in Cohort 01</strong>. Waitlist gets in first, and <em>survey takers get preference</em>.</p>
+    <p>Our first private beta opens within weeks — <strong>only 100 spots in Cohort 01</strong>. Waitlist gets in first, and <strong>survey takers get preference</strong>.</p>
     <form class="final-form" id="final-form" autocomplete="on" novalidate>
       <label class="sr-only" for="final-email">Your email</label>
       <input type="email" id="final-email" name="email" placeholder="you@example.com" autocomplete="email" inputmode="email" maxlength="254" required spellcheck="false" />
@@ -783,6 +824,8 @@
     <p class="cta-fine">Cohort 01 is capped at 100 — survey takers get priority access.</p>
   </div>
 </section>
+
+</main>
 
 <footer>
   <div class="footer-brand">
@@ -922,6 +965,6 @@
   </div>
 </div>
 
-<script defer src="assets/js/main.js?v=20260526e"></script>
+<script defer src="assets/js/main.js?v=20260527c"></script>
 </body>
 </html>

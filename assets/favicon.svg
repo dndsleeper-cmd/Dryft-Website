@@ -1,4 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <path d="M 8 4 L 56 4 C 58 4, 60 6, 60 8 L 60 56 C 60 58, 58 60, 56 60 L 8 60 C 6 60, 4 58, 4 56 L 4 8 C 4 6, 6 4, 8 4 Z" fill="#0d0e10"/>
-  <path d="M 14 14 L 14 50 L 30 50 C 42 50, 50 42, 50 32 C 50 22, 42 14, 30 14 Z" fill="#f4f0e6"/>
+  <!--
+    Single-path favicon that responds to the user's system color scheme.
+    The path is a rounded square with a D-shape cut out via fill-rule="evenodd".
+    Whatever sits behind the favicon (the browser tab background) shows through the cutout.
+      • Light system → black frame, D-shape reveals the light tab behind it.
+      • Dark  system → white frame, D-shape reveals the dark  tab behind it.
+  -->
+  <style>
+    .frame { fill: #0d0e10; }
+    @media (prefers-color-scheme: dark) {
+      .frame { fill: #ffffff; }
+    }
+  </style>
+  <path class="frame" fill-rule="evenodd" d="M 8 4 L 56 4 C 58 4, 60 6, 60 8 L 60 56 C 60 58, 58 60, 56 60 L 8 60 C 6 60, 4 58, 4 56 L 4 8 C 4 6, 6 4, 8 4 Z M 17 17 L 17 47 L 30 47 C 41 47, 47 41, 47 32 C 47 23, 41 17, 30 17 Z"/>
 </svg>
