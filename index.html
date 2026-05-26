@@ -3,95 +3,135 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dryft | AI Personal Finance Accountability App</title>
-<meta name="description" content="Join the Dryft waitlist for an AI personal finance accountability app that watches real spending, catches budget drift early, and helps you make clearer money decisions.">
+<title>Dryft — Catch the drift before it costs you.</title>
+<meta name="description" content="Dryft is the AI accountability coach for personal finance. Catches drift on day 7 — when one swap still saves the month.">
 <meta name="robots" content="index, follow">
-<meta name="theme-color" content="#0a0a08">
+<meta name="theme-color" content="#f4f6f7">
+
+<!-- SECURITY — these are duplicated in vercel.json as real HTTP headers (authoritative).
+     Meta tags act as a fallback if the site is ever served from somewhere without those headers. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://script.google.com https://*.googleusercontent.com https://vitals.vercel-insights.com https://va.vercel-scripts.com; base-uri 'self'; form-action 'self' https://script.google.com; frame-ancestors 'none'; object-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Permissions-Policy" content="accelerometer=(), autoplay=(), browsing-topics=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), hid=(), idle-detection=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), serial=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=(), interest-cohort=()">
+
 <link rel="canonical" href="https://dryft.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Dryft">
-<meta property="og:title" content="Dryft | AI Personal Finance Accountability App">
-<meta property="og:description" content="AI-powered budgeting accountability that catches spending drift before small habits become expensive problems.">
+<meta property="og:title" content="Dryft — Catch the drift before it costs you.">
+<meta property="og:description" content="Catches drift on day 7 — when one swap still saves the month.">
 <meta property="og:url" content="https://dryft.app/">
 <meta property="og:image" content="https://dryft.app/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Dryft AI personal finance accountability app">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Dryft | AI Personal Finance Accountability App">
-<meta name="twitter:description" content="Join the waitlist for an AI personal finance app built around spending accountability, cashflow alerts, and calmer budget decisions.">
-<meta name="twitter:image" content="https://dryft.app/og-image.png">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230a0a08'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia%2C serif' font-weight='700' font-style='italic' font-size='46' fill='%23e8c97a'%3ED%3C/text%3E%3C/svg%3E">
+<meta name="twitter:title" content="Dryft — Catch the drift before it costs you.">
+<meta name="twitter:description" content="The money app that catches you on day 7 — not in a chart on day 30.">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+<!-- Note: SRI is intentionally NOT used on Google Fonts (dynamic UA-conditional CSS)
+     or on Vercel Insights (rotates with no pinned-version SRI hashes). Both are loaded
+     crossorigin + referrerpolicy=no-referrer and constrained by our CSP origin allowlist. -->
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdn.vercel-insights.com/v1/script.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <link rel="stylesheet" href="assets/css/styles.css">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@graph": [
-    {
-      "@type": "Organization",
-      "@id": "https://dryft.app/#organization",
-      "name": "Dryft",
-      "url": "https://dryft.app/",
-      "description": "Dryft builds AI-powered personal finance accountability tools that help people notice spending drift earlier."
-    },
-    {
-      "@type": "WebSite",
-      "@id": "https://dryft.app/#website",
-      "url": "https://dryft.app/",
-      "name": "Dryft",
-      "publisher": {
-        "@id": "https://dryft.app/#organization"
-      },
-      "description": "Join the Dryft waitlist for AI-powered budgeting accountability and spending drift alerts."
-    },
-    {
-      "@type": "SoftwareApplication",
-      "@id": "https://dryft.app/#software",
-      "name": "Dryft",
-      "applicationCategory": "FinanceApplication",
-      "operatingSystem": "Web",
-      "url": "https://dryft.app/",
-      "description": "An AI personal finance accountability app that watches spending, flags cashflow risk, and helps people adjust budgets before small habits compound."
-    }
+    { "@type": "Organization", "@id": "https://dryft.app/#organization", "name": "Dryft", "url": "https://dryft.app/" },
+    { "@type": "WebSite", "@id": "https://dryft.app/#website", "url": "https://dryft.app/", "name": "Dryft", "publisher": { "@id": "https://dryft.app/#organization" } },
+    { "@type": "SoftwareApplication", "@id": "https://dryft.app/#software", "name": "Dryft", "applicationCategory": "FinanceApplication", "operatingSystem": "iOS, Android", "url": "https://dryft.app/" }
   ]
 }
 </script>
 </head>
 <body>
 
+<!-- NAV -->
 <nav id="nav">
-  <div class="logo">Dryft<span></span></div>
-  <a href="#waitlist" class="nav-cta">Get Early Access</a>
+  <a href="#top" class="brand" aria-label="Dryft home">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 64 64" width="26" height="26">
+        <path d="M 8 4 L 56 4 C 58 4, 60 6, 60 8 L 60 56 C 60 58, 58 60, 56 60 L 8 60 C 6 60, 4 58, 4 56 L 4 8 C 4 6, 6 4, 8 4 Z M 14 14 L 14 50 L 30 50 C 42 50, 50 42, 50 32 C 50 22, 42 14, 30 14 Z" fill="currentColor" fill-rule="evenodd"/>
+      </svg>
+    </span>
+    <span class="brand-word">Dryft</span>
+  </a>
+  <div class="nav-links" id="nav-links">
+    <a href="#difference">What's Different?</a>
+    <a href="#coaches">Coaches</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <div class="nav-right">
+    <a href="#waitlist" class="nav-cta">Join waitlist</a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+  </div>
 </nav>
+<div class="mobile-menu" id="mobile-menu" hidden>
+  <a href="#difference">What's Different?</a>
+  <a href="#coaches">Coaches</a>
+  <a href="#faq">FAQ</a>
+  <a href="#waitlist" class="mobile-menu-cta">Join waitlist</a>
+</div>
 
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-grid"></div>
-  <div class="hero-glow"></div>
+<!-- STATEMENT — full viewport, ocean bg + dark overlay -->
+<section class="statement" id="top">
+  <div class="statement-bg" aria-hidden="true"></div>
+  <div class="statement-overlay" aria-hidden="true"></div>
+  <div class="statement-content">
+    <h1 class="statement-h1">
+      The budget that<br>
+      <span class="hl">adjusts</span> <span class="underlined">for you</span>.
+    </h1>
+    <a href="#demo" class="hero-side-scroll" aria-label="Scroll down to see how">
+      <span class="hss-label">Scroll</span>
+      <span class="hss-arrow" aria-hidden="true">
+        <svg viewBox="0 0 16 28" width="14" height="26"><path d="M8 2 L8 22 M2 16 L8 26 L14 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </span>
+    </a>
+  </div>
+</section>
+
+<!-- DEMO — phones + form, the proof of the tagline above -->
+<section class="hero" id="demo">
   <div class="hero-inner">
-    <div class="hero-copy"> 
-      <div class="eyebrow">Private Beta — 10 Spots</div>
-      <h1>You're not bad with money.<br>You just <em>dryft</em>.</h1>
-      <p class="hero-sub">Most budgets break when life changes.<br>Dryft adapts with you.</p>
-      <div class="hero-form" id="hero-form-wrap">
-        <label class="sr-only" for="hero-email">Email address</label>
-        <input type="email" id="hero-email" name="email" placeholder="your@email.com" autocomplete="email" inputmode="email" required aria-describedby="hero-email-note" />
-        <button onclick="joinWaitlist('hero')">Reserve Your Spot</button>
+    <div class="hero-copy">
+      <div class="eyebrow">Private beta · Cohort 01</div>
+      <h2 class="demo-h2">
+        overspent <span class="hl">$184</span> in 3 weeks.<br>
+        Dryft saw it coming on <span class="hl">day 7</span>.
+      </h2>
+      <p class="hero-sub">
+        Dryft watches your spending and catches drift</br><strong>while one swap still saves the month</strong>.
+      </p>
+
+      <form class="hero-form" id="hero-form" autocomplete="on" novalidate>
+        <label class="sr-only" for="hero-email">Your email</label>
+        <input type="email" id="hero-email" name="email" placeholder="you@example.com" autocomplete="email" inputmode="email" maxlength="254" required spellcheck="false" />
+        <label class="hp-field" aria-hidden="true">
+          Leave this empty <input type="text" name="company" tabindex="-1" autocomplete="off">
+        </label>
+        <button type="submit">Get early access</button>
+      </form>
+      <div class="success-msg" id="hero-success">You're in. We'll be in touch within 24h.</div>
+
+      <div class="hero-perks">
+        <span class="perk">60-second setup</span>
+        <span class="perk">Read-only bank access</span>
+        <span class="perk">Cancel anytime</span>
       </div>
-      <p class="sr-only" id="hero-email-note">Enter your email address to join the Dryft private beta waitlist.</p>
-      <div class="success-msg" id="hero-success">✓ You're on the list. We'll be in touch.</div>
-      <p class="waitlist-count">For users with a strong need. <strong>We will ask for constant feedback.</strong></p>
     </div>
 
     <div class="hero-demo" aria-hidden="true">
-      <div class="demo-label">demo</div>
       <div class="demo-stage">
 
-        <!-- NOTIFICATION PHONE (LOCK SCREEN) -->
+        <!-- NOTIFICATION PHONE -->
         <div class="dryft-phone phone-notif" data-phone="notif">
           <div class="phone-rail rail-left">
             <span class="rail-btn action-btn"></span>
@@ -103,38 +143,20 @@
           </div>
           <div class="phone-shell">
             <div class="phone-screen lock">
-              <div class="dynamic-island">
-                <span class="di-camera"></span>
-              </div>
+              <div class="dynamic-island"><span class="di-camera"></span></div>
               <div class="status-bar">
                 <span class="sb-time">9:41</span>
                 <span class="sb-right">
-                  <svg class="sb-icon" viewBox="0 0 18 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="0.6"/><rect x="5" y="6" width="3" height="6" rx="0.6"/><rect x="10" y="3" width="3" height="9" rx="0.6"/><rect x="15" y="0" width="3" height="12" rx="0.6"/></svg>
-                  <svg class="sb-icon" viewBox="0 0 16 12" aria-hidden="true"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.4-2.6.85-.85a3.6 3.6 0 0 1 5.1 0l.85.85m-9.05-3a8 8 0 0 1 11.3 0M.7 3.7a12 12 0 0 1 14.6 0" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <svg class="sb-icon" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx=".6"/><rect x="5" y="6" width="3" height="6" rx=".6"/><rect x="10" y="3" width="3" height="9" rx=".6"/><rect x="15" y="0" width="3" height="12" rx=".6"/></svg>
+                  <svg class="sb-icon" viewBox="0 0 16 12"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.4-2.6.85-.85a3.6 3.6 0 0 1 5.1 0l.85.85m-9.05-3a8 8 0 0 1 11.3 0M.7 3.7a12 12 0 0 1 14.6 0" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
                   <span class="sb-batt"><span class="sb-batt-fill"></span></span>
                 </span>
               </div>
-
               <div class="lock-clock">
-                <div class="lock-date">Wednesday, May 20</div>
+                <div class="lock-date">Wednesday · March 7</div>
                 <div class="lock-time">9:41</div>
               </div>
-
-              <div class="lock-weather">
-                <span class="lw-icon">◐</span>
-                <span class="lw-text">Waterloo · 18° Partly cloudy</span>
-              </div>
-
-              <!-- <div class="notif-strip-label">
-                <span></span>
-                <em>Notification Center</em>
-                <span></span>
-              </div> -->
-
-              <div class="notif-stack" data-notif-stack>
-                <!-- notifications injected by JS -->
-              </div>
-
+              <div class="notif-stack" data-notif-stack></div>
               <div class="lock-bottom">
                 <div class="lock-action-btn"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M7 4h10v2H7zM6 8h12v12H6z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
                 <div class="home-indicator"></div>
@@ -156,41 +178,36 @@
           </div>
           <div class="phone-shell">
             <div class="phone-screen chat">
-              <div class="dynamic-island">
-                <span class="di-camera"></span>
-              </div>
+              <div class="dynamic-island"><span class="di-camera"></span></div>
               <div class="status-bar">
                 <span class="sb-time">9:41</span>
                 <span class="sb-right">
-                  <svg class="sb-icon" viewBox="0 0 18 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="0.6"/><rect x="5" y="6" width="3" height="6" rx="0.6"/><rect x="10" y="3" width="3" height="9" rx="0.6"/><rect x="15" y="0" width="3" height="12" rx="0.6"/></svg>
-                  <svg class="sb-icon" viewBox="0 0 16 12" aria-hidden="true"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.4-2.6.85-.85a3.6 3.6 0 0 1 5.1 0l.85.85m-9.05-3a8 8 0 0 1 11.3 0M.7 3.7a12 12 0 0 1 14.6 0" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <svg class="sb-icon" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx=".6"/><rect x="5" y="6" width="3" height="6" rx=".6"/><rect x="10" y="3" width="3" height="9" rx=".6"/><rect x="15" y="0" width="3" height="12" rx=".6"/></svg>
+                  <svg class="sb-icon" viewBox="0 0 16 12"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.4-2.6.85-.85a3.6 3.6 0 0 1 5.1 0l.85.85m-9.05-3a8 8 0 0 1 11.3 0M.7 3.7a12 12 0 0 1 14.6 0" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
                   <span class="sb-batt"><span class="sb-batt-fill"></span></span>
                 </span>
               </div>
-
               <div class="chat-nav">
                 <span class="chat-back">‹</span>
                 <div class="chat-id">
-                  <div class="chat-avatar">D</div>
+                  <div class="chat-avatar" aria-hidden="true">
+                    <svg viewBox="0 0 64 64" width="18" height="18"><path d="M 14 14 L 14 50 L 30 50 C 42 50, 50 42, 50 32 C 50 22, 42 14, 30 14 Z" fill="#f4f0e6"/></svg>
+                  </div>
                   <div class="chat-id-text">
                     <strong>Dryft</strong>
-                    <em><span class="chat-dot"></span> bank-connected</em>
+                    <em>Active</em>
                   </div>
                 </div>
                 <span class="chat-menu">⋯</span>
               </div>
-
-              <div class="chat-feed" data-chat-feed>
-                <!-- bubbles injected by JS -->
-              </div>
-
+              <div class="chat-feed" data-chat-feed></div>
               <div class="chat-input-bar">
                 <span class="chat-plus">+</span>
                 <div class="chat-input">
                   <span class="chat-input-text" data-chat-input></span>
                   <span class="chat-cursor"></span>
                 </div>
-                <button class="chat-send" data-chat-send aria-label="Send">
+                <button class="chat-send" data-chat-send aria-label="Send" type="button">
                   <svg viewBox="0 0 24 24" width="14" height="14"><path d="M4 12l16-8-6 16-2-7z" fill="currentColor"/></svg>
                 </button>
               </div>
@@ -199,196 +216,219 @@
           </div>
         </div>
 
-        <div class="stage-glow"></div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- DIFFERENCE -->
+<section class="difference" id="difference">
+  <div class="section-wrap">
+    <div class="diff-head reveal">
+      <p class="section-label">The proof.</p>
+      <h2>Same person. Same drift.<br>One <span class="hl">changes the month</span>.</h2>
+    </div>
+
+    <div class="diff-grid reveal">
+      <div class="diff-card">
+        <div class="diff-card-head">
+          <span class="dc-eyebrow">Spending vs plan · March</span>
+        </div>
+
+        <svg class="diff-chart" viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart: Dryft catches drift on day 7 and the user returns to plan; without Dryft, the line keeps climbing">
+          <defs>
+            <linearGradient id="otherFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#c44d3c" stop-opacity="0.16"/>
+              <stop offset="100%" stop-color="#c44d3c" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+
+          <g stroke="#0d0e10" stroke-opacity="0.05" stroke-dasharray="2 4">
+            <line x1="50" y1="70" x2="570" y2="70"/>
+            <line x1="50" y1="130" x2="570" y2="130"/>
+            <line x1="50" y1="190" x2="570" y2="190"/>
+          </g>
+
+          <line x1="158" y1="40" x2="158" y2="260" stroke="#1a8294" stroke-width="1" stroke-dasharray="2 3" stroke-opacity="0.45"/>
+
+          <path d="M 50 220 L 570 130" stroke="#0d0e10" stroke-width="2" stroke-dasharray="5 5" fill="none" stroke-opacity="0.4"/>
+          <text x="58" y="234" font-family="JetBrains Mono, monospace" font-size="11" fill="#5b5d65" letter-spacing="0.06em" font-weight="500">PLAN</text>
+
+          <path class="other-fill" d="M 50 220 L 90 215 L 120 206 L 158 178 L 220 150 L 283 112 L 350 80 L 410 58 L 470 42 L 530 32 L 570 26 L 570 260 L 50 260 Z" fill="url(#otherFill)"/>
+
+          <path class="pre-line" d="M 50 220 L 90 215 L 120 206 L 158 178" stroke="#c4631e" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path class="other-line" d="M 158 178 L 220 150 L 283 112 L 350 80 L 410 58 L 470 42 L 530 32 L 570 26" stroke="#c44d3c" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path class="dryft-line" d="M 158 178 L 220 178 L 283 168 L 350 158 L 410 148 L 470 140 L 530 134 L 570 130" stroke="#1a8294" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+          <g class="day7">
+            <circle cx="158" cy="178" r="20" fill="#1a8294" fill-opacity="0.10"/>
+            <circle cx="158" cy="178" r="13" fill="#1a8294" fill-opacity="0.18"/>
+            <circle cx="158" cy="178" r="6" fill="#1a8294"/>
+            <circle cx="158" cy="178" r="2.5" fill="#f4f0e6"/>
+            <g transform="translate(180 135)">
+              <line x1="-4" y1="20" x2="-22" y2="43" stroke="#1a8294" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.5"/>
+              <rect x="0" y="0" width="124" height="26" rx="13" fill="#1a8294"/>
+              <text x="62" y="17" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#f4f0e6">Dryft catches</text>
+            </g>
+          </g>
+
+          <g class="dryft-end">
+            <circle cx="570" cy="130" r="6" fill="#1a8294"/>
+            <circle cx="570" cy="130" r="2.5" fill="#f4f0e6"/>
+            <g transform="translate(456 110)">
+              <rect x="0" y="0" width="110" height="22" rx="11" fill="#1a8294"/>
+              <text x="55" y="15" text-anchor="middle" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#f4f0e6" letter-spacing="0.04em">DRYFT · ON PLAN</text>
+            </g>
+          </g>
+
+          <g class="other-end">
+            <circle cx="570" cy="26" r="6" fill="#c44d3c"/>
+            <circle cx="570" cy="26" r="2.5" fill="#f4f0e6"/>
+            <g transform="translate(440 40)">
+              <rect x="0" y="0" width="130" height="22" rx="11" fill="#c44d3c"/>
+              <text x="65" y="15" text-anchor="middle" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#f4f0e6" letter-spacing="0.04em">OTHER · OVER BUDGET</text>
+            </g>
+          </g>
+
+          <line x1="50" y1="260" x2="570" y2="260" stroke="#0d0e10" stroke-opacity="0.15" stroke-width="1"/>
+
+          <g font-family="JetBrains Mono, monospace" font-size="11" fill="#9aa0a8" letter-spacing="0.06em" font-weight="500">
+            <text x="50" y="282" text-anchor="middle">DAY 1</text>
+            <text x="158" y="282" text-anchor="middle" fill="#1a8294" font-weight="600">DAY 7</text>
+            <text x="283" y="282" text-anchor="middle">DAY 14</text>
+            <text x="409" y="282" text-anchor="middle">DAY 21</text>
+            <text x="570" y="282" text-anchor="middle">DAY 30</text>
+          </g>
+
+          <g transform="translate(50 308)" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="0.08em">
+            <line x1="0" y1="6" x2="14" y2="6" stroke="#1a8294" stroke-width="3" stroke-linecap="round"/>
+            <text x="20" y="10" fill="#5b5d65">DRYFT</text>
+            <line x1="86" y1="6" x2="100" y2="6" stroke="#c44d3c" stroke-width="3" stroke-linecap="round"/>
+            <text x="106" y="10" fill="#5b5d65">OTHER APPS</text>
+            <line x1="208" y1="6" x2="222" y2="6" stroke="#0d0e10" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="3 3"/>
+            <text x="228" y="10" fill="#5b5d65">PLAN</text>
+          </g>
+        </svg>
+
+        <div class="diff-pins">
+          <div class="diff-pin good">
+            <span class="pin-label">With Dryft</span>
+            <strong>Back on plan</strong>
+            <p>One swap. Buffer intact.</p>
+          </div>
+          <div class="diff-pin bad">
+            <span class="pin-label">Without</span>
+            <strong>Over budget</strong>
+            <p>Found out on day 30.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="diff-compare">
+        <div class="compare-block bad">
+          <span class="compare-tag">Other apps</span>
+          <h3>A dashboard.</h3>
+          <ul>
+            <li>Tells you the damage on day 30.</li>
+            <li>Asks you to remember to open it.</li>
+            <li>Shows charts. Offers no next step.</li>
+          </ul>
+        </div>
+        <div class="compare-block good">
+          <span class="compare-tag accent">Dryft</span>
+          <h3>A coach.</h3>
+          <ul>
+            <li>Texts you on day 7 — while it's fixable.</li>
+            <li>Lives in your notifications.</li>
+            <li>Names the trade-off. Proposes the swap.</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- TICKER -->
-<div class="ticker">
-  <div class="ticker-track" id="ticker">
-    <span class="ticker-item">Bank Connection</span>
-    <span class="ticker-item">AI-Guided Plan Setup</span>
-    <span class="ticker-item">Chat-Based Adjustments</span>
-    <span class="ticker-item">Accountability Notifications</span>
-    <span class="ticker-item">Weekly Reports</span>
-    <span class="ticker-item">Monthly Recaps</span>
-    <span class="ticker-item">Spend vs. Goal Curves</span>
-    <span class="ticker-item">Cashflow Risk Detection</span>
-    <span class="ticker-item">Personality-Based Nudges</span>
-    <span class="ticker-item">Bank Connection</span>
-    <span class="ticker-item">AI-Guided Plan Setup</span>
-    <span class="ticker-item">Chat-Based Adjustments</span>
-    <span class="ticker-item">Accountability Notifications</span>
-    <span class="ticker-item">Weekly Reports</span>
-    <span class="ticker-item">Monthly Recaps</span>
-    <span class="ticker-item">Spend vs. Goal Curves</span>
-    <span class="ticker-item">Cashflow Risk Detection</span>
-    <span class="ticker-item">Personality-Based Nudges</span>
-  </div>
-</div>
+<!-- COACHES -->
+<section class="coaches" id="coaches">
+  <div class="section-wrap">
+    <div class="section-head reveal">
+      <p class="section-label">Pick your voice.</p>
+      <h2>Three coaches.<br>Same plan. <em>Your</em> voice.</h2>
+    </div>
 
-<!-- PAIN -->
-<section class="pain">
-  <div class="section-label">The Problem</div>
-  <div class="pain-grid">
-    <div class="pain-card reveal" data-n="01" >
-      <h3>Dashboards tell you what happened.<br>Not what to do next.</h3>
-      <p>You've seen the charts. Your spending is $400 over in "dining." Great. Now what? Most apps stop there — leaving you with guilt but no guidance.</p>
-    </div>
-    <div class="pain-card reveal" data-n="02">
-      <h3>Notifications fire too late.<br>After the damage is done.</h3>
-      <p>An "over budget" notification at the end of the month is a post-mortem, not accountability. The money is already gone. You needed the warning on day 8.</p>
-    </div>
-    <div class="pain-card reveal" data-n="03">
-      <h3>Budgets break by the second week.</h3>
-      <p>You set a $300 grocery budget with the best intentions. By the 10th, it's gone. The app doesn't care. It just waits until next month to let you fail again.</p>
-    </div>
-    <div class="pain-card reveal" data-n="04">
-      <h3>Goals are disconnected from daily life.</h3>
-      <p>"Save $5,000 this year" lives in a spreadsheet. Your $7 coffee lives in the real world. Nothing connects the two — until you're three months behind and wondering why.</p>
-    </div>
-  </div>
-</section>
+    <div class="coach-grid reveal">
+      <article class="coach-card" data-coach="drill">
+        <div class="coach-tag drill">Tough love</div>
+        <h3>The Drill Sergeant</h3>
+        <p class="coach-desc">Blunt. Zero excuses.</p>
+        <blockquote class="coach-quote drill">
+          <p>"Three delivery orders this week. We agreed on two. Explain yourself."</p>
+        </blockquote>
+      </article>
 
-<!-- DIVIDER QUOTE -->
-<div class="divider">
-  <div class="divider-inner reveal">
-    <p class="big-quote">"The problem isn't the <strong>big purchases</strong>. It's the hundred small ones you never noticed — until they added up to a month's rent."</p>
-    <p class="quote-source">— What Dryft is built to prevent</p>
-  </div>
-</div>
+      <article class="coach-card" data-coach="hype">
+        <div class="coach-tag hype">Warm</div>
+        <h3>The Hype Friend</h3>
+        <p class="coach-desc">Supportive. Celebrates wins.</p>
+        <blockquote class="coach-quote hype">
+          <p>"You crushed groceries this week — go you. Delivery's creeping, you got this though."</p>
+        </blockquote>
+      </article>
 
-<!-- HOW IT WORKS -->
-<section class="how">
-  <div class="section-label">How It Works</div>
-  <div class="how-header reveal">
-    <h2>Built for the moments you're <em>most likely</em> to dryft</h2>
-    <p>Most finance apps are built around dashboards. Dryft is built around accountability — in real time, before habits become expensive.</p>
-  </div>
-  <div class="steps">
-    <div class="step reveal">
-      <span class="step-num">01 — Connect</span>
-      <h3>Link Your Banks</h3>
-      <p>Securely connect all your accounts. Dryft watches real spending across every card and account — not just what you remember to log.</p>
+      <article class="coach-card" data-coach="deadpan">
+        <div class="coach-tag deadpan">Dry</div>
+        <h3>The Deadpan</h3>
+        <p class="coach-desc">Calm. The receipts speak.</p>
+        <blockquote class="coach-quote deadpan">
+          <p>"Food delivery: $184. Groceries: $96. I'm not saying anything. Just putting these next to each other."</p>
+        </blockquote>
+      </article>
     </div>
-    <div class="step reveal">
-      <span class="step-num">02 — Plan</span>
-      <h3>AI Builds Your Plan</h3>
-      <p>Answer a few questions. Dryft sets up spending categories, maps your recurring charges, and locks in your goal — survive school, invest monthly, pay off debt.</p>
-    </div>
-    <div class="step reveal">
-      <span class="step-num">03 — Stay Sharp</span>
-      <h3>Get Nudged Early</h3>
-      <p>Dryft catches drift before it compounds. Personality-based notifications, weekly mini-reports, and monthly recaps keep you honest — and celebrating when you nail it.</p>
-    </div>
-    <div class="step reveal">
-      <span class="step-num">04 — Adjust</span>
-      <h3>Chat to Change It</h3>
-      <p>Life changes. Plans should too. Ask Dryft to adjust your budget conversationally. When a purchase can't be categorized, Dryft asks — you answer once.</p>
-    </div>
-  </div>
-</section>
-
-<!-- FEATURES -->
-<section class="features">
-  <div class="features-inner">
-    <div class="features-header reveal">
-      <div class="section-label" style="justify-content: center; margin-bottom: 1.5rem;">What You Get</div>
-      <h2>Everything accountability needs. Nothing it doesn't.</h2>
-      <p>No bloat. No endless settings. Just the tools that keep you on track.</p>
-    </div>
-    <div class="feature-list">
-      <div class="feature-item reveal">
-        <span class="feature-tag">Real-time</span>
-        <h3>Live Spend vs. Plan</h3>
-        <p>See exactly where you stand against your goal — by category, by week, by month. Not a snapshot. A running score.</p>
-      </div>
-      <div class="feature-item reveal">
-        <span class="feature-tag">AI-Powered</span>
-        <h3>Conversational Adjustments</h3>
-        <p>Talk to your plan. "Can I spend $200 more on food this month?" Dryft tells you what that means for your goal and adjusts if you say go.</p>
-      </div>
-      <div class="feature-item reveal">
-        <span class="feature-tag">Early Warning</span>
-        <h3>Dryft Notifications</h3>
-        <p>Nudges calibrated to your chosen personality — gentle nudge or brutal honesty. Fires when drift is detected, not when it's too late.</p>
-      </div>
-      <div class="feature-item reveal">
-        <span class="feature-tag">Weekly</span>
-        <h3>Mini Reports</h3>
-        <p>A brief weekly digest. Celebrate what went well. Understand what drifted. No judgment — just clarity and a path forward.</p>
-      </div>
-      <div class="feature-item reveal">
-        <span class="feature-tag">Monthly</span>
-        <h3>Behaviour Recaps</h3>
-        <p>What went well, where you drifted, and one realistic habit recommendation. Built to improve — not to shame.</p>
-      </div>
-      <div class="feature-item reveal">
-        <span class="feature-tag">Cashflow</span>
-        <h3>Risk Detection</h3>
-        <p>Dryft spots when subscriptions, recurring charges, or spending patterns threaten your goal — and flags it before your account does.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- MANIFESTO -->
-<section class="manifesto">
-  <div class="reveal">
-    <div class="section-label" style="justify-content: center; margin-bottom: 2rem;">Our Belief</div>
-    <h2>You don't need more data. You need someone watching.</h2>
-    <p>Finance apps have been trying to solve money with <strong>more features, more charts, more screens</strong>. None of it works, because the problem isn't information.</p>
-    <p>The problem is the <strong>gap between knowing and doing</strong>. Between setting a plan on Sunday and making a decision on Thursday.</p>
-    <p>Dryft lives in that gap. It watches your real spending against your real plan, <strong>catches the moment things start to slip</strong>, and helps you course-correct before it matters.</p>
-    <p>Not a dashboard. <strong>An accountability partner.</strong></p>
   </div>
 </section>
 
 <!-- TRUST + FAQ -->
-<section class="trust" aria-labelledby="trust-heading">
-  <div class="trust-header reveal">
-    <div class="section-label">Trust & Clarity</div>
-    <h2 id="trust-heading">Personal finance accountability, without pretending to be your financial advisor.</h2>
-    <p>Dryft is built for budgeting, spending insights, cashflow planning, and everyday course-correction. It helps you understand patterns and tradeoffs, but it does not replace professional investment, tax, legal, or financial advice.</p>
-  </div>
-  <div class="trust-grid reveal">
-    <div class="trust-card">
-      <span>Data use</span>
-      <h3>Only what helps your plan</h3>
-      <p>Dryft is designed to use spending and cashflow context to spot drift, explain tradeoffs, and support your budget decisions. Waitlist emails are used for early access updates.</p>
+<section class="trust" id="faq">
+  <div class="section-wrap">
+    <div class="section-head reveal">
+      <p class="section-label">Trust & clarity.</p>
+      <h2>The <em>boring</em> stuff that matters.</h2>
     </div>
-    <div class="trust-card">
-      <span>Security</span>
-      <h3>Built around permissioned access</h3>
-      <p>Bank connection workflows are intended to use secure, permissioned providers so Dryft can read transactions without asking you to hand over bank credentials directly.</p>
-    </div>
-    <div class="trust-card">
-      <span>Boundaries</span>
-      <h3>Advice stays in its lane</h3>
-      <p>Dryft can help you notice spending drift, plan around bills, and understand budget impact. It does not guarantee savings or provide investment recommendations.</p>
-    </div>
-  </div>
 
-  <div class="faq reveal" aria-labelledby="faq-heading">
-    <h2 id="faq-heading">Questions people ask before joining.</h2>
-    <div class="faq-list">
-      <div class="faq-item">
-        <h3>What is Dryft?</h3>
-        <p>Dryft is an AI personal finance app focused on accountability: spending alerts, budget adjustments, cashflow risk detection, and plain-language explanations of where your plan is drifting.</p>
+    <div class="trust-grid reveal">
+      <div class="trust-card">
+        <span>Your data</span>
+        <h3>Yours. Never sold.</h3>
+        <p>Transactions stay yours. Used only to spot drift.</p>
       </div>
-      <div class="faq-item">
-        <h3>Who is it for?</h3>
-        <p>Dryft is for people who already know budgets matter, but need earlier nudges and more practical guidance than charts at the end of the month.</p>
+      <div class="trust-card">
+        <span>Security</span>
+        <h3>Read-only via Plaid.</h3>
+        <p>Dryft reads transactions. It never holds your login.</p>
       </div>
-      <div class="faq-item">
-        <h3>Does Dryft give financial advice?</h3>
-        <p>No. Dryft is built for budgeting support and personal spending accountability. It is not investment, tax, legal, or professional financial advice.</p>
+      <div class="trust-card">
+        <span>Boundaries</span>
+        <h3>Coaching, not advice.</h3>
+        <p>Not investment, tax, or legal advice.</p>
       </div>
-      <div class="faq-item">
-        <h3>When will early access open?</h3>
-        <p>Private beta spots will open to the waitlist first. Joining the waitlist lets Dryft reach out when early access is ready.</p>
+    </div>
+
+    <div class="faq reveal">
+      <h2><em>Questions</em>.</h2>
+      <div class="faq-list">
+        <div class="faq-item">
+          <h3>How is this different from Mint, YNAB, or Copilot?</h3>
+          <p>Those report. Dryft <em>intervenes</em>. On day 7, when one swap still saves the month.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Will it make me budget every receipt?</h3>
+          <p>No. The whole point is <em>not</em> over-optimization. Dryft watches the math.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Can Dryft move money?</h3>
+          <p>No. Read-only access.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -396,24 +436,32 @@
 
 <!-- FINAL CTA -->
 <section class="final-cta" id="waitlist">
-  <div class="cta-glow"></div>
   <div class="final-cta-inner">
-    <h2>Be among the first <br> to use <em>Dryft.</em></h2>
-    <p>V1 opens to the first 10 on the waitlist. <br> we will require feedback.</p>
-    <div class="final-form" id="final-form-wrap">
-      <label class="sr-only" for="final-emailw">Email address</label>
-      <input type="email" id="final-email" name="email" placeholder="your@email.com" autocomplete="email" inputmode="email" required aria-describedby="final-email-note" />
-      <button onclick="joinWaitlist('final')">Get Early Access</button>
-    </div>
-    <p class="sr-only" id="final-email-note">Enter your email address to join the Dryft early access waitlist.</p>
-    <div class="final-success" id="final-success">✓ You're on the list. We'll reach out before launch.</div>
+    <p class="cta-eyebrow">Cohort 01 · 250 spots.</p>
+    <h2>Get in <span class="hl">first</span>.</h2>
+    <p>The first beta cohort opens within weeks. Waitlist gets in first.</p>
+    <form class="final-form" id="final-form" autocomplete="on" novalidate>
+      <label class="sr-only" for="final-email">Your email</label>
+      <input type="email" id="final-email" name="email" placeholder="you@example.com" autocomplete="email" inputmode="email" maxlength="254" required spellcheck="false" />
+      <label class="hp-field" aria-hidden="true">
+        Leave this empty <input type="text" name="company" tabindex="-1" autocomplete="off">
+      </label>
+      <button type="submit">Claim my spot</button>
+    </form>
+    <div class="final-success" id="final-success">You're in. We'll email you when Cohort 01 opens.</div>
+    <p class="cta-fine">No spam. We'll ask for honest feedback. That's the trade.</p>
   </div>
 </section>
 
 <footer>
-  <div class="logo">Dryft<span></span></div>
-  <p>© 2026 Dryft — Financial Accountability That Works</p>
-  <p>Early stage. Built with conviction.</p>
+  <div class="footer-brand">
+    <svg viewBox="0 0 64 64" width="22" height="22" aria-hidden="true">
+      <path d="M 8 4 L 56 4 C 58 4, 60 6, 60 8 L 60 56 C 60 58, 58 60, 56 60 L 8 60 C 6 60, 4 58, 4 56 L 4 8 C 4 6, 6 4, 8 4 Z M 14 14 L 14 50 L 30 50 C 42 50, 50 42, 50 32 C 50 22, 42 14, 30 14 Z" fill="currentColor" fill-rule="evenodd"/>
+    </svg>
+    <span>Dryft</span>
+  </div>
+  <p>© 2026 Dryft · Made in Toronto</p>
+  <p>Not financial advice · Read-only bank access</p>
 </footer>
 
 <script defer src="assets/js/main.js"></script>

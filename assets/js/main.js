@@ -1,407 +1,400 @@
-  // NAV SCROLL
-  const nav = document.getElementById('nav');
+/* =================================================================
+   Dryft — landing interactions
+   - nav scroll state
+   - scroll reveals
+   - waitlist submission (CSP-friendly, honeypot + timing bot checks)
+   - hero notification cascade
+   - hero chat sequence
+================================================================= */
+'use strict';
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+/* ---------------- nav scroll ---------------- */
+const nav = document.getElementById('nav');
+if (nav) {
   window.addEventListener('scroll', () => {
-    nav.classList.toggle('scrolled', window.scrollY > 60);
-  });
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  }, { passive: true });
+}
 
-  // SCROLL REVEALS
-  const reveals = document.querySelectorAll('.reveal');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((e, i) => {
-      if (e.isIntersecting) {
-        setTimeout(() => e.target.classList.add('visible'), i * 80);
-        observer.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-  reveals.forEach(r => observer.observe(r));
-
-  // WAITLIST
-  const SHEET_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxhbDCy2s1nhtvimGFl5ioW3yvTgnO4p_x4mZElzXjUqaXHzu72NQrD3vFcAzhy0WQmrg/exec';
-  let count = 247;
-
-  async function joinWaitlist(source) {
-    const emailInput = document.getElementById(source === 'hero' ? 'hero-email' : 'final-email');
-    const btn = emailInput.closest('.hero-form, .final-form').querySelector('button');
-    const email = emailInput.value.trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(email)) {
-      emailInput.style.borderColor = 'var(--red)';
-      emailInput.focus();
-      setTimeout(() => emailInput.style.borderColor = '', 1500);
-      return;
-    }
-
-    const originalText = btn.textContent;
-    btn.textContent = 'Saving…';
-    btn.disabled = true;
-    emailInput.disabled = true;
-
-    try {
-      if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-        const params = new URLSearchParams({
-          email,
-          timestamp: new Date().toISOString(),
-          source
-        });
-        await fetch(`${SHEET_WEBHOOK_URL}?${params}`, {
-          method: 'GET',
-          mode: 'no-cors'
-        });
-      } else {
-        console.warn('Waitlist webhook not configured. Set SHEET_WEBHOOK_URL.');
-        console.log('Waitlist signup:', { email, timestamp: new Date().toISOString(), source });
-      }
-    } catch (err) {
-      console.error('Waitlist save failed:', err);
-    }
-
-    if (source === 'hero') {
-      document.getElementById('hero-form-wrap').style.display = 'none';
-      document.getElementById('hero-success').style.display = 'block';
+/* ---------------- mobile menu ---------------- */
+const navToggle = document.getElementById('nav-toggle');
+const mobileMenu = document.getElementById('mobile-menu');
+if (navToggle && mobileMenu) {
+  const setMenu = (open) => {
+    navToggle.setAttribute('aria-expanded', String(open));
+    navToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    if (open) {
+      mobileMenu.hidden = false;
+      requestAnimationFrame(() => mobileMenu.classList.add('open'));
+      document.body.classList.add('menu-open');
     } else {
-      document.getElementById('final-form-wrap').style.display = 'none';
-      document.getElementById('final-success').style.display = 'block';
+      mobileMenu.classList.remove('open');
+      document.body.classList.remove('menu-open');
+      setTimeout(() => { if (navToggle.getAttribute('aria-expanded') === 'false') mobileMenu.hidden = true; }, 340);
     }
+  };
+  navToggle.addEventListener('click', () => setMenu(navToggle.getAttribute('aria-expanded') !== 'true'));
+  mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && navToggle.getAttribute('aria-expanded') === 'true') setMenu(false); });
+  const desktopBreakpoint = window.matchMedia('(min-width: 1081px)');
+  desktopBreakpoint.addEventListener('change', (e) => { if (e.matches) setMenu(false); });
+}
 
-    count++;
-    const countEl = document.querySelector('.waitlist-count strong');
-    if (countEl) countEl.textContent = count;
+/* ---------------- scroll reveals ---------------- */
+const reveals = document.querySelectorAll('.reveal');
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 70);
+      revealObserver.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+reveals.forEach(r => revealObserver.observe(r));
+
+/* =================================================================
+   WAITLIST — anti-abuse posture (front-end only):
+     1. Honeypot field (in markup) — bots fill all visible inputs
+     2. Short dwell time — instant-submit bots get rejected
+     3. Per-form throttle — no spam-clicking submit
+     4. Per-page-load rate limit (in-memory) — protects the Apps Script endpoint
+        from one tab hammering. Resets on reload, which is fine for the threat we
+        actually care about (bots, not determined humans).
+     5. Strict email validation + sanitization
+================================================================= */
+const SHEET_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxhbDCy2s1nhtvimGFl5ioW3yvTgnO4p_x4mZElzXjUqaXHzu72NQrD3vFcAzhy0WQmrg/exec';
+const PAGE_LOAD_TS = Date.now();
+const MIN_HUMAN_DWELL_MS = 1200;
+const MIN_SUBMIT_INTERVAL_MS = 800;
+const MAX_SUBMITS_PER_SESSION = 5;
+// Local-part: 1-64 chars from a safe subset. Domain: labels of 1-63 chars, TLD 2+ letters.
+const EMAIL_REGEX = /^[A-Za-z0-9._%+\-]{1,64}@(?:[A-Za-z0-9](?:[A-Za-z0-9\-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,24}$/;
+const DOTSEQ = /\.{2,}/;
+let submitCount = 0;
+let lastSubmitAt = 0;
+const submittedEmails = new Set();
+
+function sanitizeEmail(input) {
+  return String(input || '')
+    .trim()
+    .slice(0, 254)
+    .replace(/[^A-Za-z0-9._%+\-@]/g, '');
+}
+function isPlausibleEmail(email) {
+  if (!email || email.length > 254) return false;
+  if (DOTSEQ.test(email)) return false;
+  if (email.startsWith('.') || email.endsWith('.')) return false;
+  if (email.includes('@.') || email.includes('.@')) return false;
+  if ((email.match(/@/g) || []).length !== 1) return false;
+  return EMAIL_REGEX.test(email);
+}
+function shakeForm(wrap, input) {
+  wrap.style.borderColor = 'var(--damage)';
+  wrap.style.boxShadow = '0 0 0 4px rgba(196,77,60,0.15)';
+  if (input) input.focus();
+  setTimeout(() => { wrap.style.borderColor = ''; wrap.style.boxShadow = ''; }, 1600);
+}
+function flashButton(btn, msg, ms = 2000) {
+  if (!btn) return;
+  const original = btn.dataset.originalLabel || btn.textContent;
+  btn.dataset.originalLabel = original;
+  btn.textContent = msg;
+  btn.disabled = true;
+  setTimeout(() => { btn.textContent = original; btn.disabled = false; }, ms);
+}
+function showSuccess(source) {
+  if (source === 'hero') {
+    const f = document.getElementById('hero-form'); const s = document.getElementById('hero-success');
+    if (f) f.style.display = 'none';
+    if (s) s.style.display = 'block';
+  } else {
+    const f = document.getElementById('final-form'); const s = document.getElementById('final-success');
+    if (f) f.style.display = 'none';
+    if (s) s.style.display = 'block';
   }
-  window.joinWaitlist = joinWaitlist;
+}
 
-  document.getElementById('hero-email').addEventListener('keydown', e => {
-    if (e.key === 'Enter') joinWaitlist('hero');
-  });
-  document.getElementById('final-email').addEventListener('keydown', e => {
-    if (e.key === 'Enter') joinWaitlist('final');
-  });
+async function handleWaitlistSubmit(form, source) {
+  const emailInput = form.querySelector('input[type="email"]');
+  const honeypot = form.querySelector('input[name="company"]');
+  const btn = form.querySelector('button[type="submit"]');
+  if (!emailInput || !btn) return;
 
-  /* ===========================================================
-     HERO PHONE DEMOS
-     Two synchronized scenes that loop forever:
-       - Notification phone: alerts slide in from BOTTOM,
-         pushing older ones upward until they fade out the top.
-       - Chat phone: typing in input bar -> send -> thinking ->
-         streaming response -> impact graph generates -> action chip.
-     Sequences are pre-baked; relative timing in ms.
-  =========================================================== */
+  // Honeypot — any value means bot. Silent reject.
+  if (honeypot && honeypot.value !== '') { form.reset(); return; }
 
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const wait = (ms) => new Promise(r => setTimeout(r, ms));
+  // Dwell — instant submits are bots
+  const now = Date.now();
+  if (now - PAGE_LOAD_TS < MIN_HUMAN_DWELL_MS) { shakeForm(form, emailInput); return; }
 
-  // ---------- NOTIFICATIONS (bottom-up cascade) ----------
- const NOTIFICATIONS = [
-  {
-    app: 'Dryft - Strict',
-    time: 'now',
-    body: '<strong>Dining spend is over plan.</strong> 6 days ahead ⚠️ Skip a delivery today. No negotiation.',
-    tag: { label: 'Dryft ⚠️', cls: 'warn' },
-    extra: '+ $112 over pace',
-  },
-  {
-    app: 'Dryft - Direct',
-    time: '2d ago',
-    body: '<strong>Subscriptions hit before rent.</strong> Netflix + Equinox. Cut or delay one.',
-    tag: { label: 'Risk ⚠️', cls: '' },
-    extra: '2 renewals',
-  },
-  {
-    app: 'Dryft - Understanding',
-    time: '1w ago',
-    body: '<strong>Good news — you’re back on track 🎯</strong> Savings buffer for May is now secured.',
-    tag: { label: 'On plan ✓', cls: 'ok' },
-    extra: 'Nice recovery 🎉',
-  },
-  {
-    app: 'Dryft - Direct',
-    time: '2w ago',
-    body: '<strong>$64 adjustment restores balance.</strong> Execute when ready.',
-    tag: { label: 'Adjustment ⚙️', cls: 'ok' },
-    extra: '$64',
-  },
-  
+  // Per-form throttle (prevents accidental double-submits, doesn't block retries)
+  if (now - lastSubmitAt < MIN_SUBMIT_INTERVAL_MS) return;
+
+  // Rate limit per page-load. Visible feedback when hit.
+  if (submitCount >= MAX_SUBMITS_PER_SESSION) {
+    flashButton(btn, 'Too many tries — refresh', 2500);
+    return;
+  }
+
+  const email = sanitizeEmail(emailInput.value);
+  if (!isPlausibleEmail(email)) { shakeForm(form, emailInput); return; }
+
+  // Duplicate in this page-load — show success without re-posting (no enumeration leak).
+  const lower = email.toLowerCase();
+  if (submittedEmails.has(lower)) { showSuccess(source); return; }
+
+  // All checks passed — commit
+  lastSubmitAt = now;
+  submitCount++;
+  submittedEmails.add(lower);
+
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+  emailInput.disabled = true;
+
+  try {
+    if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL.startsWith('https://')) {
+      const body = new FormData();
+      body.set('email', email);
+      body.set('source', source);
+      body.set('timestamp', new Date().toISOString());
+      body.set('dwell_ms', String(now - PAGE_LOAD_TS));
+      // mode:'no-cors' = fire-and-forget; we can't read the response (opaque).
+      // No credentials/referrerPolicy overrides — Apps Script redirects to
+      // script.googleusercontent.com and any extra fetch options can interfere.
+      const resp = await fetch(SHEET_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body });
+      console.log('[dryft waitlist] posted', { email, source, type: resp.type });
+    } else {
+      console.log('[dryft waitlist]', { email, source });
+    }
+  } catch (err) {
+    console.error('[dryft waitlist] save failed:', err);
+  }
+
+  showSuccess(source);
+}
+
+['hero-form', 'final-form'].forEach((id) => {
+  const form = document.getElementById(id);
+  if (!form) return;
+  const source = id === 'hero-form' ? 'hero' : 'final';
+  form.setAttribute('novalidate', '');
+  form.addEventListener('submit', (e) => { e.preventDefault(); handleWaitlistSubmit(form, source); });
+});
+
+/* =================================================================
+   HERO PHONE — NOTIFICATIONS (lock screen cascade)
+================================================================= */
+const NOTIFICATIONS = [
+  { app: 'Dryft', time: 'now', body: '<strong>Day 7 catch.</strong> Delivery $112 over. One groceries run gets you back on plan.', tag: { label: 'Fixable', cls: 'warn' }, extra: '+$112 over pace' },
+  { app: 'Dryft', time: '2d ago', body: '<strong>Subscriptions hit before payday.</strong> Move one or delay it.', tag: { label: 'Risk', cls: 'warn' }, extra: '2 renewals' },
+  { app: 'Dryft', time: '5d ago', body: '<strong>Back on track.</strong> Buffer for March is secured.', tag: { label: 'On plan', cls: 'ok' }, extra: 'Buffer +$86' },
+  { app: 'Dryft', time: '1w ago', body: '<strong>Plan adjusted — $64 moved to bills.</strong> All clear.', tag: { label: 'Adjusted', cls: 'ok' }, extra: '$64 moved' },
 ];
 
-  function makeNotifNode({ app, time, body, tag, extra }) {
-    const el = document.createElement('div');
-    el.className = 'notif';
-    el.innerHTML = `
-      <div class="notif-head">
-        <span class="notif-app"><span class="notif-app-icon">D</span>${app}</span>
-        <span class="notif-time">${time}</span>
-      </div>
-      <p class="notif-body">${body}</p>
-      <div class="notif-meta">
-        <span class="tag ${tag.cls}">${tag.label}</span>
-        <span>${extra}</span>
-      </div>
-    `;
-    return el;
-  }
+function makeNotifNode({ app, time, body, tag, extra }) {
+  const node = document.createElement('div');
+  node.className = 'notif';
+  node.innerHTML = `
+    <div class="notif-head">
+      <span class="notif-app">
+        <span class="notif-app-icon">
+          <svg viewBox="0 0 64 64"><path d="M 14 14 L 14 50 L 30 50 C 42 50, 50 42, 50 32 C 50 22, 42 14, 30 14 Z" fill="currentColor"/></svg>
+        </span>${app}
+      </span>
+      <span class="notif-time">${time}</span>
+    </div>
+    <p class="notif-body">${body}</p>
+    <div class="notif-meta">
+      <span class="tag ${tag.cls}">${tag.label}</span>
+      <span>${extra}</span>
+    </div>
+  `;
+  return node;
+}
 
-  async function runNotificationLoop(stack) {
-    if (reduceMotion) {
-      // Static: show first 3 notifications stacked
-      NOTIFICATIONS.slice(0, 3).forEach((n, i) => {
-        const el = makeNotifNode(n);
-        el.classList.add('in');
-        if (i === 0) el.classList.add('up-2');
-        if (i === 1) el.classList.add('up-1');
-        stack.appendChild(el);
-      });
-      return;
-    }
-
-    while (true) {
-      stack.innerHTML = '';
-      const visible = []; // newest last
-
-      for (let i = 0; i < NOTIFICATIONS.length; i++) {
-        // Insert new notification at BOTTOM
-        const el = makeNotifNode(NOTIFICATIONS[i]);
-        stack.appendChild(el);
-        visible.push(el);
-
-        // Reflow then animate in
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => el.classList.add('in'));
-        });
-
-        // Promote older ones: last entry is bottom (new), one above is up-1, etc.
-        for (let k = 0; k < visible.length - 1; k++) {
-          const node = visible[visible.length - 2 - k];
-          if (!node) break;
-          node.classList.remove('in', 'up-1', 'up-2', 'up-3');
-          if (k === 0) node.classList.add('up-1');
-          else if (k === 1) node.classList.add('up-2');
-          else node.classList.add('up-3');
-        }
-
-        // Trim DOM once they've faded
-        while (visible.length > 4) {
-          const old = visible.shift();
-          setTimeout(() => old.remove(), 600);
-        }
-
-        await wait(3500);
-      }
-
-      // Hold then reset
-      await wait(2200);
-      // Fade all out
-      visible.forEach((n, idx) => {
-        n.classList.add('up-3');
-      });
-      await wait(700);
-    }
-  }
-
-  // ---------- CHAT SCENE ----------
-  const CHAT_SEQUENCE = [
-    {
-      typed: 'Can I buy a PS4 this month?',
-      typeSpeed: 55,
-      thinkLabel: 'Checking your May plan',
-      thinkDuration: 1100,
-      response: 'Yes — if dining stays under $42/wk and you pause one renewal.',
-      streamSpeed: 18,
-      afterPause: 1500,
-    },
-    {
-      typed: 'Why did food spike?',
-      typeSpeed: 60,
-      thinkLabel: 'Finding the pattern',
-      thinkDuration: 1300,
-      response: 'Takeout is up 38% vs last month. Two delivery apps drove it.',
-      streamSpeed: 20,
-      showImpact: true,
-      followup: 'Add $64 budget for bills and cap delivery this week — plan stays green.',
-      followupSpeed: 16,
-      afterPause: 2400,
-    },
-  ];
-
-  async function typeInto(node, text, speed) {
-    node.textContent = '';
-    for (let i = 0; i < text.length; i++) {
-      node.textContent += text[i];
-      // Slight humanized jitter
-      const jitter = (text[i] === ' ') ? speed * 0.4 : speed * (0.7 + Math.random() * 0.6);
-      await wait(jitter);
-    }
-  }
-
-  function streamBubble(feed, text, speed, role = 'dryft') {
-    return new Promise(async (resolve) => {
-      const bubble = document.createElement('div');
-      bubble.className = `bubble ${role}`;
-      const stream = document.createElement('span');
-      stream.className = 'stream';
-      bubble.appendChild(stream);
-      feed.appendChild(bubble);
-      requestAnimationFrame(() => bubble.classList.add('show'));
-
-      for (let i = 0; i < text.length; i++) {
-        const span = document.createElement('span');
-        span.className = 'stream-char';
-        span.textContent = text[i];
-        stream.appendChild(span);
-        const jitter = speed * (0.5 + Math.random() * 1.1);
-        await wait(jitter);
-      }
-      resolve(bubble);
+async function runNotificationLoop(stack) {
+  if (reduceMotion) {
+    NOTIFICATIONS.slice(0, 3).forEach((n, i) => {
+      const node = makeNotifNode(n);
+      node.classList.add('in');
+      if (i === 0) node.classList.add('up-2');
+      if (i === 1) node.classList.add('up-1');
+      stack.appendChild(node);
     });
+    return;
   }
+  while (true) {
+    stack.innerHTML = '';
+    const visible = [];
+    for (let i = 0; i < NOTIFICATIONS.length; i++) {
+      const node = makeNotifNode(NOTIFICATIONS[i]);
+      stack.appendChild(node);
+      visible.push(node);
+      requestAnimationFrame(() => requestAnimationFrame(() => node.classList.add('in')));
+      for (let k = 0; k < visible.length - 1; k++) {
+        const n = visible[visible.length - 2 - k];
+        if (!n) break;
+        n.classList.remove('in', 'up-1', 'up-2', 'up-3');
+        if (k === 0) n.classList.add('up-1');
+        else if (k === 1) n.classList.add('up-2');
+        else n.classList.add('up-3');
+      }
+      while (visible.length > 4) { const old = visible.shift(); setTimeout(() => old.remove(), 600); }
+      await wait(3500);
+    }
+    await wait(2200);
+    visible.forEach(n => n.classList.add('up-3'));
+    await wait(700);
+  }
+}
 
-  function addUserBubble(feed, text) {
+/* =================================================================
+   HERO PHONE — CHAT (looping conversation)
+================================================================= */
+const CHAT_SEQUENCE = [
+  { typed: 'Can I order takeout tonight?', typeSpeed: 55, thinkLabel: 'Checking plan', thinkDuration: 1100, response: 'Yes — under $24 and skip Friday\'s.', streamSpeed: 18, afterPause: 1800 },
+  { typed: 'Why is food up this week?', typeSpeed: 60, thinkLabel: 'Finding the pattern', thinkDuration: 1300, response: 'Delivery is +38% vs last week.', streamSpeed: 20, showImpact: true, followup: 'Cap delivery to 2 this week.', followupSpeed: 16, afterPause: 2400 },
+];
+
+async function typeInto(node, text, speed) {
+  node.textContent = '';
+  for (let i = 0; i < text.length; i++) {
+    node.textContent += text[i];
+    const jitter = (text[i] === ' ') ? speed * 0.4 : speed * (0.7 + Math.random() * 0.6);
+    await wait(jitter);
+  }
+}
+function streamBubble(feed, text, speed) {
+  return new Promise(async (resolve) => {
     const bubble = document.createElement('div');
-    bubble.className = 'bubble user';
-    bubble.textContent = text;
+    bubble.className = 'bubble dryft';
+    const stream = document.createElement('span');
+    stream.className = 'stream';
+    bubble.appendChild(stream);
     feed.appendChild(bubble);
     requestAnimationFrame(() => bubble.classList.add('show'));
-    return bubble;
-  }
-
-  function addThinking(feed, label) {
-    const node = document.createElement('div');
-    node.className = 'thinking';
-    node.innerHTML = `
-      <span class="thinking-label">${label}</span>
-      <span class="thinking-dots"><span></span><span></span><span></span></span>
-    `;
-    feed.appendChild(node);
-    requestAnimationFrame(() => node.classList.add('show'));
-    return node;
-  }
-
-  function addImpactCard(feed) {
-    const card = document.createElement('div');
-    card.className = 'impact-card';
-    card.innerHTML = `
-      <div class="impact-head"><strong>Plan impact · May</strong><em>vs target</em></div>
-      <div class="impact-bars">
-        <div class="impact-bar"><div class="impact-bar-fill" data-h="38"></div></div>
-        <div class="impact-bar"><div class="impact-bar-fill red" data-h="92"></div></div>
-        <div class="impact-bar"><div class="impact-bar-fill" data-h="54"></div></div>
-        <div class="impact-bar"><div class="impact-bar-fill" data-h="68"></div></div>
-        <div class="impact-bar"><div class="impact-bar-fill green" data-h="46"></div></div>
-      </div>
-      <div class="impact-labels">
-        <span>Rent</span><span>Food</span><span>Subs</span><span>Gas</span><span>Save</span>
-      </div>
-      <div class="impact-action">Add $64 → Bills</div>
-    `;
-    feed.appendChild(card);
-    requestAnimationFrame(() => card.classList.add('show'));
-
-    // Animate bars in staggered after the slide-in
-    setTimeout(() => {
-      card.querySelectorAll('.impact-bar-fill').forEach((bar, i) => {
-        setTimeout(() => {
-          bar.style.height = `${bar.dataset.h}%`;
-        }, i * 110);
-      });
-    }, 250);
-
-    return card;
-  }
-
-  function fadeOutFeed(feed) {
-    return new Promise(async (resolve) => {
-      const items = [...feed.children];
-      items.forEach((n, i) => {
-        setTimeout(() => {
-          n.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-          n.style.opacity = '0';
-          n.style.transform = 'translateY(-6px)';
-        }, i * 60);
-      });
-      await wait(items.length * 60 + 320);
-      feed.innerHTML = '';
-      resolve();
+    for (let i = 0; i < text.length; i++) {
+      const span = document.createElement('span');
+      span.className = 'stream-char';
+      span.textContent = text[i];
+      stream.appendChild(span);
+      const jitter = speed * (0.5 + Math.random() * 1.1);
+      await wait(jitter);
+    }
+    resolve(bubble);
+  });
+}
+function addUserBubble(feed, text) {
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble user';
+  bubble.textContent = text;
+  feed.appendChild(bubble);
+  requestAnimationFrame(() => bubble.classList.add('show'));
+  return bubble;
+}
+function addThinking(feed, label) {
+  const node = document.createElement('div');
+  node.className = 'thinking';
+  node.innerHTML = `<span class="thinking-label">${label}</span><span class="thinking-dots"><span></span><span></span><span></span></span>`;
+  feed.appendChild(node);
+  requestAnimationFrame(() => node.classList.add('show'));
+  return node;
+}
+function addImpactCard(feed) {
+  const card = document.createElement('div');
+  card.className = 'impact-card';
+  card.innerHTML = `
+    <div class="impact-head"><strong>Plan impact</strong><em>vs target</em></div>
+    <div class="impact-bars">
+      <div class="impact-bar"><div class="impact-bar-fill" data-h="42"></div></div>
+      <div class="impact-bar"><div class="impact-bar-fill red" data-h="92"></div></div>
+      <div class="impact-bar"><div class="impact-bar-fill" data-h="54"></div></div>
+      <div class="impact-bar"><div class="impact-bar-fill" data-h="68"></div></div>
+      <div class="impact-bar"><div class="impact-bar-fill" data-h="48"></div></div>
+    </div>
+    <div class="impact-labels"><span>Rent</span><span>Food</span><span>Subs</span><span>Gas</span><span>Save</span></div>
+    <div class="impact-action">Move $64 to Bills</div>
+  `;
+  feed.appendChild(card);
+  requestAnimationFrame(() => card.classList.add('show'));
+  setTimeout(() => {
+    card.querySelectorAll('.impact-bar-fill').forEach((bar, i) => {
+      setTimeout(() => { bar.style.height = `${bar.dataset.h}%`; }, i * 110);
     });
-  }
-
-  async function runChatLoop(phone) {
-    const feed = phone.querySelector('[data-chat-feed]');
-    const inputText = phone.querySelector('[data-chat-input]');
-    const cursor = phone.querySelector('.chat-cursor');
-    const sendBtn = phone.querySelector('[data-chat-send]');
-
-    if (reduceMotion) {
-      // Static final state
-      addUserBubble(feed, CHAT_SEQUENCE[1].typed);
-      const b = document.createElement('div');
-      b.className = 'bubble dryft show';
-      b.textContent = CHAT_SEQUENCE[1].response;
-      feed.appendChild(b);
-      const card = addImpactCard(feed);
+  }, 250);
+  return card;
+}
+function fadeOutFeed(feed) {
+  return new Promise(async (resolve) => {
+    const items = [...feed.children];
+    items.forEach((n, i) => {
       setTimeout(() => {
-        card.querySelectorAll('.impact-bar-fill').forEach(bar => bar.style.height = `${bar.dataset.h}%`);
-      }, 200);
-      return;
-    }
+        n.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        n.style.opacity = '0';
+        n.style.transform = 'translateY(-6px)';
+      }, i * 60);
+    });
+    await wait(items.length * 60 + 320);
+    feed.innerHTML = '';
+    resolve();
+  });
+}
 
-    // Brief warm-up so notif phone leads
-    await wait(900);
-
-    while (true) {
-      for (let s = 0; s < CHAT_SEQUENCE.length; s++) {
-        const step = CHAT_SEQUENCE[s];
-
-        // Cursor on
-        cursor.classList.add('active');
-
-        // Type into input
-        await typeInto(inputText, step.typed, step.typeSpeed);
-        await wait(280);
-
-        // Activate send btn
-        sendBtn.classList.add('active');
-        await wait(140);
-
-        // "Send" — input clears, user bubble appears
-        const sentText = inputText.textContent;
-        inputText.textContent = '';
-        sendBtn.classList.remove('active');
-        cursor.classList.remove('active');
-        addUserBubble(feed, sentText);
-        await wait(450);
-
-        // Thinking
-        const think = addThinking(feed, step.thinkLabel);
-        await wait(step.thinkDuration);
-        think.classList.remove('show');
-        await wait(220);
-        think.remove();
-
-        // Stream response
-        await streamBubble(feed, step.response, step.streamSpeed);
-        await wait(400);
-
-        if (step.showImpact) {
-          addImpactCard(feed);
-          await wait(1500);
-        }
-
-        if (step.followup) {
-          await streamBubble(feed, step.followup, step.followupSpeed);
-        }
-
-        await wait(step.afterPause);
-      }
-
-      // Reset: fade feed, then loop
-      await fadeOutFeed(feed);
-      await wait(400);
-    }
+async function runChatLoop(phone) {
+  const feed = phone.querySelector('[data-chat-feed]');
+  const inputText = phone.querySelector('[data-chat-input]');
+  const cursor = phone.querySelector('.chat-cursor');
+  const sendBtn = phone.querySelector('[data-chat-send]');
+  if (!feed || !inputText || !cursor || !sendBtn) return;
+  if (reduceMotion) {
+    addUserBubble(feed, CHAT_SEQUENCE[1].typed);
+    const b = document.createElement('div');
+    b.className = 'bubble dryft show';
+    b.textContent = CHAT_SEQUENCE[1].response;
+    feed.appendChild(b);
+    const card = addImpactCard(feed);
+    setTimeout(() => { card.querySelectorAll('.impact-bar-fill').forEach(bar => bar.style.height = `${bar.dataset.h}%`); }, 200);
+    return;
   }
+  await wait(900);
+  while (true) {
+    for (const step of CHAT_SEQUENCE) {
+      cursor.classList.add('active');
+      await typeInto(inputText, step.typed, step.typeSpeed);
+      await wait(280);
+      sendBtn.classList.add('active');
+      await wait(140);
+      const sentText = inputText.textContent;
+      inputText.textContent = '';
+      sendBtn.classList.remove('active');
+      cursor.classList.remove('active');
+      addUserBubble(feed, sentText);
+      await wait(450);
+      const think = addThinking(feed, step.thinkLabel);
+      await wait(step.thinkDuration);
+      think.classList.remove('show');
+      await wait(220);
+      think.remove();
+      await streamBubble(feed, step.response, step.streamSpeed);
+      await wait(400);
+      if (step.showImpact) { addImpactCard(feed); await wait(1500); }
+      if (step.followup) await streamBubble(feed, step.followup, step.followupSpeed);
+      await wait(step.afterPause);
+    }
+    await fadeOutFeed(feed);
+    await wait(400);
+  }
+}
 
-  // Boot demos
-  const notifPhone = document.querySelector('[data-phone="notif"]');
-  const chatPhone = document.querySelector('[data-phone="chat"]');
-  const notifStack = notifPhone && notifPhone.querySelector('[data-notif-stack]');
-  if (notifStack) runNotificationLoop(notifStack);
-  if (chatPhone) runChatLoop(chatPhone);
+/* =================================================================
+   BOOT
+================================================================= */
+const notifPhone = document.querySelector('[data-phone="notif"]');
+const chatPhone  = document.querySelector('[data-phone="chat"]');
+const notifStack = notifPhone && notifPhone.querySelector('[data-notif-stack]');
+if (notifStack) runNotificationLoop(notifStack);
+if (chatPhone) runChatLoop(chatPhone);
