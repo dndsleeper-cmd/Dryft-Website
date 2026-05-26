@@ -1125,11 +1125,10 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   footer p:last-child { text-align: center; }
 }
 
-/* Mobile composition (<= 560px): two full-size phones, notif as the hero.
-   Both phones keep their full width so the in-screen text stays at native size
-   and remains readable. Notif sits forward + left, chat is shifted right and
-   tilted away — its right edge bleeds slightly off the viewport for a
-   "there's more" effect (.hero has overflow:hidden so the clip is clean). */
+/* Mobile composition (<= 560px): two full-size phones, chat on top.
+   Notif sits back-left and chat is layered in front on the right with a low
+   tilt on both, so both screens read cleanly side-by-side. The right edge of
+   chat bleeds slightly off the viewport (.hero overflow:hidden clips it). */
 @media (max-width: 560px) {
   .hero { padding: 3.5rem 1.1rem 2rem; }
   .hero-demo { min-height: 0; width: 100%; }
@@ -1149,21 +1148,20 @@ footer p:last-child { text-align: right; color: var(--subtle); }
     animation: none !important;
     transform-origin: center;
   }
-  /* notif phone — hero, shifted left, soft tilt */
+  /* notif phone — left, behind chat, very slight tilt for readability */
   .dryft-phone.phone-notif {
-    z-index: 3;
-    transform: translate(-16%, 0) rotate(-4deg) translateZ(0) !important;
-  }
-  /* chat phone — full size (text stays readable), shifted right + tilted away */
-  .dryft-phone.phone-chat {
     z-index: 2;
-    transform: translate(30%, 8%) rotate(8deg) translateZ(0) !important;
+    transform: translate(-22%, 0) rotate(-2deg) translateZ(0) !important;
+  }
+  /* chat phone — right, in front (on top of notif), very slight tilt */
+  .dryft-phone.phone-chat {
+    z-index: 3;
+    transform: translate(30%, 6%) rotate(3deg) translateZ(0) !important;
   }
   .hero-inner { gap: 1.1rem; }
 }
 
-/* Very small phones (<= 380px) — slightly narrower phones to keep the bleed
-   under control on tiny viewports, same composition. */
+/* Very small phones (<= 380px) — narrower phones, same composition. */
 @media (max-width: 380px) {
   .brand-word { font-size: 1.1rem; }
   .nav-cta { font-size: 0.75rem; padding: 0.45rem 0.75rem; }
@@ -1171,8 +1169,8 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   .hero .demo-h2 { font-size: clamp(1.55rem, 7vw, 2rem); letter-spacing: -0.02em; }
   .section-head h2, .diff-head h2 { font-size: clamp(1.7rem, 7vw, 2.2rem); }
   .dryft-phone { width: min(206px, 60vw); }
-  .dryft-phone.phone-notif { transform: translate(-16%, 0) rotate(-4deg) !important; }
-  .dryft-phone.phone-chat  { transform: translate(28%, 8%) rotate(8deg) !important; }
+  .dryft-phone.phone-notif { transform: translate(-22%, 0) rotate(-2deg) !important; }
+  .dryft-phone.phone-chat  { transform: translate(28%, 6%) rotate(3deg) !important; }
 }
 
 /* ============================================================
@@ -1628,12 +1626,37 @@ footer p:last-child { text-align: right; color: var(--subtle); }
   .overplan { margin-top: 2rem; padding-top: 1.6rem; }
   .overplan-head h2 { display: block; }
   .overplan-hint { margin-left: 0; margin-top: 0.6rem; }
-  .persona-tabs { grid-template-columns: 1fr; gap: 0.7rem; }
-  .persona-stage { padding: 1rem 1rem 0.9rem; }
-  .persona-card { padding: 1rem 1.1rem; }
-  .persona-meta > div { grid-template-columns: 64px 1fr; }
-  .visual-chart { aspect-ratio: 600 / 340; }
+  /* Persona cards — side-by-side on mobile, compact. Frees up vertical space
+     for the chart below so the recovery scenarios stay glanceable. */
+  .persona-tabs { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .persona-card { padding: 0.7rem 0.75rem; gap: 0.3rem; border-radius: 14px; }
+  .persona-head { gap: 0.4rem; }
+  .persona-tag { font-size: 0.5rem; padding: 0.2rem 0.45rem; letter-spacing: 0.1em; }
+  .persona-arrow { font-size: 0.9rem; }
+  .persona-name { font-size: 1.05rem; margin-top: 0.1rem; }
+  .persona-segment { font-size: 0.5rem; letter-spacing: 0.06em; }
+  .persona-meta { gap: 0.18rem; margin-top: 0.3rem; }
+  .persona-meta > div { grid-template-columns: 46px 1fr; gap: 0.4rem; }
+  .persona-meta dt { font-size: 0.48rem; letter-spacing: 0.08em; }
+  .persona-meta dd { font-size: 0.7rem; line-height: 1.25; }
+  /* Bigger, more readable chart on mobile. Only bump the monospace
+     axis/legend labels — Inter-font pill labels have fixed-width rect
+     backgrounds and would overflow the SVG bounds if scaled up. */
+  .persona-stage { padding: 0.9rem 0.7rem 0.85rem; border-radius: 16px; }
+  .visual-chart { aspect-ratio: 600 / 420; }
+  .visual-chart text[font-family*="JetBrains"][font-size="9"],
+  .visual-chart text[font-family*="JetBrains"][font-size="10"] { font-size: 13px; }
   .visual-foot p { font-size: 0.85rem; }
+  .vh-eyebrow { font-size: 0.6rem; }
+  .vh-meta { font-size: 0.55rem; }
+  /* Difference chart (proof section) */
+  .diff-card { padding: 1rem 0.7rem 1rem; }
+  .diff-card-head { margin-bottom: 0.7rem; }
+  .diff-chart { aspect-ratio: 600 / 500; }
+  .diff-chart text[font-family*="JetBrains"][font-size="9"],
+  .diff-chart text[font-family*="JetBrains"][font-size="10"],
+  .diff-chart text[font-family*="JetBrains"][font-size="11"] { font-size: 14px; }
+  .dc-eyebrow { font-size: 0.62rem; }
 }
 
 /* =========================== SURVEY MODAL ===========================
