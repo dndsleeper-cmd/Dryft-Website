@@ -477,6 +477,35 @@ body.menu-open { overflow: hidden; }
   opacity: 0;
   animation: fadeUp 0.85s 0.85s ease forwards;
 }
+/* Minimal under-form consent line — kept tiny + translucent so it doesn't
+   compete with the headline or CTA, but still ties form submission to the
+   Privacy / Terms acceptance at the point of submission (best practice). The
+   verbose CASL disclosure (receive emails / unsubscribe) lives in the footer.
+   The font-size uses !important because .final-cta > .final-cta-inner > p
+   sets font-size:1rem with higher specificity and would otherwise win. */
+.form-consent {
+  margin: 0.55rem auto 0 !important;
+  font-size: 0.64rem !important;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 480px;
+  opacity: 0.55;
+  text-align: center;
+  transition: opacity 0.2s ease;
+}
+.form-consent:hover { opacity: 0.85; }
+.form-consent a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.form-consent a:hover { color: var(--brand); }
+/* Survey-modal variant — centered + a bit more breathing room under the button */
+.survey-consent {
+  margin: 0.9rem auto 0;
+  text-align: center;
+  max-width: 420px;
+}
 
 /* =========================== PHONE (shared chrome) =========================== */
 .hero-demo {
@@ -1047,7 +1076,28 @@ footer {
 .footer-brand { display: inline-flex; align-items: center; gap: 0.55rem; font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-size: 1.15rem; font-weight: 600; letter-spacing: -0.025em; color: var(--ink); }
 .footer-brand svg { color: var(--ink); }
 footer p { font-size: 0.8rem; color: var(--muted); }
-footer p:last-child { text-align: right; color: var(--subtle); }
+footer p:nth-of-type(2) { text-align: right; color: var(--subtle); }
+/* Full-width compliance row spanning all footer columns — CASL identification,
+   unsubscribe statement, and mailing address. Tiny + translucent so it reads
+   as legal fine-print, not marketing. */
+.footer-fine {
+  grid-column: 1 / -1;
+  font-size: 0.66rem !important;
+  line-height: 1.5;
+  color: var(--subtle) !important;
+  opacity: 0.7;
+  margin-top: 0.6rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+  text-align: center !important;
+}
+footer a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
+}
+footer a:hover { color: var(--brand); }
 
 /* =========================== REVEAL =========================== */
 .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.7s ease, transform 0.7s ease; }
@@ -1078,7 +1128,7 @@ footer p:last-child { text-align: right; color: var(--subtle); }
 @media (max-width: 980px) {
   .hero-inner { grid-template-columns: 1fr; gap: 2.2rem; }
   .hero-copy { max-width: 680px; margin: 0 auto; text-align: center; }
-  .hero-copy .hero-form, .hero-copy .hero-fine { margin-left: auto; margin-right: auto; }
+  .hero-copy .hero-form, .hero-copy .hero-fine, .hero-copy .form-consent { margin-left: auto; margin-right: auto; }
   .hero-sub { margin-left: auto; margin-right: auto; }
   .hero-demo { width: min(100%, 560px); min-height: 560px; }
   .diff-grid { grid-template-columns: 1fr; gap: 1.2rem; }

@@ -9,4 +9,16 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://dryft.app/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://dryft.app/"/>
   </url>
+  <url>
+    <loc>https://dryft.app/privacy</loc>
+    <lastmod>2026-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://dryft.app/terms</loc>
+    <lastmod>2026-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
 </urlset>
