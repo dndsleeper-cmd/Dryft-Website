@@ -417,7 +417,7 @@ if (surveyModal && surveyForm) {
     body.set('source', String(surveySource || '').replace(/[^a-z]/gi, '').slice(0, 16));
     body.set('timestamp', new Date().toISOString());
     body.set('stage', sanitizeStage(data.get('stage')));
-    ['q1','q2','q3','q4','q5','q6'].forEach(k => body.set(k, sanitizeScale(data.get(k))));
+    ['q1','q2','q3','q4','q5','q6','q7'].forEach(k => body.set(k, sanitizeScale(data.get(k))));
 
     try {
       if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL.startsWith('https://')) {
