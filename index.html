@@ -65,7 +65,7 @@
      crossorigin + referrerpolicy=no-referrer and constrained by our CSP origin allowlist. -->
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script defer src="https://cdn.vercel-insights.com/v1/script.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<link rel="stylesheet" href="assets/css/styles.css?v=20260527x">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260527y">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -876,35 +876,38 @@
         <input type="hidden" name="stage" value="">
       </div>
 
+      <div class="survey-section">
+        <h4 class="survey-section-title">Financial Habits &amp; Spending</h4>
+        <p class="survey-section-sub">For the next questions, rate how much you agree. <br><strong>1 = Strongly disagree, 5 = Strongly agree.</strong></p>
+      </div>
+
       <div class="survey-q" data-q="q1">
         <div class="survey-q-head">
           <span class="survey-q-num">02</span>
-          <p class="survey-q-label">&ldquo;Small purchases add up before I realize.&rdquo;</p>
+          <p class="survey-q-label">&ldquo;Small purchases add up before I notice.&rdquo;</p>
         </div>
-        <div class="survey-scale" data-scale="q1" role="radiogroup" aria-label="Small purchases">
+        <div class="survey-scale" data-scale="q1" role="radiogroup" aria-label="Small purchases add up before I notice">
           <button type="button" class="survey-num" data-value="1" role="radio" aria-checked="false">1</button>
           <button type="button" class="survey-num" data-value="2" role="radio" aria-checked="false">2</button>
           <button type="button" class="survey-num" data-value="3" role="radio" aria-checked="false">3</button>
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
-        <div class="survey-scale-labels"><span>Never</span><span>Very often</span></div>
         <input type="hidden" name="q1" value="">
       </div>
 
       <div class="survey-q" data-q="q2">
         <div class="survey-q-head">
           <span class="survey-q-num">03</span>
-          <p class="survey-q-label">&ldquo;I realize I should not have spent money only after I&rsquo;ve already spent it.&rdquo;</p>
+          <p class="survey-q-label">&ldquo;I usually realize I overspent after the money is already gone.&rdquo;</p>
         </div>
-        <div class="survey-scale" data-scale="q2" role="radiogroup" aria-label="Notice overspending late">
+        <div class="survey-scale" data-scale="q2" role="radiogroup" aria-label="Realize overspending after the money is gone">
           <button type="button" class="survey-num" data-value="1" role="radio" aria-checked="false">1</button>
           <button type="button" class="survey-num" data-value="2" role="radio" aria-checked="false">2</button>
           <button type="button" class="survey-num" data-value="3" role="radio" aria-checked="false">3</button>
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
-        <div class="survey-scale-labels"><span>Never</span><span>Often</span></div>
         <input type="hidden" name="q2" value="">
       </div>
 
@@ -920,23 +923,21 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
-        <div class="survey-scale-labels"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q3" value="">
       </div>
 
       <div class="survey-q" data-q="q4">
         <div class="survey-q-head">
           <span class="survey-q-num">05</span>
-          <p class="survey-q-label">&ldquo;Real-time spending alerts would influence my decisions.&rdquo;</p>
+          <p class="survey-q-label">&ldquo;Real-time spending alerts would help me make better decisions.&rdquo;</p>
         </div>
-        <div class="survey-scale" data-scale="q4" role="radiogroup" aria-label="Real-time spending alerts">
+        <div class="survey-scale" data-scale="q4" role="radiogroup" aria-label="Real-time spending alerts would help me make better decisions">
           <button type="button" class="survey-num" data-value="1" role="radio" aria-checked="false">1</button>
           <button type="button" class="survey-num" data-value="2" role="radio" aria-checked="false">2</button>
           <button type="button" class="survey-num" data-value="3" role="radio" aria-checked="false">3</button>
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
-        <div class="survey-scale-labels"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q4" value="">
       </div>
 
@@ -952,24 +953,26 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
-        <div class="survey-scale-labels"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q5" value="">
       </div>
 
       <div class="survey-q" data-q="q6">
         <div class="survey-q-head">
           <span class="survey-q-num">07</span>
-          <p class="survey-q-label">&ldquo;Most budgeting tools feel too rigid for real life.&rdquo;</p>
+          <p class="survey-q-label">&ldquo;Most budgeting tools feel too strict for real life.&rdquo;</p>
         </div>
-        <div class="survey-scale" data-scale="q6" role="radiogroup" aria-label="Budgeting tools feel too rigid">
+        <div class="survey-scale" data-scale="q6" role="radiogroup" aria-label="Budgeting tools feel too strict for real life">
           <button type="button" class="survey-num" data-value="1" role="radio" aria-checked="false">1</button>
           <button type="button" class="survey-num" data-value="2" role="radio" aria-checked="false">2</button>
           <button type="button" class="survey-num" data-value="3" role="radio" aria-checked="false">3</button>
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
-        <div class="survey-scale-labels"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q6" value="">
+      </div>
+
+      <div class="survey-section">
+        <h4 class="survey-section-title">Stress &amp; Emotions Around Money</h4>
       </div>
 
       <div class="survey-q" data-q="q8">
@@ -984,7 +987,6 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
-        <div class="survey-scale-labels"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q8" value="">
       </div>
 
@@ -1000,23 +1002,25 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
-        <div class="survey-scale-labels"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q9" value="">
+      </div>
+
+      <div class="survey-section">
+        <h4 class="survey-section-title">Interest in a Solution Like Dryft</h4>
       </div>
 
       <div class="survey-q" data-q="q10">
         <div class="survey-q-head">
           <span class="survey-q-num">10</span>
-          <p class="survey-q-label">&ldquo;I would try a tool that helps me notice bad habits in real time.&rdquo;</p>
+          <p class="survey-q-label">&ldquo;I would try a tool that helps me catch bad spending habits in real time.&rdquo;</p>
         </div>
-        <div class="survey-scale" data-scale="q10" role="radiogroup" aria-label="Would try a tool that notices bad habits in real time">
+        <div class="survey-scale" data-scale="q10" role="radiogroup" aria-label="Would try a tool that catches bad spending habits in real time">
           <button type="button" class="survey-num" data-value="1" role="radio" aria-checked="false">1</button>
           <button type="button" class="survey-num" data-value="2" role="radio" aria-checked="false">2</button>
           <button type="button" class="survey-num" data-value="3" role="radio" aria-checked="false">3</button>
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
-        <div class="survey-scale-labels"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q10" value="">
       </div>
 
@@ -1032,20 +1036,31 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
-        <div class="survey-scale-labels"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q11" value="">
       </div>
 
       <div class="survey-q" data-q="q7">
         <div class="survey-q-head">
           <span class="survey-q-num">12</span>
-          <p class="survey-q-label">&ldquo;I would be comfortable with an app analyzing my spending patterns.&rdquo;</p>
+          <p class="survey-q-label">&ldquo;I&rsquo;d be comfortable with an app analyzing my spending patterns to help me improve.&rdquo;</p>
         </div>
         <div class="survey-scale survey-scale-two" data-chip-group="q7" role="radiogroup" aria-label="Comfort with app analyzing spending patterns">
           <button type="button" class="survey-num" data-value="Yes" role="radio" aria-checked="false">Yes</button>
           <button type="button" class="survey-num" data-value="No" role="radio" aria-checked="false">No</button>
         </div>
         <input type="hidden" name="q7" value="">
+      </div>
+
+      <div class="survey-section">
+        <h4 class="survey-section-title">Optional Open-Ended Question</h4>
+      </div>
+
+      <div class="survey-q survey-q-open" data-q="q12">
+        <div class="survey-q-head">
+          <span class="survey-q-num">13</span>
+          <p class="survey-q-label">What&rsquo;s the hardest part about managing money consistently?</p>
+        </div>
+        <textarea class="survey-textarea" name="q12" rows="3" maxlength="2000" placeholder="Optional — a sentence or two helps."></textarea>
       </div>
 
       <div class="survey-actions">
@@ -1065,6 +1080,6 @@
   </div>
 </div>
 
-<script defer src="assets/js/main.js?v=20260527h"></script>
+<script defer src="assets/js/main.js?v=20260527j"></script>
 </body>
 </html>

@@ -349,6 +349,27 @@ if (surveyModal && surveyForm) {
     const s = String(v == null ? '' : v).trim().slice(0, 8);
     return VALID_YESNO.has(s) ? s : '';
   }
+  // Open-ended free-text answer (q12). Strips control chars (keeps \n, \t),
+  // collapses long runs of whitespace, defuses spreadsheet formula injection
+  // (=, +, -, @, tab at start), and caps length so a single user can't bloat
+  // the sheet row. Empty strings are fine — q12 is optional.
+  // The Apps Script writeRow ALSO applies a formula-injection guard, so this
+  // is defense in depth — even if that guard is ever removed, the textarea
+  // value still arrives at the sheet as plain text.
+  function sanitizeText(v) {
+    if (v == null) return '';
+    let s = String(v);
+    // eslint-disable-next-line no-control-regex
+    s = s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    s = s.replace(/[ \t]{3,}/g, '  '); // collapse runaway spaces
+    s = s.replace(/\n{4,}/g, '\n\n\n'); // cap blank-line runs
+    s = s.trim().slice(0, 2000);
+    // Sheets/CSV formula injection: a leading =, +, -, @, or tab makes the
+    // cell evaluate as a formula. Prefix a single quote (Sheets' text-literal
+    // marker, rendered invisibly) to neutralize.
+    if (s && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return s;
+  }
 
   // Derive the question list from the form itself — one hidden input per question.
   // This auto-adapts if questions are added or removed from the HTML.
@@ -425,6 +446,7 @@ if (surveyModal && surveyForm) {
     body.set('stage', sanitizeStage(data.get('stage')));
     ['q1','q2','q3','q4','q5','q6','q8','q9','q10','q11'].forEach(k => body.set(k, sanitizeScale(data.get(k))));
     body.set('q7', sanitizeYesNo(data.get('q7')));
+    body.set('q12', sanitizeText(data.get('q12')));
 
     try {
       if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL.startsWith('https://')) {
