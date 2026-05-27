@@ -23,6 +23,7 @@ const {
   sanitizeEmail, isPlausibleEmail,
   sanitizeSource, sanitizeStage,
   scaleToNumber, sanitizeYesNo, sanitizeText,
+  verifyRecaptcha, rateLimit,
 } = require('./_lib/validate');
 
 // Likert question field names — keep this in sync with the form. The order
@@ -55,6 +56,26 @@ module.exports = async function handler(req, res) {
   if (!source)                  return res.status(400).json({ ok: false, reason: 'source' });
   if (!stage)                   return res.status(400).json({ ok: false, reason: 'stage' });
 
+  const ip = clientIp(req);
+  const ua = String(req.headers['user-agent'] || '').slice(0, 300);
+  const ipHashVal = hashIp(ip);
+
+  // App Check + rate limit run BEFORE any data-shaping work so a flooder
+  // can't make us do expensive sanitization on every rejected request.
+  const verif = await verifyRecaptcha(body.recaptchaToken, ip);
+  if (!verif.ok) {
+    return res.status(403).json({ ok: false, reason: 'recaptcha:' + verif.reason });
+  }
+  // Survey is more permissive than waitlist (3/min vs 5/min) because each
+  // waitlist signup naturally fires one survey within seconds — but still
+  // tight enough to catch obvious abuse.
+  const rlKey = 'rl:survey:' + (ipHashVal || ip || 'unknown');
+  const rl = await rateLimit(rlKey, { max: 3, windowSec: 60 });
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', String(Math.ceil((rl.retryAfterMs || 60000) / 1000)));
+    return res.status(429).json({ ok: false, reason: 'rate-limited' });
+  }
+
   // Build the Likert block as integers. Missing or invalid → null so the
   // doc shape is stable across responses.
   const likert = {};
@@ -62,9 +83,6 @@ module.exports = async function handler(req, res) {
 
   const q7  = sanitizeYesNo(body.q7);
   const q12 = sanitizeText(body.q12);
-
-  const ip = clientIp(req);
-  const ua = String(req.headers['user-agent'] || '').slice(0, 300);
 
   try {
     const docRef = await db().collection('survey').add({
@@ -76,7 +94,7 @@ module.exports = async function handler(req, res) {
       ...likert,
       q7,            // 'Yes' | 'No' | ''
       q12,           // free text, max 2000 chars
-      ipHash: hashIp(ip),
+      ipHash: ipHashVal,
       userAgent: ua,
     });
     return res.status(200).json({ ok: true, id: docRef.id });

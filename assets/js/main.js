@@ -72,6 +72,30 @@ reveals.forEach(r => revealObserver.observe(r));
 ================================================================= */
 const WAITLIST_ENDPOINT = '/api/waitlist';
 const SURVEY_ENDPOINT   = '/api/survey';
+
+// reCAPTCHA v3 site key, set in the <meta> in index.html. If the placeholder
+// is still in place we never call grecaptcha (and the server-side verifier
+// also no-ops when its secret isn't set), so the site works either way.
+const RECAPTCHA_SITE_KEY = (document.querySelector('meta[name="recaptcha-site-key"]') || {}).content || '';
+const RECAPTCHA_ENABLED  = RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY.indexOf('YOUR_') !== 0;
+
+// Resolves to a fresh v3 token, or '' if reCAPTCHA isn't enabled or the
+// script hasn't loaded yet. We never block the user on this — if it returns
+// '', the server side either accepts (reCAPTCHA disabled) or rejects with
+// recaptcha:missing-token (reCAPTCHA enforced), and either is acceptable
+// for a transient script-load failure.
+function getRecaptchaToken(action) {
+  if (!RECAPTCHA_ENABLED || typeof grecaptcha === 'undefined') return Promise.resolve('');
+  return new Promise(function (resolve) {
+    try {
+      grecaptcha.ready(function () {
+        grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: action })
+          .then(function (t) { resolve(t || ''); })
+          .catch(function () { resolve(''); });
+      });
+    } catch (_) { resolve(''); }
+  });
+}
 const PAGE_LOAD_TS = Date.now();
 const MIN_HUMAN_DWELL_MS = 1200;
 const MIN_SUBMIT_INTERVAL_MS = 800;
@@ -173,12 +197,14 @@ async function handleWaitlistSubmit(form, source) {
   // shouldn't wait on network latency before seeing the survey. Errors
   // surface in the console; the server-side write is idempotent enough
   // that a quiet retry from the user is harmless.
-  fetch(WAITLIST_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, source, dwell_ms: now - PAGE_LOAD_TS }),
-    keepalive: true,  // lets the request finish even if the tab navigates
-  }).catch(err => console.error('[dryft waitlist] save failed:', err));
+  getRecaptchaToken('waitlist').then(function (recaptchaToken) {
+    return fetch(WAITLIST_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, source: source, dwell_ms: now - PAGE_LOAD_TS, recaptchaToken: recaptchaToken }),
+      keepalive: true,  // lets the request finish even if the tab navigates
+    });
+  }).catch(function (err) { console.error('[dryft waitlist] save failed:', err); });
 }
 
 ['hero-form', 'final-form'].forEach((id) => {
@@ -451,6 +477,10 @@ if (surveyModal && surveyForm) {
       .forEach(k => { payload[k] = sanitizeScale(data.get(k)); });
 
     try {
+      // Attach a fresh reCAPTCHA token (or '' if disabled). Token must be
+      // generated AT submit time — v3 tokens expire after ~2 minutes.
+      payload.recaptchaToken = await getRecaptchaToken('survey');
+
       // Same-origin POST → we can await the real response (no opaque no-cors).
       // If the server returns non-2xx we still show success — UX-wise, the
       // user shouldn't be punished for a server hiccup, and we'll see the

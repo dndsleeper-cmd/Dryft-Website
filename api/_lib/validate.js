@@ -139,6 +139,114 @@ function clientIp(req) {
   return xff || req.socket?.remoteAddress || null;
 }
 
+// --- reCAPTCHA v3 verification --------------------------------------------
+// We use plain reCAPTCHA v3 (not Firebase App Check) because the site has
+// no other Firebase Web SDK use — pulling in the Firebase JS bundle just to
+// wrap reCAPTCHA would cost ~30 KB for marginal benefit.
+//
+// Behavior:
+//   - If RECAPTCHA_SECRET_KEY is NOT set → verification is skipped entirely.
+//     This lets the endpoint work in dev / before the secret is provisioned.
+//   - If the secret IS set → token is required; missing or invalid → reject.
+//     Score < 0.5 (Google's default suspicious threshold) → reject.
+//
+// Returns { ok: true, score? } or { ok: false, reason, score? }.
+async function verifyRecaptcha(token, ip) {
+  const secret = process.env.RECAPTCHA_SECRET_KEY;
+  if (!secret) return { ok: true, skipped: true };
+  if (!token)  return { ok: false, reason: 'missing-token' };
+
+  const params = new URLSearchParams();
+  params.set('secret', secret);
+  params.set('response', String(token).slice(0, 4096));
+  if (ip) params.set('remoteip', ip);
+
+  let data;
+  try {
+    const resp = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params,
+      signal: AbortSignal.timeout(4000),
+    });
+    data = await resp.json();
+  } catch (err) {
+    // If Google is unreachable, fail OPEN — better to accept a real signup
+    // than to lose data because of a transient outage. The rate limiter
+    // still applies as a backstop.
+    console.warn('[recaptcha] siteverify unreachable:', err && err.message);
+    return { ok: true, degraded: true };
+  }
+
+  if (!data || !data.success) {
+    return { ok: false, reason: 'failed', errors: data && data['error-codes'] };
+  }
+  // v3 returns a score in [0, 1]. 1.0 = very likely human, 0.0 = very likely bot.
+  if (typeof data.score === 'number' && data.score < 0.5) {
+    return { ok: false, reason: 'low-score', score: data.score };
+  }
+  return { ok: true, score: data.score };
+}
+
+// --- Rate limiting --------------------------------------------------------
+// Tries Upstash Redis (durable, distributed across serverless instances)
+// first; falls back to an in-memory Map (works only on a warm instance, but
+// catches the most common abuse pattern — same attacker, rapid bursts).
+//
+// Pattern: fixed-window counter. Each key gets INCR'd; on the first hit
+// inside a fresh window, we set a TTL. Above `max` in the window → blocked.
+//
+// Returns { allowed: true } or { allowed: false, retryAfterMs }.
+const _memCounters = new Map();
+
+async function upstashFetch(pathSegments) {
+  const url   = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  const resp = await fetch(url + '/' + pathSegments.map(encodeURIComponent).join('/'), {
+    headers: { Authorization: 'Bearer ' + token },
+    signal: AbortSignal.timeout(2000),
+  });
+  if (!resp.ok) throw new Error('upstash ' + resp.status);
+  return resp.json();
+}
+
+async function rateLimit(key, { max = 5, windowSec = 60 } = {}) {
+  // Try Upstash (real distributed rate limit) first.
+  try {
+    const incrRes = await upstashFetch(['incr', key]);
+    if (incrRes && typeof incrRes.result === 'number') {
+      // First hit in a fresh window — apply TTL.
+      if (incrRes.result === 1) {
+        await upstashFetch(['expire', key, String(windowSec)]).catch(() => {});
+      }
+      if (incrRes.result > max) {
+        return { allowed: false, retryAfterMs: windowSec * 1000 };
+      }
+      return { allowed: true, source: 'upstash', count: incrRes.result };
+    }
+  } catch (err) {
+    console.warn('[ratelimit] upstash unreachable:', err && err.message);
+    // fall through to in-memory
+  }
+
+  // In-memory fallback (per warm instance).
+  const now = Date.now();
+  const windowMs = windowSec * 1000;
+  const entry = _memCounters.get(key) || { count: 0, resetAt: now + windowMs };
+  if (now > entry.resetAt) { entry.count = 0; entry.resetAt = now + windowMs; }
+  entry.count++;
+  _memCounters.set(key, entry);
+  // Periodically prune expired entries so the map can't grow unbounded.
+  if (_memCounters.size > 1000) {
+    for (const [k, v] of _memCounters) if (now > v.resetAt) _memCounters.delete(k);
+  }
+  if (entry.count > max) {
+    return { allowed: false, retryAfterMs: entry.resetAt - now, source: 'memory' };
+  }
+  return { allowed: true, source: 'memory', count: entry.count };
+}
+
 module.exports = {
   sanitizeEmail, isPlausibleEmail,
   sanitizeSource, sanitizeStage,
@@ -147,4 +255,5 @@ module.exports = {
   sanitizeInt,
   hashIp, clientIp,
   readBody,
+  verifyRecaptcha, rateLimit,
 };

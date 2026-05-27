@@ -19,6 +19,7 @@ const {
   readBody, clientIp, hashIp,
   sanitizeEmail, isPlausibleEmail,
   sanitizeSource, sanitizeInt,
+  verifyRecaptcha, rateLimit,
 } = require('./_lib/validate');
 
 module.exports = async function handler(req, res) {
@@ -49,6 +50,23 @@ module.exports = async function handler(req, res) {
 
   const ip = clientIp(req);
   const ua = String(req.headers['user-agent'] || '').slice(0, 300);
+  const ipHashVal = hashIp(ip);
+
+  // App Check: reCAPTCHA v3 token verification. No-op if RECAPTCHA_SECRET_KEY
+  // isn't set, so the endpoint stays functional in dev / before provisioning.
+  const verif = await verifyRecaptcha(body.recaptchaToken, ip);
+  if (!verif.ok) {
+    return res.status(403).json({ ok: false, reason: 'recaptcha:' + verif.reason });
+  }
+
+  // Rate limit: 5 waitlist submits per IP per 60 seconds. Falls back to
+  // in-memory when Upstash isn't configured.
+  const rlKey = 'rl:waitlist:' + (ipHashVal || ip || 'unknown');
+  const rl = await rateLimit(rlKey, { max: 5, windowSec: 60 });
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', String(Math.ceil((rl.retryAfterMs || 60000) / 1000)));
+    return res.status(429).json({ ok: false, reason: 'rate-limited' });
+  }
 
   try {
     const docRef = await db().collection('waitlist').add({
@@ -57,7 +75,7 @@ module.exports = async function handler(req, res) {
       emailLower: email.toLowerCase(),  // for dedup queries later
       source,
       dwellMs: dwell,
-      ipHash: hashIp(ip),
+      ipHash: ipHashVal,
       userAgent: ua,
     });
     return res.status(200).json({ ok: true, id: docRef.id });
