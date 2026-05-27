@@ -123,7 +123,10 @@ h1 em, h2 em, h3 em, .hl {
 .section-label.center { display: block; }
 
 /* =========================== NAV =========================== */
-nav {
+/* Scoped to #nav so the bare `nav` selector doesn't also apply to other
+   nested <nav> elements like the footer's link group, which is grid-flow,
+   not fixed-position. */
+nav#nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: grid; grid-template-columns: auto 1fr auto;
   align-items: center; gap: 2rem;
@@ -157,6 +160,23 @@ nav.scrolled {
 .nav-cta:hover { background: #a8f0d1; border-color: #a8f0d1; color: #0d0e10; }
 nav.scrolled .nav-cta { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 nav.scrolled .nav-cta:hover { background: var(--brand); border-color: var(--brand); }
+
+/* Back-to-site link on legal pages — quieter than the primary CTA, with a
+   chevron icon and tight padding so it reads as secondary nav. */
+.nav-back {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-family: 'Inter', sans-serif; font-size: 0.84rem; font-weight: 500;
+  color: var(--ink); opacity: 0.75;
+  text-decoration: none;
+  padding: 0.4rem 0.2rem;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.nav-back:hover { opacity: 1; transform: translateX(-2px); }
+.nav-back svg { display: block; }
+@media (max-width: 560px) {
+  .nav-back span { display: none; }   /* icon-only on small screens */
+  .nav-back { padding: 0.4rem 0.3rem; }
+}
 
 /* ----- mobile menu toggle (hidden on desktop, shown when nav-links collapse) ----- */
 .nav-toggle {
@@ -484,7 +504,8 @@ body.menu-open { overflow: hidden; }
    The font-size uses !important because .final-cta > .final-cta-inner > p
    sets font-size:1rem with higher specificity and would otherwise win. */
 .form-consent {
-  margin: 0.55rem auto 0 !important;
+  margin-top: 0.55rem;
+  margin-bottom: 0 !important;
   font-size: 0.64rem !important;
   line-height: 1.45;
   color: var(--muted);
@@ -500,9 +521,17 @@ body.menu-open { overflow: hidden; }
   text-underline-offset: 2px;
 }
 .form-consent a:hover { color: var(--brand); }
+/* Final-CTA context centers via auto margins (parent's text-align: center only
+   centers inline content; this block needs margin:auto to actually center).
+   The hero version aligns with .hero-fine — left-anchored on desktop, centered
+   on mobile via the existing 980px override below. */
+.final-cta .form-consent {
+  margin-left: auto;
+  margin-right: auto;
+}
 /* Survey-modal variant — centered + a bit more breathing room under the button */
 .survey-consent {
-  margin: 0.9rem auto 0;
+  margin: 0.9rem auto 0 !important;
   text-align: center;
   max-width: 420px;
 }
@@ -1064,40 +1093,62 @@ body.menu-open { overflow: hidden; }
 }
 .cta-fine { margin-top: 1.3rem !important; font-size: 0.82rem !important; color: var(--subtle) !important; }
 
-/* =========================== FOOTER =========================== */
+/* =========================== FOOTER ===========================
+   Two-row layout:
+     Row 1 (top, columns:  brand | nav links right):  brand mark, then a small
+       Privacy / Terms / Contact nav justified to the right.
+     Row 2 (full width):  legal/marketing meta line ("™ 2026 Dryft · ...").
+     Row 3 (full width, with border-top):  CASL fine-print block.
+   On mobile everything stacks centered. */
 footer {
-  padding: 2.5rem 1.6rem;
+  padding: 2.5rem 1.6rem 2rem;
   border-top: 1px solid var(--border);
   background: var(--bg);
-  display: grid; grid-template-columns: auto 1fr auto;
-  align-items: center; gap: 1.5rem;
-  max-width: 1180px; margin: 0 auto;
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.7rem 1.5rem;
 }
-.footer-brand { display: inline-flex; align-items: center; gap: 0.55rem; font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-size: 1.15rem; font-weight: 600; letter-spacing: -0.025em; color: var(--ink); }
+.footer-brand {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 1.15rem; font-weight: 600; letter-spacing: -0.025em;
+  color: var(--ink);
+}
 .footer-brand svg { color: var(--ink); }
-footer p { font-size: 0.8rem; color: var(--muted); }
-footer p:nth-of-type(2) { text-align: right; color: var(--subtle); }
-/* Full-width compliance row spanning all footer columns — CASL identification,
-   unsubscribe statement, and mailing address. Tiny + translucent so it reads
-   as legal fine-print, not marketing. */
+
+.footer-links {
+  display: inline-flex; gap: 1.4rem;
+  justify-self: end;
+  font-size: 0.86rem;
+}
+.footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.18s ease;
+}
+.footer-links a:hover { color: var(--brand); }
+
+.footer-meta {
+  grid-column: 1 / -1;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0;
+  padding-top: 0.5rem;
+}
 .footer-fine {
   grid-column: 1 / -1;
-  font-size: 0.66rem !important;
-  line-height: 1.5;
-  color: var(--subtle) !important;
+  font-size: 0.66rem;
+  line-height: 1.55;
+  color: var(--subtle);
   opacity: 0.7;
-  margin-top: 0.6rem;
+  margin: 0;
   padding-top: 0.9rem;
   border-top: 1px solid var(--border);
-  text-align: center !important;
 }
-footer a {
-  color: var(--muted);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: color 0.2s ease;
-}
-footer a:hover { color: var(--brand); }
 
 /* =========================== REVEAL =========================== */
 .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.7s ease, transform 0.7s ease; }
@@ -1140,7 +1191,7 @@ footer a:hover { color: var(--brand); }
 
 /* Small tablet / large phone */
 @media (max-width: 720px) {
-  nav { padding: 0.85rem 1.1rem; gap: 1rem; }
+  nav#nav { padding: 0.85rem 1.1rem; gap: 1rem; }
   .nav-cta { font-size: 0.8rem; padding: 0.5rem 0.9rem; }
   .brand-word { font-size: 1.2rem; }
   .brand-mark { width: 22px; height: 22px; }
@@ -1170,9 +1221,9 @@ footer a:hover { color: var(--brand); }
   .trust-strip { margin-bottom: 1.8rem; }
   .final-cta { padding: 2.8rem 1.1rem 3rem; }
   .final-cta h2 { font-size: clamp(2rem, 7vw, 2.8rem); }
-  footer { grid-template-columns: 1fr; text-align: center; gap: 0.7rem; padding: 2rem 1.1rem; }
+  footer { grid-template-columns: 1fr; text-align: center; gap: 0.8rem; padding: 2rem 1.1rem 1.8rem; }
   .footer-brand { justify-self: center; }
-  footer p:last-child { text-align: center; }
+  .footer-links { justify-self: center; gap: 1.1rem; }
 }
 
 /* Mobile composition (<= 560px): two full-size phones, chat on top.
