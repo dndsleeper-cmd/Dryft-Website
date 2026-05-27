@@ -317,6 +317,8 @@ if (surveyModal && surveyForm) {
   ]);
   // Likert scale: empty string (unanswered) or "1"–"5"
   const VALID_SCALE = new Set(['', '1', '2', '3', '4', '5']);
+  // Yes/No question (q7): empty string (unanswered) or "Yes"/"No"
+  const VALID_YESNO = new Set(['', 'Yes', 'No']);
   // Survey-level throttle to mirror the waitlist anti-abuse posture
   let surveySubmitCount = 0;
   let surveyLastSubmitAt = 0;
@@ -342,6 +344,10 @@ if (surveyModal && surveyForm) {
     // Reject anything that isn't exactly "" or "1".."5"
     const s = String(v == null ? '' : v).trim();
     return VALID_SCALE.has(s) ? s : '';
+  }
+  function sanitizeYesNo(v) {
+    const s = String(v == null ? '' : v).trim().slice(0, 8);
+    return VALID_YESNO.has(s) ? s : '';
   }
 
   // Derive the question list from the form itself — one hidden input per question.
@@ -417,7 +423,8 @@ if (surveyModal && surveyForm) {
     body.set('source', String(surveySource || '').replace(/[^a-z]/gi, '').slice(0, 16));
     body.set('timestamp', new Date().toISOString());
     body.set('stage', sanitizeStage(data.get('stage')));
-    ['q1','q2','q3','q4','q5','q6','q7'].forEach(k => body.set(k, sanitizeScale(data.get(k))));
+    ['q1','q2','q3','q4','q5','q6','q8','q9','q10','q11'].forEach(k => body.set(k, sanitizeScale(data.get(k))));
+    body.set('q7', sanitizeYesNo(data.get('q7')));
 
     try {
       if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL.startsWith('https://')) {

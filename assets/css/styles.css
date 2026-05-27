@@ -1930,6 +1930,8 @@ footer {
   gap: 0.45rem;
   margin-top: 0.3rem;
 }
+/* Two-button variant (e.g. Yes/No) — spans the full row width */
+.survey-scale.survey-scale-two { grid-template-columns: repeat(2, 1fr); }
 .survey-num {
   appearance: none; -webkit-appearance: none;
   font-family: 'JetBrains Mono', monospace;
