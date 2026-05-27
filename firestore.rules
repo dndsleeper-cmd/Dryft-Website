@@ -1,0 +1,25 @@
+// Firestore Security Rules — Dryft
+//
+// Paste this into the Firebase Console at:
+//   Firestore Database → Rules
+//
+// Posture: DENY ALL client traffic. Every write to Firestore goes through
+// the Vercel serverless functions (/api/waitlist, /api/survey), which
+// authenticate to Firebase via the Admin SDK using a service account.
+// The Admin SDK BYPASSES these rules by design, so server writes work
+// while no anonymous browser can read or write a single doc.
+//
+// If you ever add a feature where browsers read/write directly (e.g. a
+// signed-in admin dashboard), add narrowly-scoped rules below — never
+// flip the catch-all to `true`.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Catch-all: deny everything from the client.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

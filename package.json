@@ -1,0 +1,12 @@
+{
+  "name": "dryft-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dryft landing page + waitlist/survey API routes (Vercel + Firestore).",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}

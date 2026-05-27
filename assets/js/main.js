@@ -60,12 +60,18 @@ reveals.forEach(r => revealObserver.observe(r));
      1. Honeypot field (in markup) — bots fill all visible inputs
      2. Short dwell time — instant-submit bots get rejected
      3. Per-form throttle — no spam-clicking submit
-     4. Per-page-load rate limit (in-memory) — protects the Apps Script endpoint
+     4. Per-page-load rate limit (in-memory) — protects the API endpoint
         from one tab hammering. Resets on reload, which is fine for the threat we
         actually care about (bots, not determined humans).
      5. Strict email validation + sanitization
+
+   The endpoints below are same-origin Vercel serverless functions that
+   write to Firestore via the Firebase Admin SDK. Server-side validation
+   mirrors the client-side sanitizers as defense in depth — the client is
+   not the source of truth for what's allowed.
 ================================================================= */
-const SHEET_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxhbDCy2s1nhtvimGFl5ioW3yvTgnO4p_x4mZElzXjUqaXHzu72NQrD3vFcAzhy0WQmrg/exec';
+const WAITLIST_ENDPOINT = '/api/waitlist';
+const SURVEY_ENDPOINT   = '/api/survey';
 const PAGE_LOAD_TS = Date.now();
 const MIN_HUMAN_DWELL_MS = 1200;
 const MIN_SUBMIT_INTERVAL_MS = 800;
@@ -162,23 +168,17 @@ async function handleWaitlistSubmit(form, source) {
   showSuccess(source);
   openSurvey(email, source);
 
-  if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL.startsWith('https://')) {
-    // URLSearchParams → Content-Type: application/x-www-form-urlencoded.
-    // This is what populates Apps Script's e.parameter.email.
-    // FormData would set multipart/form-data, which only fills e.postData.contents.
-    const body = new URLSearchParams();
-    body.set('email', email);
-    body.set('source', source);
-    body.set('timestamp', new Date().toISOString());
-    body.set('dwell_ms', String(now - PAGE_LOAD_TS));
-    // Background POST — does not block the modal. Errors are reported quietly;
-    // we don't log success because no-cors returns opaque responses anyway.
-    fetch(SHEET_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body })
-      .catch(err => console.error('[dryft waitlist] save failed:', err));
-  } else if (typeof console !== 'undefined') {
-    // Dev-only path when no webhook is configured — shows the payload locally.
-    console.info('[dryft waitlist · dev]', { email, source });
-  }
+  // Same-origin POST to our Vercel function — we CAN read the response
+  // (no need for no-cors), but we still don't await it because the user
+  // shouldn't wait on network latency before seeing the survey. Errors
+  // surface in the console; the server-side write is idempotent enough
+  // that a quiet retry from the user is harmless.
+  fetch(WAITLIST_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, source, dwell_ms: now - PAGE_LOAD_TS }),
+    keepalive: true,  // lets the request finish even if the tab navigates
+  }).catch(err => console.error('[dryft waitlist] save failed:', err));
 }
 
 ['hero-form', 'final-form'].forEach((id) => {
@@ -435,31 +435,38 @@ if (surveyModal && surveyForm) {
     isSurveySubmitting = true;
     showSurveySendingNotice(true);
 
+    // Build the JSON payload. The server re-sanitizes every field, but we
+    // still scrub here so the wire format is clean and the dev console payload
+    // is easy to read. surveyEmail came from sanitizeEmail() earlier; we
+    // re-validate before posting in case the reference was tampered with.
     const data = new FormData(surveyForm);
-    const body = new URLSearchParams();
-    body.set('kind', 'survey');
-    // Re-sanitize the email here too — surveyEmail came from sanitizeEmail() earlier,
-    // but we re-validate before posting in case the reference was tampered with.
-    body.set('email', sanitizeEmail(surveyEmail || ''));
-    body.set('source', String(surveySource || '').replace(/[^a-z]/gi, '').slice(0, 16));
-    body.set('timestamp', new Date().toISOString());
-    body.set('stage', sanitizeStage(data.get('stage')));
-    ['q1','q2','q3','q4','q5','q6','q8','q9','q10','q11'].forEach(k => body.set(k, sanitizeScale(data.get(k))));
-    body.set('q7', sanitizeYesNo(data.get('q7')));
-    body.set('q12', sanitizeText(data.get('q12')));
+    const payload = {
+      email:  sanitizeEmail(surveyEmail || ''),
+      source: String(surveySource || '').replace(/[^a-z]/gi, '').slice(0, 16),
+      stage:  sanitizeStage(data.get('stage')),
+      q7:     sanitizeYesNo(data.get('q7')),
+      q12:    sanitizeText(data.get('q12')),
+    };
+    ['q1','q2','q3','q4','q5','q6','q8','q9','q10','q11']
+      .forEach(k => { payload[k] = sanitizeScale(data.get(k)); });
 
     try {
-      if (SHEET_WEBHOOK_URL && SHEET_WEBHOOK_URL.startsWith('https://')) {
-        await fetch(SHEET_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body });
-      } else if (typeof console !== 'undefined') {
-        // Dev-only path when no webhook is configured.
-        console.info('[dryft survey · dev]', Object.fromEntries(body));
-      }
+      // Same-origin POST → we can await the real response (no opaque no-cors).
+      // If the server returns non-2xx we still show success — UX-wise, the
+      // user shouldn't be punished for a server hiccup, and we'll see the
+      // failure in Vercel logs to investigate.
+      const resp = await fetch(SURVEY_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      });
+      if (!resp.ok) console.warn('[dryft survey] non-OK response:', resp.status);
     } catch (err) {
       console.error('[dryft survey] save failed:', err);
     } finally {
       // Clear the guard whether the POST succeeded or failed — request has at
-      // least left the browser by this point with no-cors mode.
+      // least left the browser by this point.
       isSurveySubmitting = false;
       showSurveySendingNotice(false);
     }
