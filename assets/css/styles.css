@@ -136,9 +136,21 @@ nav#nav {
   /* over the dark statement bg by default: light text */
   color: rgba(255,255,255,0.92);
 }
-nav.scrolled {
+/* Scrolled state — also scoped to #nav so its specificity matches the base
+   `nav#nav` rule above (otherwise the base color wins and the brand stays
+   white on the scrolled light background). */
+nav#nav.scrolled {
   background: rgba(245,244,240,0.88);
   border-color: var(--border);
+  backdrop-filter: blur(16px) saturate(1.05);
+  -webkit-backdrop-filter: blur(16px) saturate(1.05);
+  color: var(--ink);
+}
+/* Legal pages — no scroll handler runs, the page bg is always light, so force
+   the dark-on-light nav style as the default. */
+body.legal-page nav#nav {
+  background: rgba(245,244,240,0.88);
+  border-bottom-color: var(--border);
   backdrop-filter: blur(16px) saturate(1.05);
   -webkit-backdrop-filter: blur(16px) saturate(1.05);
   color: var(--ink);
