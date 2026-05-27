@@ -20,22 +20,23 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="Permissions-Policy" content="accelerometer=(), autoplay=(), browsing-topics=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), hid=(), idle-detection=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), serial=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=(), interest-cohort=()">
 
-<link rel="canonical" href="https://dryft.app/">
+<link rel="canonical" href="https://thedryft.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Dryft">
 <meta property="og:title" content="Dryft — A Budget that Adapts to Real Life.">
 <meta property="og:description" content="The finance coach that learns your habits and nudges you on day 9 — when one change still saves the month.">
-<meta property="og:url" content="https://dryft.app/">
-<meta property="og:image" content="https://dryft.app/og-image.png">
+<meta property="og:url" content="https://thedryft.com/">
+<meta property="og:image" content="https://thedryft.com/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Dryft — A Budget that Adapts to Real Life.">
 <meta property="og:locale" content="en_US">
+<!-- Twitter Card markup still works without a twitter:site attribution.
+     Cards render normally; they're just not linked to an X/Twitter account. -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@dryftapp">
 <meta name="twitter:title" content="Dryft — A Budget that Adapts to Real Life.">
 <meta name="twitter:description" content="The finance coach that learns your habits and nudges you on day 9 — when one change still saves the month.">
-<meta name="twitter:image" content="https://dryft.app/og-image.png">
+<meta name="twitter:image" content="https://thedryft.com/og-image.png">
 <meta name="twitter:image:alt" content="Dryft — A Budget that Adapts to Real Life.">
 <!-- Favicon URL is version-busted because browsers cache favicons extremely
      aggressively (often surviving hard reloads). Bump the ?v= on every change. -->
@@ -43,8 +44,8 @@
 <link rel="apple-touch-icon" href="assets/favicon.svg?v=20260527b">
 <link rel="manifest" href="manifest.json">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-<link rel="alternate" hreflang="en" href="https://dryft.app/">
-<link rel="alternate" hreflang="x-default" href="https://dryft.app/">
+<link rel="alternate" hreflang="en" href="https://thedryft.com/">
+<link rel="alternate" hreflang="x-default" href="https://thedryft.com/">
 <!-- iOS / Android installable PWA + tile hints (competitive parity with Cleo, Monarch, Origin, etc.) -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -71,32 +72,36 @@
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://dryft.app/#organization",
+      "@id": "https://thedryft.com/#organization",
       "name": "Dryft",
-      "url": "https://dryft.app/",
-      "logo": "https://dryft.app/assets/favicon.svg",
+      "url": "https://thedryft.com/",
+      "logo": "https://thedryft.com/assets/favicon.svg",
       "description": "Finance coach that learns your habits and nudges you before you slip.",
-      "foundingLocation": "Waterloo, Ontario, Canada"
+      "foundingLocation": "Waterloo, Ontario, Canada",
+      "sameAs": [
+        "https://www.instagram.com/thedryft_com/",
+        "https://www.tiktok.com/@thedryft.com"
+      ]
     },
     {
       "@type": "WebSite",
-      "@id": "https://dryft.app/#website",
-      "url": "https://dryft.app/",
+      "@id": "https://thedryft.com/#website",
+      "url": "https://thedryft.com/",
       "name": "Dryft",
       "description": "A Budget that Adapts to Real Life — a finance coach that nudges you before you dryft.",
-      "publisher": { "@id": "https://dryft.app/#organization" },
+      "publisher": { "@id": "https://thedryft.com/#organization" },
       "inLanguage": "en-US"
     },
     {
       "@type": "SoftwareApplication",
-      "@id": "https://dryft.app/#software",
+      "@id": "https://thedryft.com/#software",
       "name": "Dryft",
       "applicationCategory": "FinanceApplication",
       "applicationSubCategory": "Personal Finance",
       "operatingSystem": "iOS, Android",
-      "url": "https://dryft.app/",
+      "url": "https://thedryft.com/",
       "description": "A finance accountability coach for personal finance. Predicts spending slips with a reinforcement-learning habit model and nudges you on day 9 — when one change still saves the month.",
-      "publisher": { "@id": "https://dryft.app/#organization" },
+      "publisher": { "@id": "https://thedryft.com/#organization" },
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -113,10 +118,10 @@
     },
     {
       "@type": "Service",
-      "@id": "https://dryft.app/#service",
+      "@id": "https://thedryft.com/#service",
       "name": "Dryft — Predictive Finance Coaching",
       "serviceType": "Personal Finance Coaching",
-      "provider": { "@id": "https://dryft.app/#organization" },
+      "provider": { "@id": "https://thedryft.com/#organization" },
       "areaServed": [
         { "@type": "Country", "name": "Canada" },
         { "@type": "Country", "name": "United States" }
@@ -129,7 +134,7 @@
     },
     {
       "@type": "FAQPage",
-      "@id": "https://dryft.app/#faq",
+      "@id": "https://thedryft.com/#faq",
       "mainEntity": [
         {
           "@type": "Question",

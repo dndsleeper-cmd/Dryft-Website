@@ -22,7 +22,7 @@ const {
 } = require('./_lib/validate');
 
 module.exports = async function handler(req, res) {
-  // Same-origin only (the site posts from dryft.app). Block other methods
+  // Same-origin only (the site posts from thedryft.com). Block other methods
   // and reject preflight from unexpected origins by simply not setting CORS.
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');

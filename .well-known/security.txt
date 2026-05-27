@@ -1,5 +1,5 @@
-Contact: mailto:security@dryft.app
+Contact: mailto:security@thedryft.com
 Expires: 2027-05-25T00:00:00.000Z
 Preferred-Languages: en
-Canonical: https://dryft.app/.well-known/security.txt
-Policy: https://dryft.app/#faq
+Canonical: https://thedryft.com/.well-known/security.txt
+Policy: https://thedryft.com/#faq
