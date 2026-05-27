@@ -2010,6 +2010,23 @@ footer {
   padding: 0 0.15rem;
 }
 
+/* Per-question mini-captions under buttons 1 and 5. The grid mirrors the
+   button row's 5-column layout so each label sits centered under its own
+   button rather than at the row edges. Buttons 2-4 are intentionally
+   uncovered — no caption there. */
+.survey-scale-endlabels {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  margin-top: 0.25rem;
+  font-size: 0.58rem;
+  color: var(--ink-2);
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+}
+.survey-scale-endlabels span { text-align: center; }
+.survey-scale-endlabels span:first-child { grid-column: 1; }
+.survey-scale-endlabels span:last-child  { grid-column: 5; }
+
 /* Actions */
 .survey-actions {
   display: flex; gap: 0.6rem;

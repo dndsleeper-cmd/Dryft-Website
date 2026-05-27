@@ -6,12 +6,13 @@
  * a response back to its signup.
  *
  * Body (JSON or form-urlencoded):
- *   email     required
- *   source    required ("hero" or "final" — which form the user came from)
- *   stage     required — one of the 5 life stages
- *   q1..q11   Likert scale, "1".."5" (strings on the wire, stored as ints)
- *   q7        Yes/No
- *   q12       open-ended text (optional)
+ *   email        required
+ *   source       required ("hero" or "final" — which form the user came from)
+ *   careerStage  required — one of VALID_CAREER_STAGES in validate.js
+ *   lifeStage    required — one of VALID_LIFE_STAGES in validate.js
+ *   q1..q11      Likert scale, "1".."5" (strings on the wire, stored as ints)
+ *   q7           Yes/No
+ *   q12          open-ended text (optional)
  *
  * Likert questions are stored as integers (1..5) so they're aggregatable
  * in BigQuery/Looker without parseInt every time. Missing answers store as
@@ -25,7 +26,8 @@ const {
   sanitizeEmail,
   isPlausibleEmail,
   sanitizeSource,
-  sanitizeStage,
+  sanitizeCareerStage,
+  sanitizeLifeStage,
   scaleToNumber,
   sanitizeYesNo,
   sanitizeText,
@@ -57,11 +59,13 @@ module.exports = async function handler(req, res) {
 
   const email = sanitizeEmail(body.email);
   const source = sanitizeSource(body.source);
-  const stage = sanitizeStage(body.stage);
+  const careerStage = sanitizeCareerStage(body.careerStage);
+  const lifeStage = sanitizeLifeStage(body.lifeStage);
 
   if (!isPlausibleEmail(email)) return res.status(400).json({ ok: false, reason: 'email' });
   if (!source) return res.status(400).json({ ok: false, reason: 'source' });
-  if (!stage) return res.status(400).json({ ok: false, reason: 'stage' });
+  if (!careerStage) return res.status(400).json({ ok: false, reason: 'careerStage' });
+  if (!lifeStage) return res.status(400).json({ ok: false, reason: 'lifeStage' });
 
   const ip = clientIp(req);
   const ua = String(req.headers['user-agent'] || '').slice(0, 300);
@@ -99,7 +103,8 @@ module.exports = async function handler(req, res) {
         email,
         emailLower: email.toLowerCase(),
         source,
-        stage,
+        careerStage,
+        lifeStage,
         ...likert,
         q7, // 'Yes' | 'No' | ''
         q12, // free text, max 2000 chars

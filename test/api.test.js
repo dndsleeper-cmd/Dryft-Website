@@ -290,7 +290,8 @@ async function run() {
     const payload = {
       email: 'mid@example.com',
       source: 'final',
-      stage: 'Mid-career professional',
+      careerStage: 'Mid-career professional',
+      lifeStage: 'Living independently',
       q1: '5',
       q2: '4',
       q3: '3',
@@ -312,7 +313,8 @@ async function run() {
       'wrote 1 doc to survey collection',
     );
     const d = writes[0]?.doc || {};
-    ok(d.stage === 'Mid-career professional', 'stage allowlist accepts known value');
+    ok(d.careerStage === 'Mid-career professional', 'careerStage allowlist accepts known value');
+    ok(d.lifeStage === 'Living independently', 'lifeStage allowlist accepts known value');
     ok(d.q1 === 5 && d.q11 === 5, 'Likert stored as integer, not string');
     ok(d.q7 === 'Yes', 'q7 Yes/No stored');
     ok(d.q12 === 'Subscriptions sneak up on me each month.', 'q12 free text stored');
@@ -321,9 +323,30 @@ async function run() {
   // -- Required field validation
   {
     writes.length = 0;
-    const { req, res } = fakeReqRes('POST', { email: 'a@b.co', source: 'hero' /* no stage */ });
+    const { req, res } = fakeReqRes('POST', {
+      email: 'a@b.co',
+      source: 'hero' /* no careerStage */,
+    });
     await survey(req, res);
-    ok(res.statusCode === 400 && res.body.reason === 'stage', 'missing stage → 400 reason:stage');
+    ok(
+      res.statusCode === 400 && res.body.reason === 'careerStage',
+      'missing careerStage → 400 reason:careerStage',
+    );
+  }
+
+  // -- Missing lifeStage rejected (separately from careerStage)
+  {
+    writes.length = 0;
+    const { req, res } = fakeReqRes('POST', {
+      email: 'a@b.co',
+      source: 'hero',
+      careerStage: 'Retired',
+    });
+    await survey(req, res);
+    ok(
+      res.statusCode === 400 && res.body.reason === 'lifeStage',
+      'missing lifeStage → 400 reason:lifeStage',
+    );
   }
 
   // -- Stage allowlist rejects junk
@@ -332,12 +355,13 @@ async function run() {
     const { req, res } = fakeReqRes('POST', {
       email: 'a@b.co',
       source: 'hero',
-      stage: 'High school student',
+      careerStage: 'Astronaut',
+      lifeStage: 'Living independently',
     });
     await survey(req, res);
     ok(
-      res.statusCode === 400 && res.body.reason === 'stage',
-      'unknown stage rejected (allowlist enforced)',
+      res.statusCode === 400 && res.body.reason === 'careerStage',
+      'unknown careerStage rejected (allowlist enforced)',
     );
   }
 
@@ -347,7 +371,8 @@ async function run() {
     const { req, res } = fakeReqRes('POST', {
       email: 'sparse@example.com',
       source: 'hero',
-      stage: 'Retired',
+      careerStage: 'Retired',
+      lifeStage: 'Retired',
       q1: '4', // only q1, others missing
     });
     await survey(req, res);
@@ -363,7 +388,8 @@ async function run() {
     const { req, res } = fakeReqRes('POST', {
       email: 'oof@example.com',
       source: 'hero',
-      stage: 'Retired',
+      careerStage: 'Retired',
+      lifeStage: 'Retired',
       q1: '7',
       q2: 'haha',
       q3: '-1',
@@ -382,7 +408,8 @@ async function run() {
     const { req, res } = fakeReqRes('POST', {
       email: 'yn@example.com',
       source: 'hero',
-      stage: 'Retired',
+      careerStage: 'Retired',
+      lifeStage: 'Retired',
       q7: 'Maybe',
     });
     await survey(req, res);
@@ -395,7 +422,8 @@ async function run() {
     const { req, res } = fakeReqRes('POST', {
       email: 'inj@example.com',
       source: 'hero',
-      stage: 'Retired',
+      careerStage: 'Retired',
+      lifeStage: 'Retired',
       q12: '=HYPERLINK("https://evil.com","Click me")',
     });
     await survey(req, res);
@@ -410,7 +438,8 @@ async function run() {
     const { req, res } = fakeReqRes('POST', {
       email: 'big@example.com',
       source: 'hero',
-      stage: 'Retired',
+      careerStage: 'Retired',
+      lifeStage: 'Retired',
       q12: bigText,
     });
     await survey(req, res);
@@ -587,7 +616,8 @@ async function run() {
       {
         email: 'separate@example.com',
         source: 'hero',
-        stage: 'Retired',
+        careerStage: 'Retired',
+        lifeStage: 'Retired',
       },
       { ip: burstIp },
     );

@@ -45,19 +45,47 @@ function sanitizeSource(v) {
   return VALID_SOURCES.has(s) ? s : '';
 }
 
-// --- Stage (chip) ----------------------------------------------------------
-const VALID_STAGES = new Set([
+// --- Career stage (chip) ---------------------------------------------------
+// Kept as a Set so allowlist membership is O(1). Must match the data-value
+// attributes in index.html exactly — including the en-dash in "0–2" etc.
+const VALID_CAREER_STAGES = new Set([
+  'High school student',
   'University / college student',
-  'Early career professional',
+  'Recent graduate (0–2 years working)',
+  'Early-career professional (3–7 years)',
   'Mid-career professional',
-  'Parent / family stage',
+  'Senior professional / executive',
+  'Self-employed / freelancer',
+  'Founder / entrepreneur',
+  'Between jobs',
   'Retired',
+  'Prefer not to say',
 ]);
-function sanitizeStage(v) {
+function sanitizeCareerStage(v) {
   const s = String(v == null ? '' : v)
     .trim()
     .slice(0, 64);
-  return VALID_STAGES.has(s) ? s : '';
+  return VALID_CAREER_STAGES.has(s) ? s : '';
+}
+
+// --- Life / family stage (chip) -------------------------------------------
+const VALID_LIFE_STAGES = new Set([
+  'Living with parents or family',
+  'Living independently',
+  'In a long-term relationship',
+  'Married / partnered',
+  'Parent with young children',
+  'Parent with teenage or adult children',
+  'Caring for family members',
+  'Empty nester',
+  'Retired',
+  'Prefer not to say',
+]);
+function sanitizeLifeStage(v) {
+  const s = String(v == null ? '' : v)
+    .trim()
+    .slice(0, 64);
+  return VALID_LIFE_STAGES.has(s) ? s : '';
 }
 
 // --- Likert scale (1-5) ----------------------------------------------------
@@ -274,7 +302,8 @@ module.exports = {
   sanitizeEmail,
   isPlausibleEmail,
   sanitizeSource,
-  sanitizeStage,
+  sanitizeCareerStage,
+  sanitizeLifeStage,
   sanitizeScale,
   scaleToNumber,
   sanitizeYesNo,

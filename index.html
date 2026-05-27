@@ -75,7 +75,7 @@
      crossorigin + referrerpolicy=no-referrer and constrained by our CSP origin allowlist. -->
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script defer src="https://cdn.vercel-insights.com/v1/script.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<link rel="stylesheet" href="assets/css/styles.css?v=20260527y">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260528a">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -875,19 +875,45 @@
 
     <form class="survey-form" id="survey-form" novalidate>
 
-      <div class="survey-q" data-q="stage">
+      <div class="survey-q" data-q="careerStage">
         <div class="survey-q-head">
           <span class="survey-q-num">01</span>
-          <p class="survey-q-label">Which stage best describes you right now?</p>
+          <p class="survey-q-label">Which best describes your current career stage?</p>
         </div>
-        <div class="survey-chips" data-chip-group="stage" role="radiogroup" aria-label="Life stage">
+        <div class="survey-chips" data-chip-group="careerStage" role="radiogroup" aria-label="Career stage">
+          <button type="button" class="survey-chip" data-value="High school student" role="radio" aria-checked="false">High school student</button>
           <button type="button" class="survey-chip" data-value="University / college student" role="radio" aria-checked="false">University / college student</button>
-          <button type="button" class="survey-chip" data-value="Early career professional" role="radio" aria-checked="false">Early career professional</button>
+          <button type="button" class="survey-chip" data-value="Recent graduate (0–2 years working)" role="radio" aria-checked="false">Recent graduate (0–2 years)</button>
+          <button type="button" class="survey-chip" data-value="Early-career professional (3–7 years)" role="radio" aria-checked="false">Early-career professional (3–7 years)</button>
           <button type="button" class="survey-chip" data-value="Mid-career professional" role="radio" aria-checked="false">Mid-career professional</button>
-          <button type="button" class="survey-chip" data-value="Parent / family stage" role="radio" aria-checked="false">Parent / family stage</button>
+          <button type="button" class="survey-chip" data-value="Senior professional / executive" role="radio" aria-checked="false">Senior professional / executive</button>
+          <button type="button" class="survey-chip" data-value="Self-employed / freelancer" role="radio" aria-checked="false">Self-employed / freelancer</button>
+          <button type="button" class="survey-chip" data-value="Founder / entrepreneur" role="radio" aria-checked="false">Founder / entrepreneur</button>
+          <button type="button" class="survey-chip" data-value="Between jobs" role="radio" aria-checked="false">Between jobs</button>
           <button type="button" class="survey-chip" data-value="Retired" role="radio" aria-checked="false">Retired</button>
+          <button type="button" class="survey-chip" data-value="Prefer not to say" role="radio" aria-checked="false">Prefer not to say</button>
         </div>
-        <input type="hidden" name="stage" value="">
+        <input type="hidden" name="careerStage" value="">
+      </div>
+
+      <div class="survey-q" data-q="lifeStage">
+        <div class="survey-q-head">
+          <span class="survey-q-num">02</span>
+          <p class="survey-q-label">Which best describes your current life stage?</p>
+        </div>
+        <div class="survey-chips" data-chip-group="lifeStage" role="radiogroup" aria-label="Family / life stage">
+          <button type="button" class="survey-chip" data-value="Living with parents or family" role="radio" aria-checked="false">Living with parents or family</button>
+          <button type="button" class="survey-chip" data-value="Living independently" role="radio" aria-checked="false">Living independently</button>
+          <button type="button" class="survey-chip" data-value="In a long-term relationship" role="radio" aria-checked="false">In a long-term relationship</button>
+          <button type="button" class="survey-chip" data-value="Married / partnered" role="radio" aria-checked="false">Married / partnered</button>
+          <button type="button" class="survey-chip" data-value="Parent with young children" role="radio" aria-checked="false">Parent with young children</button>
+          <button type="button" class="survey-chip" data-value="Parent with teenage or adult children" role="radio" aria-checked="false">Parent with teenage or adult children</button>
+          <button type="button" class="survey-chip" data-value="Caring for family members" role="radio" aria-checked="false">Caring for family members</button>
+          <button type="button" class="survey-chip" data-value="Empty nester" role="radio" aria-checked="false">Empty nester</button>
+          <button type="button" class="survey-chip" data-value="Retired" role="radio" aria-checked="false">Retired</button>
+          <button type="button" class="survey-chip" data-value="Prefer not to say" role="radio" aria-checked="false">Prefer not to say</button>
+        </div>
+        <input type="hidden" name="lifeStage" value="">
       </div>
 
       <div class="survey-section">
@@ -897,7 +923,7 @@
 
       <div class="survey-q" data-q="q1">
         <div class="survey-q-head">
-          <span class="survey-q-num">02</span>
+          <span class="survey-q-num">03</span>
           <p class="survey-q-label">&ldquo;Small purchases add up before I notice.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q1" role="radiogroup" aria-label="Small purchases add up before I notice">
@@ -907,12 +933,13 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
+        <div class="survey-scale-endlabels" aria-hidden="true"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q1" value="">
       </div>
 
       <div class="survey-q" data-q="q2">
         <div class="survey-q-head">
-          <span class="survey-q-num">03</span>
+          <span class="survey-q-num">04</span>
           <p class="survey-q-label">&ldquo;I usually realize I overspent after the money is already gone.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q2" role="radiogroup" aria-label="Realize overspending after the money is gone">
@@ -922,12 +949,13 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
+        <div class="survey-scale-endlabels" aria-hidden="true"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q2" value="">
       </div>
 
       <div class="survey-q" data-q="q3">
         <div class="survey-q-head">
-          <span class="survey-q-num">04</span>
+          <span class="survey-q-num">05</span>
           <p class="survey-q-label">&ldquo;I find it hard to stick to a budget long term.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q3" role="radiogroup" aria-label="Hard to stick to a budget long term">
@@ -937,12 +965,13 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
+        <div class="survey-scale-endlabels" aria-hidden="true"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q3" value="">
       </div>
 
       <div class="survey-q" data-q="q4">
         <div class="survey-q-head">
-          <span class="survey-q-num">05</span>
+          <span class="survey-q-num">06</span>
           <p class="survey-q-label">&ldquo;Real-time spending alerts would help me make better decisions.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q4" role="radiogroup" aria-label="Real-time spending alerts would help me make better decisions">
@@ -952,12 +981,13 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
+        <div class="survey-scale-endlabels" aria-hidden="true"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q4" value="">
       </div>
 
       <div class="survey-q" data-q="q5">
         <div class="survey-q-head">
-          <span class="survey-q-num">06</span>
+          <span class="survey-q-num">07</span>
           <p class="survey-q-label">&ldquo;Most budgeting apps help me track spending, but not control it.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q5" role="radiogroup" aria-label="Budgeting apps track but do not control">
@@ -967,12 +997,13 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
+        <div class="survey-scale-endlabels" aria-hidden="true"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q5" value="">
       </div>
 
       <div class="survey-q" data-q="q6">
         <div class="survey-q-head">
-          <span class="survey-q-num">07</span>
+          <span class="survey-q-num">08</span>
           <p class="survey-q-label">&ldquo;Most budgeting tools feel too strict for real life.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q6" role="radiogroup" aria-label="Budgeting tools feel too strict for real life">
@@ -982,6 +1013,7 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
+        <div class="survey-scale-endlabels" aria-hidden="true"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q6" value="">
       </div>
 
@@ -991,7 +1023,7 @@
 
       <div class="survey-q" data-q="q8">
         <div class="survey-q-head">
-          <span class="survey-q-num">08</span>
+          <span class="survey-q-num">09</span>
           <p class="survey-q-label">&ldquo;Managing money feels mentally exhausting sometimes.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q8" role="radiogroup" aria-label="Managing money feels mentally exhausting">
@@ -1001,12 +1033,13 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
+        <div class="survey-scale-endlabels" aria-hidden="true"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q8" value="">
       </div>
 
       <div class="survey-q" data-q="q9">
         <div class="survey-q-head">
-          <span class="survey-q-num">09</span>
+          <span class="survey-q-num">10</span>
           <p class="survey-q-label">&ldquo;I&rsquo;ve tried budgeting before, but eventually stopped using it.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q9" role="radiogroup" aria-label="Tried budgeting and eventually stopped">
@@ -1016,6 +1049,7 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
+        <div class="survey-scale-endlabels" aria-hidden="true"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q9" value="">
       </div>
 
@@ -1025,7 +1059,7 @@
 
       <div class="survey-q" data-q="q10">
         <div class="survey-q-head">
-          <span class="survey-q-num">10</span>
+          <span class="survey-q-num">11</span>
           <p class="survey-q-label">&ldquo;I would try a tool that helps me catch bad spending habits in real time.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q10" role="radiogroup" aria-label="Would try a tool that catches bad spending habits in real time">
@@ -1035,12 +1069,13 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
+        <div class="survey-scale-endlabels" aria-hidden="true"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q10" value="">
       </div>
 
       <div class="survey-q" data-q="q11">
         <div class="survey-q-head">
-          <span class="survey-q-num">11</span>
+          <span class="survey-q-num">12</span>
           <p class="survey-q-label">&ldquo;I want financial guidance that adapts as my life changes.&rdquo;</p>
         </div>
         <div class="survey-scale" data-scale="q11" role="radiogroup" aria-label="Want financial guidance that adapts as life changes">
@@ -1050,12 +1085,13 @@
           <button type="button" class="survey-num" data-value="4" role="radio" aria-checked="false">4</button>
           <button type="button" class="survey-num" data-value="5" role="radio" aria-checked="false">5</button>
         </div>
+        <div class="survey-scale-endlabels" aria-hidden="true"><span>Strongly disagree</span><span>Strongly agree</span></div>
         <input type="hidden" name="q11" value="">
       </div>
 
       <div class="survey-q" data-q="q7">
         <div class="survey-q-head">
-          <span class="survey-q-num">12</span>
+          <span class="survey-q-num">13</span>
           <p class="survey-q-label">&ldquo;I&rsquo;d be comfortable with an app analyzing my spending patterns to help me improve.&rdquo;</p>
         </div>
         <div class="survey-scale survey-scale-two" data-chip-group="q7" role="radiogroup" aria-label="Comfort with app analyzing spending patterns">
@@ -1071,7 +1107,7 @@
 
       <div class="survey-q survey-q-open" data-q="q12">
         <div class="survey-q-head">
-          <span class="survey-q-num">13</span>
+          <span class="survey-q-num">14</span>
           <p class="survey-q-label">What&rsquo;s the hardest part about managing money consistently?</p>
         </div>
         <textarea class="survey-textarea" name="q12" rows="3" maxlength="2000" placeholder="Optional — a sentence or two helps."></textarea>
@@ -1094,6 +1130,6 @@
   </div>
 </div>
 
-<script defer src="assets/js/main.js?v=20260527l"></script>
+<script defer src="assets/js/main.js?v=20260528a"></script>
 </body>
 </html>

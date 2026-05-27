@@ -334,13 +334,31 @@ if (surveyModal && surveyForm) {
   // Even though the values are set by us via button clicks on data-value attributes,
   // a curious user could modify the hidden inputs via devtools. These allowlists
   // make sure nothing other than the expected values reaches the server.
-  // App is 18+; "High school student" intentionally omitted.
-  const VALID_STAGES = new Set([
+  // (The server re-validates against the same allowlists — this is defense in depth.)
+  const VALID_CAREER_STAGES = new Set([
+    'High school student',
     'University / college student',
-    'Early career professional',
+    'Recent graduate (0–2 years working)',
+    'Early-career professional (3–7 years)',
     'Mid-career professional',
-    'Parent / family stage',
-    'Retired'
+    'Senior professional / executive',
+    'Self-employed / freelancer',
+    'Founder / entrepreneur',
+    'Between jobs',
+    'Retired',
+    'Prefer not to say',
+  ]);
+  const VALID_LIFE_STAGES = new Set([
+    'Living with parents or family',
+    'Living independently',
+    'In a long-term relationship',
+    'Married / partnered',
+    'Parent with young children',
+    'Parent with teenage or adult children',
+    'Caring for family members',
+    'Empty nester',
+    'Retired',
+    'Prefer not to say',
   ]);
   // Likert scale: empty string (unanswered) or "1"–"5"
   const VALID_SCALE = new Set(['', '1', '2', '3', '4', '5']);
@@ -363,9 +381,13 @@ if (surveyModal && surveyForm) {
     return e.returnValue;
   });
 
-  function sanitizeStage(v) {
+  function sanitizeCareerStage(v) {
     const s = String(v == null ? '' : v).trim().slice(0, 64);
-    return VALID_STAGES.has(s) ? s : '';
+    return VALID_CAREER_STAGES.has(s) ? s : '';
+  }
+  function sanitizeLifeStage(v) {
+    const s = String(v == null ? '' : v).trim().slice(0, 64);
+    return VALID_LIFE_STAGES.has(s) ? s : '';
   }
   function sanitizeScale(v) {
     // Reject anything that isn't exactly "" or "1".."5"
@@ -468,11 +490,12 @@ if (surveyModal && surveyForm) {
     // re-validate before posting in case the reference was tampered with.
     const data = new FormData(surveyForm);
     const payload = {
-      email:  sanitizeEmail(surveyEmail || ''),
-      source: String(surveySource || '').replace(/[^a-z]/gi, '').slice(0, 16),
-      stage:  sanitizeStage(data.get('stage')),
-      q7:     sanitizeYesNo(data.get('q7')),
-      q12:    sanitizeText(data.get('q12')),
+      email:        sanitizeEmail(surveyEmail || ''),
+      source:       String(surveySource || '').replace(/[^a-z]/gi, '').slice(0, 16),
+      careerStage:  sanitizeCareerStage(data.get('careerStage')),
+      lifeStage:    sanitizeLifeStage(data.get('lifeStage')),
+      q7:           sanitizeYesNo(data.get('q7')),
+      q12:          sanitizeText(data.get('q12')),
     };
     ['q1','q2','q3','q4','q5','q6','q8','q9','q10','q11']
       .forEach(k => { payload[k] = sanitizeScale(data.get(k)); });
