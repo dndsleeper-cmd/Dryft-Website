@@ -1,0 +1,44 @@
+# Dependabot keeps our npm + GitHub Actions dependencies current and opens
+# PRs when CVEs land upstream. Security updates are interrupt-priority;
+# version bumps come in weekly batches so the PR queue stays manageable.
+#
+# See: https://docs.github.com/en/code-security/dependabot
+version: 2
+updates:
+  # npm dependencies (firebase-admin, eslint, prettier, etc.)
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: America/Toronto
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - npm
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+      include: scope
+    # Group non-security minor/patch bumps into a single PR so we don't
+    # drown in 10 individual bump-X PRs every week.
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # GitHub Actions used in .github/workflows/*.yml
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: chore(ci)
+      include: scope

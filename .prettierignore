@@ -1,0 +1,10 @@
+node_modules/
+.vercel/
+.git/
+package-lock.json
+# Don't auto-reformat the big static files — they're hand-tuned for diffing
+index.html
+privacy.html
+terms.html
+assets/css/styles.css
+assets/js/main.js

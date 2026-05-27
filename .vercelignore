@@ -1,0 +1,17 @@
+# Files in this list are NOT shipped to Vercel.
+# Use for things that should stay in git (so the team sees them) but
+# should never be publicly accessible at thedryft.com/...
+
+# Internal design notes — kept in git for context, not shipped.
+docs/
+
+# Tests run in CI, never in production.
+test/
+
+# Anthropic Claude Code workspace state.
+.claude/
+
+# Local environment + editor cruft.
+.env
+.env.*.local
+.DS_Store

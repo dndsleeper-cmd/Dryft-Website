@@ -1,0 +1,54 @@
+# CI for the Dryft marketing site.
+#
+# Runs on every push to main and every PR opened against main.
+# Vercel handles the actual deploy — this workflow only gates code quality.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Only one CI run per ref at a time — cancel older runs on new pushes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-test:
+    name: Lint + test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    strategy:
+      matrix:
+        # Match Vercel's runtime (currently Node 22+) plus the LTS we declare
+        # in package.json (Node 20). Catches regressions on either.
+        node: ['20', '22']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Test (mocked Firestore)
+        run: npm test
+
+      - name: Audit non-dev dependencies
+        # Reports moderate+ severity, but doesn't fail the build —
+        # transitive Firebase Admin SDK deps occasionally lag upstream fixes.
+        run: npm audit --omit=dev --audit-level=moderate || true

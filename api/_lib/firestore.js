@@ -20,16 +20,16 @@ function getAdmin() {
     return app;
   }
 
-  const projectId   = process.env.FIREBASE_PROJECT_ID;
+  const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   // Vercel stores the private key with literal "\n" sequences; convert to
   // real newlines before handing it to the SDK.
-  const privateKey  = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+  const privateKey = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
 
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(
       'Firebase Admin not configured. Set FIREBASE_PROJECT_ID, ' +
-      'FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in Vercel.'
+        'FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in Vercel.',
     );
   }
 

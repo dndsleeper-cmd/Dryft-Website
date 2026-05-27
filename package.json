@@ -2,11 +2,29 @@
   "name": "dryft-site",
   "version": "1.0.0",
   "private": true,
-  "description": "Dryft landing page + waitlist/survey API routes (Vercel + Firestore).",
+  "description": "Dryft marketing site + waitlist/survey API routes (Vercel + Firestore).",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dryft/dryft-site.git"
+  },
   "engines": {
     "node": ">=20"
   },
+  "scripts": {
+    "test": "node test/api.test.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
   "dependencies": {
     "firebase-admin": "^12.7.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "globals": "^15.15.0",
+    "prettier": "^3.8.3"
   }
 }

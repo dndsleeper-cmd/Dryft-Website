@@ -13,7 +13,10 @@ const crypto = require('crypto');
 
 // --- Email -----------------------------------------------------------------
 // Same regex shape as the client, plus structural checks.
-const EMAIL_REGEX = /^[A-Za-z0-9._%+\-]{1,64}@(?:[A-Za-z0-9](?:[A-Za-z0-9\-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,24}$/;
+// Hyphen placed at the END of each character class so it's literal without
+// needing to be escaped (ESLint flags the redundant backslash).
+const EMAIL_REGEX =
+  /^[A-Za-z0-9._%+-]{1,64}@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,24}$/;
 const DOTSEQ = /\.{2,}/;
 
 function sanitizeEmail(v) {
@@ -35,7 +38,10 @@ function isPlausibleEmail(email) {
 // 'hero' or 'final' — the two waitlist forms on the page.
 const VALID_SOURCES = new Set(['hero', 'final']);
 function sanitizeSource(v) {
-  const s = String(v == null ? '' : v).trim().toLowerCase().slice(0, 16);
+  const s = String(v == null ? '' : v)
+    .trim()
+    .toLowerCase()
+    .slice(0, 16);
   return VALID_SOURCES.has(s) ? s : '';
 }
 
@@ -48,7 +54,9 @@ const VALID_STAGES = new Set([
   'Retired',
 ]);
 function sanitizeStage(v) {
-  const s = String(v == null ? '' : v).trim().slice(0, 64);
+  const s = String(v == null ? '' : v)
+    .trim()
+    .slice(0, 64);
   return VALID_STAGES.has(s) ? s : '';
 }
 
@@ -66,7 +74,9 @@ function scaleToNumber(v) {
 // --- Yes/No ----------------------------------------------------------------
 const VALID_YESNO = new Set(['', 'Yes', 'No']);
 function sanitizeYesNo(v) {
-  const s = String(v == null ? '' : v).trim().slice(0, 8);
+  const s = String(v == null ? '' : v)
+    .trim()
+    .slice(0, 8);
   return VALID_YESNO.has(s) ? s : '';
 }
 
@@ -101,7 +111,11 @@ function sanitizeInt(v, { min = 0, max = 86_400_000 } = {}) {
 function hashIp(ip) {
   const salt = process.env.IP_HASH_SALT;
   if (!salt || !ip) return null;
-  return crypto.createHash('sha256').update(salt + '|' + ip).digest('hex').slice(0, 16);
+  return crypto
+    .createHash('sha256')
+    .update(salt + '|' + ip)
+    .digest('hex')
+    .slice(0, 16);
 }
 
 // --- Request body parsing --------------------------------------------------
@@ -122,7 +136,11 @@ async function readBody(req) {
   if (raw.length > 16 * 1024) throw new Error('payload too large');
 
   if (ct.includes('application/json')) {
-    try { return JSON.parse(raw); } catch { return {}; }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
   }
   if (ct.includes('application/x-www-form-urlencoded')) {
     const out = {};
@@ -135,7 +153,9 @@ async function readBody(req) {
 // --- Client IP extraction --------------------------------------------------
 // Vercel sets x-forwarded-for; trust the first entry (origin client IP).
 function clientIp(req) {
-  const xff = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  const xff = String(req.headers['x-forwarded-for'] || '')
+    .split(',')[0]
+    .trim();
   return xff || req.socket?.remoteAddress || null;
 }
 
@@ -154,7 +174,7 @@ function clientIp(req) {
 async function verifyRecaptcha(token, ip) {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret) return { ok: true, skipped: true };
-  if (!token)  return { ok: false, reason: 'missing-token' };
+  if (!token) return { ok: false, reason: 'missing-token' };
 
   const params = new URLSearchParams();
   params.set('secret', secret);
@@ -200,7 +220,7 @@ async function verifyRecaptcha(token, ip) {
 const _memCounters = new Map();
 
 async function upstashFetch(pathSegments) {
-  const url   = process.env.UPSTASH_REDIS_REST_URL;
+  const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
   const resp = await fetch(url + '/' + pathSegments.map(encodeURIComponent).join('/'), {
@@ -234,7 +254,10 @@ async function rateLimit(key, { max = 5, windowSec = 60 } = {}) {
   const now = Date.now();
   const windowMs = windowSec * 1000;
   const entry = _memCounters.get(key) || { count: 0, resetAt: now + windowMs };
-  if (now > entry.resetAt) { entry.count = 0; entry.resetAt = now + windowMs; }
+  if (now > entry.resetAt) {
+    entry.count = 0;
+    entry.resetAt = now + windowMs;
+  }
   entry.count++;
   _memCounters.set(key, entry);
   // Periodically prune expired entries so the map can't grow unbounded.
@@ -248,12 +271,18 @@ async function rateLimit(key, { max = 5, windowSec = 60 } = {}) {
 }
 
 module.exports = {
-  sanitizeEmail, isPlausibleEmail,
-  sanitizeSource, sanitizeStage,
-  sanitizeScale, scaleToNumber,
-  sanitizeYesNo, sanitizeText,
+  sanitizeEmail,
+  isPlausibleEmail,
+  sanitizeSource,
+  sanitizeStage,
+  sanitizeScale,
+  scaleToNumber,
+  sanitizeYesNo,
+  sanitizeText,
   sanitizeInt,
-  hashIp, clientIp,
+  hashIp,
+  clientIp,
   readBody,
-  verifyRecaptcha, rateLimit,
+  verifyRecaptcha,
+  rateLimit,
 };

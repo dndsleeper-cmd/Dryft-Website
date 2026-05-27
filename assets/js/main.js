@@ -101,7 +101,8 @@ const MIN_HUMAN_DWELL_MS = 1200;
 const MIN_SUBMIT_INTERVAL_MS = 800;
 const MAX_SUBMITS_PER_SESSION = 5;
 // Local-part: 1-64 chars from a safe subset. Domain: labels of 1-63 chars, TLD 2+ letters.
-const EMAIL_REGEX = /^[A-Za-z0-9._%+\-]{1,64}@(?:[A-Za-z0-9](?:[A-Za-z0-9\-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,24}$/;
+// Hyphen placed at the end of each class so it's literal without escaping.
+const EMAIL_REGEX = /^[A-Za-z0-9._%+-]{1,64}@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,24}$/;
 const DOTSEQ = /\.{2,}/;
 let submitCount = 0;
 let lastSubmitAt = 0;
@@ -618,25 +619,23 @@ async function typeInto(node, text, speed) {
     await wait(jitter);
   }
 }
-function streamBubble(feed, text, speed) {
-  return new Promise(async (resolve) => {
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble dryft';
-    const stream = document.createElement('span');
-    stream.className = 'stream';
-    bubble.appendChild(stream);
-    feed.appendChild(bubble);
-    requestAnimationFrame(() => bubble.classList.add('show'));
-    for (let i = 0; i < text.length; i++) {
-      const span = document.createElement('span');
-      span.className = 'stream-char';
-      span.textContent = text[i];
-      stream.appendChild(span);
-      const jitter = speed * (0.5 + Math.random() * 1.1);
-      await wait(jitter);
-    }
-    resolve(bubble);
-  });
+async function streamBubble(feed, text, speed) {
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble dryft';
+  const stream = document.createElement('span');
+  stream.className = 'stream';
+  bubble.appendChild(stream);
+  feed.appendChild(bubble);
+  requestAnimationFrame(() => bubble.classList.add('show'));
+  for (let i = 0; i < text.length; i++) {
+    const span = document.createElement('span');
+    span.className = 'stream-char';
+    span.textContent = text[i];
+    stream.appendChild(span);
+    const jitter = speed * (0.5 + Math.random() * 1.1);
+    await wait(jitter);
+  }
+  return bubble;
 }
 function addUserBubble(feed, text) {
   const bubble = document.createElement('div');
@@ -678,20 +677,17 @@ function addImpactCard(feed) {
   }, 250);
   return card;
 }
-function fadeOutFeed(feed) {
-  return new Promise(async (resolve) => {
-    const items = [...feed.children];
-    items.forEach((n, i) => {
-      setTimeout(() => {
-        n.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-        n.style.opacity = '0';
-        n.style.transform = 'translateY(-6px)';
-      }, i * 60);
-    });
-    await wait(items.length * 60 + 320);
-    feed.innerHTML = '';
-    resolve();
+async function fadeOutFeed(feed) {
+  const items = [...feed.children];
+  items.forEach((n, i) => {
+    setTimeout(() => {
+      n.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      n.style.opacity = '0';
+      n.style.transform = 'translateY(-6px)';
+    }, i * 60);
   });
+  await wait(items.length * 60 + 320);
+  feed.innerHTML = '';
 }
 
 async function runChatLoop(phone) {
