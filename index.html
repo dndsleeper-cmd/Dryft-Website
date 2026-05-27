@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dryft — A Budget that Adapts to Real Life.</title>
-<meta name="description" content="Dryft is a finance coach that learns your habits and nudges you on day 9 — when one change still saves the month. Private beta · Cohort 01.">
-<meta name="keywords" content="finance coach, personal finance app, budgeting app, spending alerts, habit tracker, financial wellness, money management, budgeting, Plaid, smart budgeting, predictive finance, accountability coach">
+<title>Dryft — A Budget That Adapts to Real Life</title>
+<meta name="description" content="Dryft is the predictive finance coach for students and early-career professionals. It learns your habits and nudges you on day 9 — while one change still saves the month. Cohort 01 private beta · 100 spots.">
+<meta name="keywords" content="finance coach for students, budgeting app for college students, finance app for young professionals, early-career budgeting, predictive budgeting, AI finance coach, Plaid budgeting app, spending alerts, adaptive budget, habit-based budgeting, day 9 nudge, real-life budget">
 <meta name="author" content="Dryft">
-<meta name="application-name" content="Dryft">
 <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, noai, noimageai">
 <meta name="googlebot" content="index, follow">
 <meta name="theme-color" content="#f4f6f7">
@@ -15,7 +14,7 @@
 
 <!-- SECURITY — these are duplicated in vercel.json as real HTTP headers (authoritative).
      Meta tags act as a fallback if the site is ever served from somewhere without those headers. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.vercel-insights.com https://va.vercel-scripts.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://vitals.vercel-insights.com https://va.vercel-scripts.com; frame-src https://www.google.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.vercel-insights.com https://va.vercel-scripts.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://vitals.vercel-insights.com https://va.vercel-scripts.com; frame-src https://www.google.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="Permissions-Policy" content="accelerometer=(), autoplay=(), browsing-topics=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), hid=(), idle-detection=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), serial=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=(), interest-cohort=()">
@@ -23,37 +22,28 @@
 <link rel="canonical" href="https://thedryft.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Dryft">
-<meta property="og:title" content="Dryft — A Budget that Adapts to Real Life.">
-<meta property="og:description" content="The finance coach that learns your habits and nudges you on day 9 — when one change still saves the month.">
+<meta property="og:title" content="Dryft — A Budget That Adapts to Real Life">
+<meta property="og:description" content="The predictive finance coach for students and early-career professionals. Learns your habits and nudges you on day 9 — while one change still saves the month.">
 <meta property="og:url" content="https://thedryft.com/">
 <meta property="og:image" content="https://thedryft.com/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Dryft — A Budget that Adapts to Real Life.">
+<meta property="og:image:alt" content="Dryft — A budget that adapts to real life.">
 <meta property="og:locale" content="en_US">
 <!-- Twitter Card markup still works without a twitter:site attribution.
      Cards render normally; they're just not linked to an X/Twitter account. -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Dryft — A Budget that Adapts to Real Life.">
-<meta name="twitter:description" content="The finance coach that learns your habits and nudges you on day 9 — when one change still saves the month.">
+<meta name="twitter:title" content="Dryft — A Budget That Adapts to Real Life">
+<meta name="twitter:description" content="The predictive finance coach for students and early-career professionals. Nudges you on day 9 — while one change still saves the month.">
 <meta name="twitter:image" content="https://thedryft.com/og-image.png">
-<meta name="twitter:image:alt" content="Dryft — A Budget that Adapts to Real Life.">
+<meta name="twitter:image:alt" content="Dryft — A budget that adapts to real life.">
 <!-- Favicon URL is version-busted because browsers cache favicons extremely
      aggressively (often surviving hard reloads). Bump the ?v= on every change. -->
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=20260527b">
 <link rel="apple-touch-icon" href="assets/favicon.svg?v=20260527b">
-<link rel="manifest" href="manifest.json">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 <link rel="alternate" hreflang="en" href="https://thedryft.com/">
 <link rel="alternate" hreflang="x-default" href="https://thedryft.com/">
-<!-- iOS / Android installable PWA + tile hints (competitive parity with Cleo, Monarch, Origin, etc.) -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Dryft">
-<meta name="msapplication-TileColor" content="#0e4754">
-<meta name="msapplication-TileImage" content="assets/favicon.svg?v=20260527b">
-<meta name="msapplication-config" content="none">
 <meta name="format-detection" content="telephone=no, email=no, address=no">
 <link rel="dns-prefetch" href="https://fonts.googleapis.com">
 <link rel="dns-prefetch" href="https://fonts.gstatic.com">
@@ -86,7 +76,7 @@
       "name": "Dryft",
       "url": "https://thedryft.com/",
       "logo": "https://thedryft.com/assets/favicon.svg",
-      "description": "Finance coach that learns your habits and nudges you before you slip.",
+      "description": "Predictive finance coach for students and early-career professionals. Learns your habits and nudges you before you slip.",
       "foundingLocation": "Waterloo, Ontario, Canada",
       "sameAs": [
         "https://www.instagram.com/thedryft_com/",
@@ -98,7 +88,7 @@
       "@id": "https://thedryft.com/#website",
       "url": "https://thedryft.com/",
       "name": "Dryft",
-      "description": "A Budget that Adapts to Real Life — a finance coach that nudges you before you dryft.",
+      "description": "A budget that adapts to real life — a predictive finance coach for students and early-career professionals.",
       "publisher": { "@id": "https://thedryft.com/#organization" },
       "inLanguage": "en-US"
     },
@@ -110,21 +100,26 @@
       "applicationSubCategory": "Personal Finance",
       "operatingSystem": "iOS, Android",
       "url": "https://thedryft.com/",
-      "description": "A finance accountability coach for personal finance. Predicts spending slips with a reinforcement-learning habit model and nudges you on day 9 — when one change still saves the month.",
+      "description": "Predictive finance coach for students and early-career professionals. Watches spending, forecasts the next slip, and nudges you on day 9 — while one change still saves the month.",
       "publisher": { "@id": "https://thedryft.com/#organization" },
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD",
-        "availability": "https://schema.org/PreOrder"
+        "availability": "https://schema.org/PreOrder",
+        "description": "Cohort 01 private beta. Capped at 100 spots; survey takers get priority access."
       },
       "featureList": [
-        "Reinforcement-learning habit model",
-        "Predictive slip detection",
-        "Personalized nudge timing",
-        "Read-only bank access via Plaid",
-        "Three coach personalities (Drill Sergeant, Hype Friend, Deadpan)"
-      ]
+        "Predictive spending-slip detection",
+        "Day-9 nudges while one change still saves the month",
+        "Adaptive monthly caps that re-plan after an over-spend",
+        "Multi-month savings smoothing toward your goal",
+        "Read-only bank access via Plaid (Dryft never moves money)"
+      ],
+      "audience": {
+        "@type": "Audience",
+        "audienceType": "Students and early-career professionals"
+      }
     },
     {
       "@type": "Service",
@@ -140,7 +135,7 @@
         "@type": "Audience",
         "audienceType": "Students and early-career professionals"
       },
-      "description": "Predictive personal-finance coaching. A reinforcement-learning habit model forecasts spending slips and nudges users on day 9 — when one change still saves the month."
+      "description": "Predictive personal-finance coaching for students and early-career professionals. Forecasts spending slips and nudges on day 9 — while one change still saves the month. Recovery plans tighten caps or smooth savings across months when life happens."
     },
     {
       "@type": "FAQPage",

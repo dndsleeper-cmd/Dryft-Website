@@ -1,7 +1,6 @@
 User-agent: *
 Allow: /
-Disallow: /logo-options.html
-Disallow: /logo-options-v2.html
+Disallow: /api/
 Disallow: /.well-known/
 Disallow: /docs/
 
