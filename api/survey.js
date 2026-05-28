@@ -37,7 +37,7 @@ const {
   readBody,
   clientIp,
   hashIp,
-  surveyDocId,
+  emailDocId,
   sanitizeEmail,
   isPlausibleEmail,
   sanitizeSource,
@@ -120,41 +120,47 @@ module.exports = async function handler(req, res) {
     return res.status(429).json({ ok: false, reason: 'rate-limited' });
   }
 
-  // Build the Likert block as integers. Missing or invalid → null so the
-  // doc shape is stable across responses.
-  const likert = {};
-  for (const k of LIKERT_KEYS) likert[k] = scaleToNumber(body[k]);
-
-  const q11 = sanitizeYesNo(body.q11);
-  const q12 = sanitizeText(body.q12);
-
-  // Shared field block written on every save. With merge:true, each autosave
-  // overwrites exactly these keys, so changing an answer updates it in place.
+  // Always-written metadata.
   const fields = {
     email,
     emailLower: email.toLowerCase(),
-    source,
-    careerStage,
-    lifeStage,
-    ...likert,
-    q11, // 'Yes' | 'No' | ''
-    q12, // free text, max 2000 chars
-    complete: isComplete,
     ipHash: ipHashVal,
     userAgent: ua,
   };
+  if (source) fields.source = source;
+
+  // Answer fields are written ONLY when they carry a valid value. A blank /
+  // unanswered field is omitted, so with merge:true it never overwrites a
+  // previously saved answer. This is what lets a returning user's new answers
+  // ACCUMULATE into their existing record instead of wiping the rest of it
+  // (e.g. reopening the survey on a fresh, empty form and answering one more
+  // question must not null out the other ten).
+  for (const k of LIKERT_KEYS) {
+    const n = scaleToNumber(body[k]); // 1..5, or null when missing/invalid
+    if (n !== null) fields[k] = n;
+  }
+  if (careerStage) fields.careerStage = careerStage;
+  if (lifeStage) fields.lifeStage = lifeStage;
+  const q11 = sanitizeYesNo(body.q11);
+  if (q11) fields.q11 = q11; // 'Yes' | 'No'
+  const q12 = sanitizeText(body.q12);
+  if (q12) fields.q12 = q12; // free text, max 2000 chars
 
   try {
     // Upsert ONE doc per email. set+merge means a changed selection overwrites
-    // the old value, and a returning/reloading user reuses the same doc
-    // (abandoners deduped). createdAt is stamped only on first write.
-    const docId = surveyDocId(email);
+    // just that field, and a returning/reloading user reuses the same doc
+    // (no duplicates). createdAt is stamped only on first write.
+    const docId = emailDocId(email);
     const ref = db().collection('survey').doc(docId);
     const snap = await ref.get();
-    const payload = { ...fields, updatedAt: serverTimestamp() };
+    // Completion is sticky: once a response is marked complete, a later partial
+    // autosave can't downgrade it back to incomplete.
+    const wasComplete = snap.exists && !!(snap.data() && snap.data().complete === true);
+    const complete = isComplete || wasComplete;
+    const payload = { ...fields, complete, updatedAt: serverTimestamp() };
     if (!snap.exists) payload.createdAt = serverTimestamp();
     await ref.set(payload, { merge: true });
-    return res.status(200).json({ ok: true, id: docId, complete: isComplete });
+    return res.status(200).json({ ok: true, id: docId, complete });
   } catch (err) {
     console.error('[survey] write failed:', err);
     return res.status(500).json({ ok: false, reason: 'server' });

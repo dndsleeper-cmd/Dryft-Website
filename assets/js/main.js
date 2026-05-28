@@ -238,9 +238,10 @@ let surveyAutosaveTimer = null;   // debounce handle
 let surveyCompleted = false;      // true once the final submit succeeds
 const SURVEY_AUTOSAVE_DEBOUNCE_MS = 700;
 // Assigned by the survey IIFE once the autosave helpers exist; called from the
-// module-scope select/close handlers. No-ops until then.
+// module-scope select/close/open handlers. No-ops until then.
 let triggerSurveyAutosave = function () {};
 let flushSurveyAutosave = function () {};
+let restoreSurveyAnswers = function () {};
 
 function openSurvey(email, source) {
   if (!surveyModal) return;
@@ -253,6 +254,9 @@ function openSurvey(email, source) {
   clearTimeout(surveyAutosaveTimer);
   // Reset selections + form state in case the modal was opened earlier in this session
   resetSurvey();
+  // If this same email answered before on this browser, pre-fill their prior
+  // selections so they can see and continue where they left off.
+  restoreSurveyAnswers(email);
   surveyLastFocus = document.activeElement;
   surveyModal.hidden = false;
   // Force reflow before adding .open so the CSS transition fires
@@ -469,6 +473,7 @@ if (surveyModal && surveyForm) {
   function autosaveNow(useBeacon) {
     if (surveyCompleted) return;          // final submit already wrote the doc
     if (!surveyEmail) return;             // email is the server-side doc key
+    saveSurveyDraft();                    // keep the local (this-browser) copy fresh
     const payload = currentSurveyPayload(false);
     payload.partial = true;               // relaxed validation + autosave bucket
     const snap = JSON.stringify(payload);
@@ -499,6 +504,63 @@ if (surveyModal && surveyForm) {
   flushSurveyAutosave = function () {
     clearTimeout(surveyAutosaveTimer);
     autosaveNow(false);
+  };
+
+  // ----- Local draft (this browser) -----
+  // We can't securely fetch a person's prior answers from the server (there's
+  // no login/email verification, so returning answers by email would leak them
+  // to anyone who types that email). Instead we keep a per-email draft in this
+  // browser's localStorage purely to PRE-FILL the form when the same email
+  // returns here. Accumulating answers into the one server record still works
+  // cross-device — this is only the "show what you picked before" convenience.
+  const SURVEY_DRAFT_PREFIX = 'dryft.survey.';
+  const SURVEY_DRAFT_FIELDS = [
+    'careerStage', 'lifeStage',
+    'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12',
+  ];
+  function draftKey(email) {
+    return SURVEY_DRAFT_PREFIX + String(email || '').trim().toLowerCase();
+  }
+  function saveSurveyDraft() {
+    if (!surveyEmail) return;
+    try {
+      const data = new FormData(surveyForm);
+      const answers = {};
+      SURVEY_DRAFT_FIELDS.forEach((k) => {
+        const v = data.get(k);
+        if (v != null && String(v) !== '') answers[k] = String(v);
+      });
+      localStorage.setItem(draftKey(surveyEmail), JSON.stringify(answers));
+    } catch (_) { /* storage unavailable/full — non-fatal */ }
+  }
+  restoreSurveyAnswers = function (email) {
+    let answers;
+    try {
+      const raw = localStorage.getItem(draftKey(email));
+      if (!raw) return;
+      answers = JSON.parse(raw);
+    } catch (_) { return; }
+    if (!answers || typeof answers !== 'object') return;
+    Object.keys(answers).forEach((name) => {
+      const value = String(answers[name]);
+      const hidden = surveyForm.querySelector(`input[type="hidden"][name="${name}"]`);
+      if (hidden) {
+        hidden.value = value;
+        const group = surveyForm.querySelector(`[data-scale="${name}"], [data-chip-group="${name}"]`);
+        if (group) {
+          group.querySelectorAll('button').forEach((b) => {
+            const on = b.dataset.value === value;
+            b.classList.toggle('selected', on);
+            b.setAttribute('aria-checked', on ? 'true' : 'false');
+          });
+        }
+        const block = hidden.closest('.survey-q');
+        if (block) block.classList.remove('unanswered');
+      } else {
+        const ta = surveyForm.querySelector(`textarea[name="${name}"]`);
+        if (ta) ta.value = value;
+      }
+    });
   };
 
   // Open-ended textarea (q12): debounce while typing, flush on blur.
@@ -616,8 +678,9 @@ if (surveyModal && surveyForm) {
       showSurveySendingNotice(false);
     }
 
-    // Mark completed so the close/beacon handlers don't overwrite the finished
-    // doc with a partial (complete:false) snapshot.
+    // Persist the final answers to the local draft, then mark completed so the
+    // close/beacon handlers don't overwrite the finished doc with a partial.
+    saveSurveyDraft();
     surveyCompleted = true;
 
     // Always show success — fire-and-forget per the no-cors fetch above

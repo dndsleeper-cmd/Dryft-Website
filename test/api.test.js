@@ -98,7 +98,7 @@ require.cache[adminPath] = {
 const waitlist = require(path.join(projectRoot, 'api', 'waitlist.js'));
 const survey = require(path.join(projectRoot, 'api', 'survey.js'));
 // Pull the real email→docId derivation so tests assert against the actual key.
-const { surveyDocId } = require(path.join(projectRoot, 'api', '_lib', 'validate.js'));
+const { emailDocId } = require(path.join(projectRoot, 'api', '_lib', 'validate.js'));
 
 // --- Test harness ---------------------------------------------------------
 let pass = 0,
@@ -217,6 +217,27 @@ async function run() {
     ok(w.ipHash !== '203.0.113.42', 'ipHash is hashed, not plaintext IP');
     ok(w.userAgent === 'Mozilla/5.0 TestRunner', 'userAgent stored');
     ok(w.createdAt === '<SERVER_TIMESTAMP>', 'createdAt set to server timestamp sentinel');
+  }
+
+  // -- Dedup: re-signing up with the SAME email updates one doc (no duplicate)
+  {
+    writes.length = 0;
+    const email = 'repeat@example.com';
+    const { req: r1, res: w1 } = fakeReqRes('POST', { email, source: 'hero' });
+    await waitlist(r1, w1);
+    const { req: r2, res: w2 } = fakeReqRes('POST', {
+      email: 'Repeat@Example.com',
+      source: 'final',
+    });
+    await waitlist(r2, w2);
+    const ids = new Set(writes.map((wr) => wr.id));
+    ok(
+      ids.size === 1 && ids.has(emailDocId(email)),
+      'same email → one waitlist doc (case-insensitive)',
+    );
+    const d = docStore.get('waitlist/' + emailDocId(email)) || {};
+    ok(d.signupCount === 2, 'signupCount increments on re-signup instead of duplicating');
+    ok(d.source === 'final', 'latest source recorded');
   }
 
   // -- Method check
@@ -394,7 +415,8 @@ async function run() {
     );
   }
 
-  // -- Missing Likert answers stored as null (stable doc shape)
+  // -- Unanswered Likert fields are OMITTED (incremental merge: a blank field
+  //    must never overwrite a previously saved answer).
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
@@ -408,10 +430,10 @@ async function run() {
     ok(res.statusCode === 200, 'sparse survey accepted (Likert is optional per question)');
     const d = writes[0]?.doc || {};
     ok(d.q1 === 4, 'q1 stored as integer 4');
-    ok(d.q5 === null && d.q10 === null, 'missing Likert answers stored as null');
+    ok(!('q5' in d) && !('q10' in d), 'unanswered Likert fields are omitted, not written');
   }
 
-  // -- Out-of-range Likert sanitized to null
+  // -- Out-of-range / non-numeric Likert is omitted (never stored as junk)
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
@@ -426,12 +448,12 @@ async function run() {
     await survey(req, res);
     const d = writes[0]?.doc || {};
     ok(
-      d.q1 === null && d.q2 === null && d.q3 === null,
-      'out-of-range / non-numeric Likert → null (not stored as junk)',
+      !('q1' in d) && !('q2' in d) && !('q3' in d),
+      'out-of-range / non-numeric Likert is omitted (not stored as junk)',
     );
   }
 
-  // -- q11 Yes/No allowlist
+  // -- q11 Yes/No allowlist — invalid value is omitted
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
@@ -442,7 +464,7 @@ async function run() {
       q11: 'Maybe',
     });
     await survey(req, res);
-    ok(writes[0]?.doc.q11 === '', 'q11 outside Yes/No allowlist → empty string');
+    ok(!('q11' in (writes[0]?.doc || {})), 'q11 outside Yes/No allowlist is omitted');
   }
 
   console.log('\n\x1b[1m== Survey progressive autosave (email-keyed upsert) ==\x1b[0m');
@@ -458,9 +480,9 @@ async function run() {
       careerStage: 'University / college student',
     });
     await survey(req, res);
-    const d = docStore.get('survey/' + surveyDocId(email)) || {};
+    const d = docStore.get('survey/' + emailDocId(email)) || {};
     ok(res.statusCode === 200, 'partial autosave (partial:true) → 200');
-    ok(res.body.id === surveyDocId(email), 'doc id is the email-derived key');
+    ok(res.body.id === emailDocId(email), 'doc id is the email-derived key');
     ok(res.body.complete === false, 'partial response echoes complete:false');
     ok(d.complete === false, 'partial write stored complete:false');
     ok(d.careerStage === 'University / college student', 'partial captured the answered field');
@@ -477,10 +499,10 @@ async function run() {
     await survey(r1, w1);
     const { req: r2, res: w2 } = fakeReqRes('POST', { ...base, q1: '5' });
     await survey(r2, w2);
-    const d = docStore.get('survey/' + surveyDocId(email)) || {};
+    const d = docStore.get('survey/' + emailDocId(email)) || {};
     ok(d.q1 === 5, 'changed answer overwrites in place (q1: 2 → 5)');
     const ids = new Set(writes.map((w) => w.id));
-    ok(ids.size === 1 && ids.has(surveyDocId(email)), 'both writes hit the one email doc (no dup)');
+    ok(ids.size === 1 && ids.has(emailDocId(email)), 'both writes hit the one email doc (no dup)');
   }
 
   // -- Abandoner dedup: a second SESSION for the same email reuses the doc,
@@ -502,7 +524,7 @@ async function run() {
       q2: '4',
     });
     await survey(r2, w2);
-    const key = surveyDocId('dedup@example.com');
+    const key = emailDocId('dedup@example.com');
     const d = docStore.get('survey/' + key) || {};
     ok(w1.body.id === key && w2.body.id === key, 'mixed-case email maps to one doc key');
     ok(d.q1 === 1 && d.q2 === 4, 'second session reuses the same email doc (no duplicate)');
@@ -523,11 +545,50 @@ async function run() {
       q1: '3',
     });
     await survey(r2, w2);
-    const d = docStore.get('survey/' + surveyDocId(email)) || {};
+    const d = docStore.get('survey/' + emailDocId(email)) || {};
     ok(w2.statusCode === 200, 'complete submit → 200');
     ok(w2.body.complete === true, 'response echoes complete:true');
     ok(d.complete === true, 'complete submit flips complete:true on the same email doc');
     ok(d.q1 === 3, 'answers preserved through the complete write');
+  }
+
+  // -- NO-WIPE: a later write that OMITS a field must not erase it. This is the
+  //    returning-user bug — reopening on a blank form and answering one more
+  //    question must accumulate, not clobber the rest.
+  {
+    writes.length = 0;
+    const email = 'nowipe@example.com';
+    // First save: only q1.
+    const { req: r1, res: w1 } = fakeReqRes('POST', { email, partial: true, q1: '5' });
+    await survey(r1, w1);
+    // Later save: only q2 (q1 absent entirely — simulates a fresh form).
+    const { req: r2, res: w2 } = fakeReqRes('POST', { email, partial: true, q2: '2' });
+    await survey(r2, w2);
+    const d = docStore.get('survey/' + emailDocId(email)) || {};
+    ok(d.q1 === 5, 'earlier answer (q1) preserved when a later write omits it');
+    ok(d.q2 === 2, 'new answer (q2) accumulates into the same record');
+  }
+
+  // -- Completion is sticky: a partial autosave after completion can't downgrade it
+  {
+    writes.length = 0;
+    const email = 'sticky@example.com';
+    const { req: r1, res: w1 } = fakeReqRes('POST', {
+      email,
+      complete: true,
+      source: 'hero',
+      careerStage: 'Retired',
+      lifeStage: 'Retired',
+      q1: '3',
+    });
+    await survey(r1, w1);
+    const { req: r2, res: w2 } = fakeReqRes('POST', { email, partial: true, q2: '4' });
+    await survey(r2, w2);
+    const d = docStore.get('survey/' + emailDocId(email)) || {};
+    ok(
+      w2.body.complete === true && d.complete === true,
+      'complete stays true after a later partial',
+    );
   }
 
   // -- Partial write still requires a plausible email (it IS the doc key)

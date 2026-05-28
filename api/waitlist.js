@@ -1,7 +1,9 @@
 /**
  * POST /api/waitlist
  *
- * Captures a waitlist signup and writes one document to Firestore.
+ * Captures a waitlist signup. UPSERTS one document per email (doc id derived
+ * from the email via emailDocId), so re-signing up with the same email updates
+ * the existing record instead of creating a duplicate.
  *
  * Body (JSON or form-urlencoded):
  *   email     required — sanitized + validated server-side
@@ -19,6 +21,7 @@ const {
   readBody,
   clientIp,
   hashIp,
+  emailDocId,
   sanitizeEmail,
   isPlausibleEmail,
   sanitizeSource,
@@ -74,16 +77,30 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const docRef = await db().collection('waitlist').add({
-      createdAt: serverTimestamp(),
+    // Upsert one doc per email so re-signups don't create duplicates.
+    // createdAt + first source are stamped once; the rest refreshes each time.
+    const docId = emailDocId(email);
+    const ref = db().collection('waitlist').doc(docId);
+    const snap = await ref.get();
+    const payload = {
       email,
-      emailLower: email.toLowerCase(), // for dedup queries later
+      emailLower: email.toLowerCase(),
       source,
       dwellMs: dwell,
       ipHash: ipHashVal,
       userAgent: ua,
-    });
-    return res.status(200).json({ ok: true, id: docRef.id });
+      updatedAt: serverTimestamp(),
+    };
+    if (!snap.exists) {
+      payload.createdAt = serverTimestamp();
+      payload.signupCount = 1;
+    } else {
+      // Track re-signups without losing the original timestamp/source.
+      const prev = snap.data() || {};
+      payload.signupCount = (typeof prev.signupCount === 'number' ? prev.signupCount : 1) + 1;
+    }
+    await ref.set(payload, { merge: true });
+    return res.status(200).json({ ok: true, id: docId });
   } catch (err) {
     console.error('[waitlist] write failed:', err);
     return res.status(500).json({ ok: false, reason: 'server' });
