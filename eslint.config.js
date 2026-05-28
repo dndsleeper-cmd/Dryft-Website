@@ -2,9 +2,9 @@
  * ESLint flat config (ESLint 9+).
  *
  * Three zones with different environments:
- *   - api/**           → Node.js (Vercel serverless), CommonJS
- *   - test/**          → Node.js, CommonJS, may use `global.fetch` overrides
- *   - assets/js/**     → Browser, no Node globals
+ *   - api/**, scripts/** → Node.js (Vercel serverless + one-off CLI scripts), CommonJS
+ *   - test/**            → Node.js, CommonJS, may use `global.fetch` overrides
+ *   - assets/js/**       → Browser, no Node globals
  *
  * Style is lenient — we lint for real bugs (unused vars, undefined refs,
  * accidental globals), not formatting. Prettier handles formatting.
@@ -28,8 +28,8 @@ module.exports = [
   js.configs.recommended,
   {
     // Server-side (Node) — Vercel serverless functions + shared lib + tests
-    // + config files at the repo root (eslint.config.js, etc.).
-    files: ['api/**/*.js', 'test/**/*.js', '*.config.js'],
+    // + one-off maintenance scripts + config files at the repo root.
+    files: ['api/**/*.js', 'test/**/*.js', 'scripts/**/*.js', '*.config.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',

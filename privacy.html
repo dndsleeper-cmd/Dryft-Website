@@ -124,7 +124,7 @@
 
   <p class="legal-eyebrow">Legal</p>
   <h1>Privacy Policy</h1>
-  <p class="legal-meta">Effective: May 27, 2026 · Last updated: May 27, 2026 (revised to describe Firestore storage, IP hashing, and security headers)</p>
+  <p class="legal-meta">Effective: May 27, 2026 · Last updated: May 28, 2026 (revised to describe progressive/partial survey saving and email-keyed storage)</p>
 
   <div class="legal-notice">
     <strong>Draft.</strong> This Privacy Policy reflects our current practices for the
@@ -176,7 +176,7 @@
   <p>On this website, we collect only what we need to operate the waitlist and improve the experience:</p>
   <ul>
     <li><strong>Email address</strong> — when you submit the waitlist form or the optional survey.</li>
-    <li><strong>Survey responses</strong> (optional) — answers you choose to share about how you currently manage money, including any free-text answer you choose to provide.</li>
+    <li><strong>Survey responses</strong> (optional) — answers about how you currently manage money, including any free-text answer you choose to provide. <strong>We save your answers progressively, as you select them — including a partial response if you start the survey but do not finish or submit it.</strong> Each response is stored in a single record keyed to your email, so re-answering a question overwrites your earlier choice rather than creating a new record. You can ask us to delete a partial or completed response at any time (see <a href="#your-rights">Section 7</a>).</li>
     <li><strong>Abuse-prevention metadata</strong> — when you submit a form, we store a one-way <strong>hash</strong> of your IP address (not the IP itself), your browser&rsquo;s user-agent string, and the time you spent on the page before submitting. These are kept alongside your submission so we can detect and stop automated abuse. The IP hash uses a per-deployment secret salt, so it is not reversible into the original IP.</li>
     <li><strong>Aggregate analytics</strong> — IP-derived approximate region, browser type, device type, referring site, and pages viewed. This is collected by our privacy-focused analytics provider (see <a href="#cookies">Section 9</a>) and is not tied to your email.</li>
   </ul>
@@ -199,8 +199,8 @@
   <h2 id="legal-basis">4. Legal basis (GDPR)</h2>
   <p>If you are in the European Economic Area or the United Kingdom, our legal bases are:</p>
   <ul>
-    <li><strong>Consent</strong> — you give consent when you submit the waitlist form or the optional survey. You may withdraw it at any time (see <a href="#your-rights">Section 7</a>).</li>
-    <li><strong>Legitimate interest</strong> — for aggregated analytics, anti-abuse, and operating the site.</li>
+    <li><strong>Consent</strong> — you give consent when you submit the waitlist form, and when you begin answering the optional survey after the on-screen notice that explains we save answers as you go (including partial responses). You may withdraw consent and request deletion at any time (see <a href="#your-rights">Section 7</a>).</li>
+    <li><strong>Legitimate interest</strong> — for retaining partial survey responses to improve the product, aggregated analytics, anti-abuse, and operating the site.</li>
   </ul>
 
   <h2 id="sharing">5. Service providers we share with</h2>
@@ -221,7 +221,7 @@
   <h2 id="retention">6. How long we keep it</h2>
   <ul>
     <li><strong>Waitlist email</strong> — until you unsubscribe or request deletion, or until two (2) years after Cohort 01 closes if you never join the product.</li>
-    <li><strong>Survey responses</strong> — for the duration of the waitlist plus two (2) years for product-research purposes, or until you request deletion.</li>
+    <li><strong>Survey responses</strong> (including partial, unfinished responses) — for the duration of the waitlist plus two (2) years for product-research purposes, or until you request deletion.</li>
     <li><strong>Analytics data</strong> — aggregated and retained per Vercel's defaults (currently up to 12 months).</li>
   </ul>
 

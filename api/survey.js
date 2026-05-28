@@ -1,28 +1,43 @@
 /**
  * POST /api/survey
  *
- * Captures one survey response. Writes a single Firestore document under
- * the `survey` collection. The waitlist email is required so we can join
- * a response back to its signup.
+ * Captures a survey response, keyed by email so we collect data even from users
+ * who never reach the final "Send answers" button. Every write UPSERTS a single
+ * Firestore doc whose id is derived from the email (surveyDocId), so:
+ *   - changing an answer overwrites the previous value (set + merge), and
+ *   - the same person reopening/reloading the survey reuses ONE doc
+ *     (abandoners are deduped, not duplicated).
+ *
+ * Two modes:
+ *   1. PARTIAL autosave — `partial: true`. Fired on every selection change.
+ *      Relaxed validation (the user may have answered almost nothing yet),
+ *      reCAPTCHA skipped, looser rate-limit bucket. Stored complete:false.
+ *   2. COMPLETE submit — the final "Send answers" (`complete: true`, no
+ *      `partial`). Strict required-field contract + reCAPTCHA. Stored
+ *      complete:true on the SAME (email-keyed) doc.
  *
  * Body (JSON or form-urlencoded):
- *   email        required
- *   source       required ("hero" or "final" — which form the user came from)
- *   careerStage  required — one of VALID_CAREER_STAGES in validate.js
- *   lifeStage    required — one of VALID_LIFE_STAGES in validate.js
+ *   email        required — the doc key (and joins a response to its signup)
+ *   partial      optional boolean — true marks an in-progress autosave
+ *   complete     optional boolean — true marks the response finished
+ *   source       "hero" | "final" (required for non-partial writes)
+ *   careerStage  one of VALID_CAREER_STAGES (required for non-partial)
+ *   lifeStage    one of VALID_LIFE_STAGES (required for non-partial)
  *   q1..q10      Likert scale, "1".."5" (strings on the wire, stored as ints)
  *   q11          Yes/No
  *   q12          open-ended text (optional)
  *
  * Likert questions are stored as integers (1..5) so they're aggregatable
  * in BigQuery/Looker without parseInt every time. Missing answers store as
- * null.
+ * null. Filter complete==false to find abandoners (you still get whatever
+ * they answered before leaving).
  */
 const { db, serverTimestamp } = require('./_lib/firestore');
 const {
   readBody,
   clientIp,
   hashIp,
+  surveyDocId,
   sanitizeEmail,
   isPlausibleEmail,
   sanitizeSource,
@@ -63,26 +78,43 @@ module.exports = async function handler(req, res) {
   const careerStage = sanitizeCareerStage(body.careerStage);
   const lifeStage = sanitizeLifeStage(body.lifeStage);
 
+  // A write is a "partial" autosave when explicitly flagged. Partial writes
+  // upsert progressively, so we relax the required-field contract (the user
+  // may have answered almost nothing yet).
+  const isPartial = body.partial === true || body.partial === 'true';
+  const isComplete = body.complete === true || body.complete === 'true';
+
+  // Email is ALWAYS required — it's both the doc key and the join to a signup.
   if (!isPlausibleEmail(email)) return res.status(400).json({ ok: false, reason: 'email' });
-  if (!source) return res.status(400).json({ ok: false, reason: 'source' });
-  if (!careerStage) return res.status(400).json({ ok: false, reason: 'careerStage' });
-  if (!lifeStage) return res.status(400).json({ ok: false, reason: 'lifeStage' });
+
+  // Non-partial (complete / legacy) submissions keep the strict contract.
+  if (!isPartial) {
+    if (!source) return res.status(400).json({ ok: false, reason: 'source' });
+    if (!careerStage) return res.status(400).json({ ok: false, reason: 'careerStage' });
+    if (!lifeStage) return res.status(400).json({ ok: false, reason: 'lifeStage' });
+  }
 
   const ip = clientIp(req);
   const ua = String(req.headers['user-agent'] || '').slice(0, 300);
   const ipHashVal = hashIp(ip);
 
-  // App Check + rate limit run BEFORE any data-shaping work so a flooder
-  // can't make us do expensive sanitization on every rejected request.
-  const verif = await verifyRecaptcha(body.recaptchaToken, ip);
-  if (!verif.ok) {
-    return res.status(403).json({ ok: false, reason: 'recaptcha:' + verif.reason });
+  // reCAPTCHA: enforce on complete/legacy submits only. Partial autosaves fire
+  // many times per session and v3 tokens expire (~2 min), so minting one per
+  // keystroke is impractical — we lean on the dedicated rate-limit bucket below.
+  if (!isPartial) {
+    const verif = await verifyRecaptcha(body.recaptchaToken, ip);
+    if (!verif.ok) {
+      return res.status(403).json({ ok: false, reason: 'recaptcha:' + verif.reason });
+    }
   }
-  // Survey is more permissive than waitlist (3/min vs 5/min) because each
-  // waitlist signup naturally fires one survey within seconds — but still
-  // tight enough to catch obvious abuse.
-  const rlKey = 'rl:survey:' + (ipHashVal || ip || 'unknown');
-  const rl = await rateLimit(rlKey, { max: 3, windowSec: 60 });
+
+  // Rate limit (BEFORE data-shaping so a flooder can't make us sanitize every
+  // rejected request). Partial autosaves get their own, looser bucket: a user
+  // answering ~13 questions (plus corrections) legitimately fires many writes.
+  const rlBase = ipHashVal || ip || 'unknown';
+  const rl = isPartial
+    ? await rateLimit('rl:survey:auto:' + rlBase, { max: 60, windowSec: 60 })
+    : await rateLimit('rl:survey:' + rlBase, { max: 3, windowSec: 60 });
   if (!rl.allowed) {
     res.setHeader('Retry-After', String(Math.ceil((rl.retryAfterMs || 60000) / 1000)));
     return res.status(429).json({ ok: false, reason: 'rate-limited' });
@@ -96,23 +128,33 @@ module.exports = async function handler(req, res) {
   const q11 = sanitizeYesNo(body.q11);
   const q12 = sanitizeText(body.q12);
 
+  // Shared field block written on every save. With merge:true, each autosave
+  // overwrites exactly these keys, so changing an answer updates it in place.
+  const fields = {
+    email,
+    emailLower: email.toLowerCase(),
+    source,
+    careerStage,
+    lifeStage,
+    ...likert,
+    q11, // 'Yes' | 'No' | ''
+    q12, // free text, max 2000 chars
+    complete: isComplete,
+    ipHash: ipHashVal,
+    userAgent: ua,
+  };
+
   try {
-    const docRef = await db()
-      .collection('survey')
-      .add({
-        createdAt: serverTimestamp(),
-        email,
-        emailLower: email.toLowerCase(),
-        source,
-        careerStage,
-        lifeStage,
-        ...likert,
-        q11, // 'Yes' | 'No' | ''
-        q12, // free text, max 2000 chars
-        ipHash: ipHashVal,
-        userAgent: ua,
-      });
-    return res.status(200).json({ ok: true, id: docRef.id });
+    // Upsert ONE doc per email. set+merge means a changed selection overwrites
+    // the old value, and a returning/reloading user reuses the same doc
+    // (abandoners deduped). createdAt is stamped only on first write.
+    const docId = surveyDocId(email);
+    const ref = db().collection('survey').doc(docId);
+    const snap = await ref.get();
+    const payload = { ...fields, updatedAt: serverTimestamp() };
+    if (!snap.exists) payload.createdAt = serverTimestamp();
+    await ref.set(payload, { merge: true });
+    return res.status(200).json({ ok: true, id: docId, complete: isComplete });
   } catch (err) {
     console.error('[survey] write failed:', err);
     return res.status(500).json({ ok: false, reason: 'server' });

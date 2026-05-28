@@ -228,10 +228,29 @@ let surveyEmail = '';
 let surveySource = '';
 let surveyLastFocus = null;
 
+// --- Progressive autosave state -------------------------------------------
+// Every selection is saved to Firebase as it happens (debounced). The server
+// keys the doc by the user's email, so changing an answer overwrites it in one
+// doc and reopening the survey reuses that same doc. This captures partial data
+// even if the user abandons before "Send answers".
+let surveyAutosaveSnapshot = '';  // last payload we sent (dedupe identical saves)
+let surveyAutosaveTimer = null;   // debounce handle
+let surveyCompleted = false;      // true once the final submit succeeds
+const SURVEY_AUTOSAVE_DEBOUNCE_MS = 700;
+// Assigned by the survey IIFE once the autosave helpers exist; called from the
+// module-scope select/close handlers. No-ops until then.
+let triggerSurveyAutosave = function () {};
+let flushSurveyAutosave = function () {};
+
 function openSurvey(email, source) {
   if (!surveyModal) return;
   surveyEmail = email;
   surveySource = source;
+  // Clean autosave state. The doc is keyed server-side by email, so reopening
+  // the survey for the same person continues their existing doc.
+  surveyAutosaveSnapshot = '';
+  surveyCompleted = false;
+  clearTimeout(surveyAutosaveTimer);
   // Reset selections + form state in case the modal was opened earlier in this session
   resetSurvey();
   surveyLastFocus = document.activeElement;
@@ -251,6 +270,9 @@ function openSurvey(email, source) {
 
 function closeSurvey() {
   if (!surveyModal) return;
+  // Capture the latest answers if the user bails out without submitting.
+  // (No-op if they already completed — guarded inside the autosave helper.)
+  flushSurveyAutosave();
   surveyModal.classList.remove('open');
   document.body.classList.remove('survey-open');
   setTimeout(() => {
@@ -291,6 +313,8 @@ function bindSelectGroup(container, hiddenName) {
       btn.classList.add('selected');
       btn.setAttribute('aria-checked', 'true');
       if (hidden) hidden.value = btn.dataset.value;
+      // Persist this choice to Firebase (debounced). Re-selecting overwrites it.
+      triggerSurveyAutosave();
       // Clear missing-state for this question
       if (qBlock) qBlock.classList.remove('unanswered');
       // Auto-dismiss the global "missing" notice if every question now has a value.
@@ -336,7 +360,6 @@ if (surveyModal && surveyForm) {
   // make sure nothing other than the expected values reaches the server.
   // (The server re-validates against the same allowlists — this is defense in depth.)
   const VALID_CAREER_STAGES = new Set([
-    'High school student',
     'University / college student',
     'Recent graduate (0–2 years working)',
     'Early-career professional (3–7 years)',
@@ -420,6 +443,81 @@ if (surveyModal && surveyForm) {
     return s;
   }
 
+  // ----- Progressive autosave -----
+  // Snapshot the survey's CURRENT state (answered + blank fields). We send the
+  // full snapshot every time and the server merges it, so the stored doc always
+  // mirrors what's on screen — changing any answer overwrites it.
+  function currentSurveyPayload(complete) {
+    const data = new FormData(surveyForm);
+    const payload = {
+      email: sanitizeEmail(surveyEmail || ''),
+      source: String(surveySource || '').replace(/[^a-z]/gi, '').slice(0, 16),
+      careerStage: sanitizeCareerStage(data.get('careerStage')),
+      lifeStage: sanitizeLifeStage(data.get('lifeStage')),
+      q11: sanitizeYesNo(data.get('q11')),
+      q12: sanitizeText(data.get('q12')),
+      complete: !!complete,
+    };
+    ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10']
+      .forEach((k) => { payload[k] = sanitizeScale(data.get(k)); });
+    return payload;
+  }
+
+  // Fire a partial save now. `useBeacon` uses navigator.sendBeacon so the write
+  // survives the page being torn down (tab close / navigation). Dedupes against
+  // the last payload so we don't spam identical writes.
+  function autosaveNow(useBeacon) {
+    if (surveyCompleted) return;          // final submit already wrote the doc
+    if (!surveyEmail) return;             // email is the server-side doc key
+    const payload = currentSurveyPayload(false);
+    payload.partial = true;               // relaxed validation + autosave bucket
+    const snap = JSON.stringify(payload);
+    if (snap === surveyAutosaveSnapshot) return; // nothing changed since last save
+    surveyAutosaveSnapshot = snap;
+    if (useBeacon && navigator.sendBeacon) {
+      try {
+        navigator.sendBeacon(SURVEY_ENDPOINT, new Blob([snap], { type: 'application/json' }));
+        return;
+      } catch (_) { /* fall through to fetch */ }
+    }
+    // Fire-and-forget; autosave failures are non-fatal (final submit is the
+    // authoritative write, and the next change will retry).
+    fetch(SURVEY_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: snap,
+      keepalive: true,
+    }).catch(() => {});
+  }
+
+  // Expose the debounced trigger + an immediate flush to the module scope so the
+  // select handlers (bindSelectGroup) and closeSurvey can drive autosave.
+  triggerSurveyAutosave = function () {
+    clearTimeout(surveyAutosaveTimer);
+    surveyAutosaveTimer = setTimeout(() => autosaveNow(false), SURVEY_AUTOSAVE_DEBOUNCE_MS);
+  };
+  flushSurveyAutosave = function () {
+    clearTimeout(surveyAutosaveTimer);
+    autosaveNow(false);
+  };
+
+  // Open-ended textarea (q12): debounce while typing, flush on blur.
+  const q12Field = surveyForm.querySelector('textarea[name="q12"]');
+  if (q12Field) {
+    q12Field.addEventListener('input', () => triggerSurveyAutosave());
+    q12Field.addEventListener('blur', () => flushSurveyAutosave());
+  }
+
+  // Last-ditch capture if the user leaves with the survey open: beacon the
+  // current state so their final choices aren't lost.
+  const beaconIfOpen = () => {
+    if (surveyModal.classList.contains('open')) autosaveNow(true);
+  };
+  window.addEventListener('pagehide', beaconIfOpen);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') beaconIfOpen();
+  });
+
   // Derive the question list from the form itself — one hidden input per question.
   // This auto-adapts if questions are added or removed from the HTML.
   function getQuestionInputs() {
@@ -478,27 +576,19 @@ if (surveyModal && surveyForm) {
     surveyLastSubmitAt = nowTs;
     surveySubmitCount++;
 
+    // Cancel any pending debounced autosave — this complete submit supersedes it.
+    clearTimeout(surveyAutosaveTimer);
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'Sending…';
     // Mark in-flight + show the inline "don't close this tab" notice
     isSurveySubmitting = true;
     showSurveySendingNotice(true);
 
-    // Build the JSON payload. The server re-sanitizes every field, but we
-    // still scrub here so the wire format is clean and the dev console payload
-    // is easy to read. surveyEmail came from sanitizeEmail() earlier; we
-    // re-validate before posting in case the reference was tampered with.
-    const data = new FormData(surveyForm);
-    const payload = {
-      email:        sanitizeEmail(surveyEmail || ''),
-      source:       String(surveySource || '').replace(/[^a-z]/gi, '').slice(0, 16),
-      careerStage:  sanitizeCareerStage(data.get('careerStage')),
-      lifeStage:    sanitizeLifeStage(data.get('lifeStage')),
-      q11:          sanitizeYesNo(data.get('q11')),
-      q12:          sanitizeText(data.get('q12')),
-    };
-    ['q1','q2','q3','q4','q5','q6','q7','q8','q9','q10']
-      .forEach(k => { payload[k] = sanitizeScale(data.get(k)); });
+    // Build the JSON payload (same snapshot the autosave uses), flagged
+    // complete:true so it upserts the SAME responseId doc and marks it finished.
+    // The server re-sanitizes every field; we scrub here for a clean wire format.
+    const payload = currentSurveyPayload(true);
 
     try {
       // Attach a fresh reCAPTCHA token (or '' if disabled). Token must be
@@ -516,6 +606,7 @@ if (surveyModal && surveyForm) {
         keepalive: true,
       });
       if (!resp.ok) console.warn('[dryft survey] non-OK response:', resp.status);
+      else surveyAutosaveSnapshot = JSON.stringify(payload);
     } catch (err) {
       console.error('[dryft survey] save failed:', err);
     } finally {
@@ -524,6 +615,10 @@ if (surveyModal && surveyForm) {
       isSurveySubmitting = false;
       showSurveySendingNotice(false);
     }
+
+    // Mark completed so the close/beacon handlers don't overwrite the finished
+    // doc with a partial (complete:false) snapshot.
+    surveyCompleted = true;
 
     // Always show success — fire-and-forget per the no-cors fetch above
     surveyForm.style.display = 'none';

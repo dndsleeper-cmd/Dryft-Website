@@ -26,6 +26,9 @@ process.env.IP_HASH_SALT = 'a'.repeat(64);
 
 // --- Mock firebase-admin --------------------------------------------------
 const writes = [];
+// Keyed doc store ("<collection>/<id>" → data) so we can exercise the
+// upsert/merge path used by progressive survey autosave.
+const docStore = new Map();
 const mockAdmin = {
   apps: [],
   credential: { cert: () => ({}) },
@@ -40,7 +43,31 @@ const mockAdmin = {
           async add(doc) {
             const id = 'doc_' + crypto.randomBytes(4).toString('hex');
             writes.push({ collection: name, id, doc });
+            docStore.set(name + '/' + id, { ...doc });
             return { id };
+          },
+          doc(id) {
+            const key = name + '/' + id;
+            return {
+              id,
+              async get() {
+                const existing = docStore.get(key);
+                return { exists: docStore.has(key), id, data: () => existing };
+              },
+              async set(doc, opts) {
+                const prev = docStore.get(key) || {};
+                const merged = opts && opts.merge ? { ...prev, ...doc } : { ...doc };
+                docStore.set(key, merged);
+                writes.push({
+                  collection: name,
+                  id,
+                  doc: merged,
+                  op: 'set',
+                  merge: !!(opts && opts.merge),
+                });
+                return;
+              },
+            };
           },
         };
       },
@@ -70,6 +97,8 @@ require.cache[adminPath] = {
 // Now load the handlers
 const waitlist = require(path.join(projectRoot, 'api', 'waitlist.js'));
 const survey = require(path.join(projectRoot, 'api', 'survey.js'));
+// Pull the real email→docId derivation so tests assert against the actual key.
+const { surveyDocId } = require(path.join(projectRoot, 'api', '_lib', 'validate.js'));
 
 // --- Test harness ---------------------------------------------------------
 let pass = 0,
@@ -414,6 +443,99 @@ async function run() {
     });
     await survey(req, res);
     ok(writes[0]?.doc.q11 === '', 'q11 outside Yes/No allowlist → empty string');
+  }
+
+  console.log('\n\x1b[1m== Survey progressive autosave (email-keyed upsert) ==\x1b[0m');
+
+  // -- Partial autosave: partial:true → upserts one email-keyed doc with
+  //    relaxed validation (no source/careerStage/lifeStage required).
+  {
+    writes.length = 0;
+    const email = 'partial@example.com';
+    const { req, res } = fakeReqRes('POST', {
+      email,
+      partial: true,
+      careerStage: 'University / college student',
+    });
+    await survey(req, res);
+    const d = docStore.get('survey/' + surveyDocId(email)) || {};
+    ok(res.statusCode === 200, 'partial autosave (partial:true) → 200');
+    ok(res.body.id === surveyDocId(email), 'doc id is the email-derived key');
+    ok(res.body.complete === false, 'partial response echoes complete:false');
+    ok(d.complete === false, 'partial write stored complete:false');
+    ok(d.careerStage === 'University / college student', 'partial captured the answered field');
+    ok(d.emailLower === email, 'emailLower stored as a field for lookups');
+    ok('createdAt' in d, 'first partial write sets createdAt once');
+  }
+
+  // -- Changing an answer overwrites the SAME email-keyed doc (no duplicate)
+  {
+    writes.length = 0;
+    const email = 'ow@example.com';
+    const base = { email, partial: true };
+    const { req: r1, res: w1 } = fakeReqRes('POST', { ...base, q1: '2' });
+    await survey(r1, w1);
+    const { req: r2, res: w2 } = fakeReqRes('POST', { ...base, q1: '5' });
+    await survey(r2, w2);
+    const d = docStore.get('survey/' + surveyDocId(email)) || {};
+    ok(d.q1 === 5, 'changed answer overwrites in place (q1: 2 → 5)');
+    const ids = new Set(writes.map((w) => w.id));
+    ok(ids.size === 1 && ids.has(surveyDocId(email)), 'both writes hit the one email doc (no dup)');
+  }
+
+  // -- Abandoner dedup: a second SESSION for the same email reuses the doc,
+  //    and case-insensitivity means EMAIL == email map to the same key.
+  //    (The client re-sends the full snapshot each save, so session 2 carries
+  //    q1 forward and adds q2 — mirroring real behavior.)
+  {
+    writes.length = 0;
+    const { req: r1, res: w1 } = fakeReqRes('POST', {
+      email: 'Dedup@Example.com',
+      partial: true,
+      q1: '1',
+    });
+    await survey(r1, w1);
+    const { req: r2, res: w2 } = fakeReqRes('POST', {
+      email: 'dedup@example.com',
+      partial: true,
+      q1: '1',
+      q2: '4',
+    });
+    await survey(r2, w2);
+    const key = surveyDocId('dedup@example.com');
+    const d = docStore.get('survey/' + key) || {};
+    ok(w1.body.id === key && w2.body.id === key, 'mixed-case email maps to one doc key');
+    ok(d.q1 === 1 && d.q2 === 4, 'second session reuses the same email doc (no duplicate)');
+  }
+
+  // -- Complete submit for the same email flips complete:true in place
+  {
+    writes.length = 0;
+    const email = 'c@example.com';
+    const { req: r1, res: w1 } = fakeReqRes('POST', { email, partial: true, q1: '3' });
+    await survey(r1, w1);
+    const { req: r2, res: w2 } = fakeReqRes('POST', {
+      email,
+      complete: true,
+      source: 'hero',
+      careerStage: 'Retired',
+      lifeStage: 'Retired',
+      q1: '3',
+    });
+    await survey(r2, w2);
+    const d = docStore.get('survey/' + surveyDocId(email)) || {};
+    ok(w2.statusCode === 200, 'complete submit → 200');
+    ok(w2.body.complete === true, 'response echoes complete:true');
+    ok(d.complete === true, 'complete submit flips complete:true on the same email doc');
+    ok(d.q1 === 3, 'answers preserved through the complete write');
+  }
+
+  // -- Partial write still requires a plausible email (it IS the doc key)
+  {
+    writes.length = 0;
+    const { req, res } = fakeReqRes('POST', { partial: true, q1: '3' });
+    await survey(req, res);
+    ok(res.statusCode === 400 && res.body.reason === 'email', 'partial without email → 400 email');
   }
 
   // -- q12 formula injection defused

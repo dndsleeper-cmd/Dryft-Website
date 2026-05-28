@@ -49,7 +49,6 @@ function sanitizeSource(v) {
 // Kept as a Set so allowlist membership is O(1). Must match the data-value
 // attributes in index.html exactly — including the en-dash in "0–2" etc.
 const VALID_CAREER_STAGES = new Set([
-  'High school student',
   'University / college student',
   'Recent graduate (0–2 years working)',
   'Early-career professional (3–7 years)',
@@ -144,6 +143,26 @@ function hashIp(ip) {
     .update(salt + '|' + ip)
     .digest('hex')
     .slice(0, 16);
+}
+
+// --- Survey doc id (email-keyed) ------------------------------------------
+// Deterministic Firestore doc id derived from the (lowercased) email, so every
+// save from one person upserts ONE doc — this dedupes abandoners who reopen or
+// reload the survey instead of creating a new doc each time.
+//
+// We hash (rather than use the raw email as the id) to keep PII out of the
+// document PATH — ids surface in logs, exports, and backups. The email itself
+// is still stored in the `email`/`emailLower` FIELDS for joins/lookups.
+//
+// Unsalted on purpose: it must be stable across deploys AND recomputable for a
+// known email (so you can look a response up). It is not a secret — client
+// access to Firestore is deny-all, the Admin SDK bypasses rules.
+function surveyDocId(email) {
+  const e = String(email == null ? '' : email)
+    .trim()
+    .toLowerCase();
+  if (!e) return null;
+  return 's_' + crypto.createHash('sha256').update(e).digest('hex');
 }
 
 // --- Request body parsing --------------------------------------------------
@@ -310,6 +329,7 @@ module.exports = {
   sanitizeText,
   sanitizeInt,
   hashIp,
+  surveyDocId,
   clientIp,
   readBody,
   verifyRecaptcha,

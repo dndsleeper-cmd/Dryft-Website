@@ -69,7 +69,11 @@ const LIMIT = parseInt(getFlag('limit', '0'), 10) || 0;
 // ---- minimal .env.local loader (only if vars not already in the env) ------
 // Lets the script work whether you use `node --env-file=.env.local` or not.
 (function loadDotEnvLocal() {
-  if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+  if (
+    process.env.FIREBASE_PROJECT_ID &&
+    process.env.FIREBASE_CLIENT_EMAIL &&
+    process.env.FIREBASE_PRIVATE_KEY
+  ) {
     return; // already provided (e.g. via --env-file or exported)
   }
   const p = path.resolve(process.cwd(), '.env.local');
@@ -110,7 +114,7 @@ const { FieldValue } = admin.firestore;
 
 // ---- helpers --------------------------------------------------------------
 const isLikert = (v) => v === null || (Number.isInteger(v) && v >= 1 && v <= 5);
-const asLikert = (v) => (isLikert(v) ? v : (Number.isInteger(v) ? v : null));
+const asLikert = (v) => (isLikert(v) ? v : Number.isInteger(v) ? v : null);
 const asYesNo = (v) => (v === 'Yes' || v === 'No' ? v : '');
 
 // A doc needs migration iff it carries the OLD-schema signature: a STRING q7.
