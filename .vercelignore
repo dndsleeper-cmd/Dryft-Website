@@ -8,6 +8,9 @@ docs/
 # Tests run in CI, never in production.
 test/
 
+# One-off maintenance / migration scripts — run locally, never shipped.
+scripts/
+
 # Anthropic Claude Code workspace state.
 .claude/
 

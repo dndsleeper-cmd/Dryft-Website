@@ -298,11 +298,11 @@ async function run() {
       q4: '2',
       q5: '1',
       q6: '4',
-      q8: '5',
-      q9: '3',
-      q10: '4',
-      q11: '5',
-      q7: 'Yes',
+      q7: '5',
+      q8: '3',
+      q9: '4',
+      q10: '5',
+      q11: 'Yes',
       q12: 'Subscriptions sneak up on me each month.',
     };
     const { req, res } = fakeReqRes('POST', payload);
@@ -315,8 +315,8 @@ async function run() {
     const d = writes[0]?.doc || {};
     ok(d.careerStage === 'Mid-career professional', 'careerStage allowlist accepts known value');
     ok(d.lifeStage === 'Living independently', 'lifeStage allowlist accepts known value');
-    ok(d.q1 === 5 && d.q11 === 5, 'Likert stored as integer, not string');
-    ok(d.q7 === 'Yes', 'q7 Yes/No stored');
+    ok(d.q1 === 5 && d.q10 === 5, 'Likert stored as integer, not string');
+    ok(d.q11 === 'Yes', 'q11 Yes/No stored');
     ok(d.q12 === 'Subscriptions sneak up on me each month.', 'q12 free text stored');
   }
 
@@ -379,7 +379,7 @@ async function run() {
     ok(res.statusCode === 200, 'sparse survey accepted (Likert is optional per question)');
     const d = writes[0]?.doc || {};
     ok(d.q1 === 4, 'q1 stored as integer 4');
-    ok(d.q5 === null && d.q11 === null, 'missing Likert answers stored as null');
+    ok(d.q5 === null && d.q10 === null, 'missing Likert answers stored as null');
   }
 
   // -- Out-of-range Likert sanitized to null
@@ -402,7 +402,7 @@ async function run() {
     );
   }
 
-  // -- q7 Yes/No allowlist
+  // -- q11 Yes/No allowlist
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
@@ -410,10 +410,10 @@ async function run() {
       source: 'hero',
       careerStage: 'Retired',
       lifeStage: 'Retired',
-      q7: 'Maybe',
+      q11: 'Maybe',
     });
     await survey(req, res);
-    ok(writes[0]?.doc.q7 === '', 'q7 outside Yes/No allowlist → empty string');
+    ok(writes[0]?.doc.q11 === '', 'q11 outside Yes/No allowlist → empty string');
   }
 
   // -- q12 formula injection defused

@@ -362,7 +362,7 @@ if (surveyModal && surveyForm) {
   ]);
   // Likert scale: empty string (unanswered) or "1"–"5"
   const VALID_SCALE = new Set(['', '1', '2', '3', '4', '5']);
-  // Yes/No question (q7): empty string (unanswered) or "Yes"/"No"
+  // Yes/No question (q11): empty string (unanswered) or "Yes"/"No"
   const VALID_YESNO = new Set(['', 'Yes', 'No']);
   // Survey-level throttle to mirror the waitlist anti-abuse posture
   let surveySubmitCount = 0;
@@ -494,10 +494,10 @@ if (surveyModal && surveyForm) {
       source:       String(surveySource || '').replace(/[^a-z]/gi, '').slice(0, 16),
       careerStage:  sanitizeCareerStage(data.get('careerStage')),
       lifeStage:    sanitizeLifeStage(data.get('lifeStage')),
-      q7:           sanitizeYesNo(data.get('q7')),
+      q11:          sanitizeYesNo(data.get('q11')),
       q12:          sanitizeText(data.get('q12')),
     };
-    ['q1','q2','q3','q4','q5','q6','q8','q9','q10','q11']
+    ['q1','q2','q3','q4','q5','q6','q7','q8','q9','q10']
       .forEach(k => { payload[k] = sanitizeScale(data.get(k)); });
 
     try {

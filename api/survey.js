@@ -10,8 +10,8 @@
  *   source       required ("hero" or "final" — which form the user came from)
  *   careerStage  required — one of VALID_CAREER_STAGES in validate.js
  *   lifeStage    required — one of VALID_LIFE_STAGES in validate.js
- *   q1..q11      Likert scale, "1".."5" (strings on the wire, stored as ints)
- *   q7           Yes/No
+ *   q1..q10      Likert scale, "1".."5" (strings on the wire, stored as ints)
+ *   q11          Yes/No
  *   q12          open-ended text (optional)
  *
  * Likert questions are stored as integers (1..5) so they're aggregatable
@@ -35,10 +35,11 @@ const {
   rateLimit,
 } = require('./_lib/validate');
 
-// Likert question field names — keep this in sync with the form. The order
-// here defines storage shape; rearranging is a NO-OP for stored data because
-// each field is keyed by name.
-const LIKERT_KEYS = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q8', 'q9', 'q10', 'q11'];
+// Likert question field names — keep this in sync with the form. Field names
+// now match the on-screen display order (q1..q10 = the ten 1–5 questions, in the
+// order shown). The order here defines storage shape; rearranging is a NO-OP for
+// stored data because each field is keyed by name.
+const LIKERT_KEYS = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10'];
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -92,7 +93,7 @@ module.exports = async function handler(req, res) {
   const likert = {};
   for (const k of LIKERT_KEYS) likert[k] = scaleToNumber(body[k]);
 
-  const q7 = sanitizeYesNo(body.q7);
+  const q11 = sanitizeYesNo(body.q11);
   const q12 = sanitizeText(body.q12);
 
   try {
@@ -106,7 +107,7 @@ module.exports = async function handler(req, res) {
         careerStage,
         lifeStage,
         ...likert,
-        q7, // 'Yes' | 'No' | ''
+        q11, // 'Yes' | 'No' | ''
         q12, // free text, max 2000 chars
         ipHash: ipHashVal,
         userAgent: ua,
