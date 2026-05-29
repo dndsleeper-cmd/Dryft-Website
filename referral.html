@@ -10,7 +10,7 @@
 <meta name="color-scheme" content="light">
 
 <!-- SECURITY — duplicated in vercel.json as real HTTP headers (authoritative); meta is a fallback. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.vercel-insights.com https://va.vercel-scripts.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://vitals.vercel-insights.com https://va.vercel-scripts.com; frame-src https://www.google.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.vercel-insights.com https://va.vercel-scripts.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://vitals.vercel-insights.com https://va.vercel-scripts.com; frame-src https://www.google.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 
@@ -26,11 +26,11 @@
 <meta name="recaptcha-site-key" content="YOUR_RECAPTCHA_V3_SITE_KEY">
 <script defer src="assets/js/recaptcha-bootstrap.js?v=20260527a"></script>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="preload" as="font" type="font/woff2" href="/assets/fonts/inter-tight-500-normal-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="/assets/fonts/dm-serif-400-italic-latin.woff2" crossorigin>
+<link rel="stylesheet" href="/assets/fonts/fonts.css">
 <script defer src="https://cdn.vercel-insights.com/v1/script.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<link rel="stylesheet" href="assets/css/styles.css?v=20260529k">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260529l">
 </head>
 <body>
 

@@ -14,7 +14,7 @@
 
 <!-- SECURITY — these are duplicated in vercel.json as real HTTP headers (authoritative).
      Meta tags act as a fallback if the site is ever served from somewhere without those headers. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.vercel-insights.com https://va.vercel-scripts.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://vitals.vercel-insights.com https://va.vercel-scripts.com; frame-src https://www.google.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.vercel-insights.com https://va.vercel-scripts.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://vitals.vercel-insights.com https://va.vercel-scripts.com; frame-src https://www.google.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="Permissions-Policy" content="accelerometer=(), autoplay=(), browsing-topics=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), hid=(), idle-detection=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), serial=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=(), interest-cohort=()">
@@ -50,8 +50,6 @@
 <link rel="alternate" hreflang="en" href="https://thedryft.com/">
 <link rel="alternate" hreflang="x-default" href="https://thedryft.com/">
 <meta name="format-detection" content="telephone=no, email=no, address=no">
-<link rel="dns-prefetch" href="https://fonts.googleapis.com">
-<link rel="dns-prefetch" href="https://fonts.gstatic.com">
 <link rel="dns-prefetch" href="https://cdn.vercel-insights.com">
 
 <!-- reCAPTCHA v3 site key. PUBLIC by design — Google requires it client-side.
@@ -63,17 +61,16 @@
 <meta name="recaptcha-site-key" content="YOUR_RECAPTCHA_V3_SITE_KEY">
 <script defer src="assets/js/recaptcha-bootstrap.js?v=20260527a"></script>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Note: SRI is intentionally NOT used on Google Fonts (dynamic UA-conditional CSS)
-     or on Vercel Insights (rotates with no pinned-version SRI hashes). Both are loaded
-     crossorigin + referrerpolicy=no-referrer and constrained by our CSP origin allowlist. -->
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
+<!-- Self-hosted fonts — no render-blocking third-party request. Preload the two
+     faces used in the above-the-fold hero so the LCP text paints without a swap. -->
+<link rel="preload" as="font" type="font/woff2" href="/assets/fonts/inter-tight-500-normal-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="/assets/fonts/dm-serif-400-italic-latin.woff2" crossorigin>
+<link rel="stylesheet" href="/assets/fonts/fonts.css">
 <script defer src="https://cdn.vercel-insights.com/v1/script.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <!-- Preload the hero background — it's the above-the-fold LCP element, so we
      fetch it at high priority instead of waiting for the CSS to discover it. -->
 <link rel="preload" as="image" href="/assets/images/background.jpg?v=20260529" fetchpriority="high">
-<link rel="stylesheet" href="assets/css/styles.css?v=20260529k">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260529l">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
