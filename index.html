@@ -7,7 +7,7 @@
 <meta name="description" content="Dryft is the predictive finance coach for students. Free while you're in school; just verify your student status. It learns your habits and nudges you on day 9, while one change still saves the month. Private Beta 01 · 300 spots.">
 <meta name="keywords" content="finance coach for students, budgeting app for college students, finance app for young professionals, early-career budgeting, predictive budgeting, AI finance coach, Plaid budgeting app, spending alerts, adaptive budget, habit-based budgeting, day 9 nudge, real-life budget">
 <meta name="author" content="Dryft">
-<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, noai, noimageai">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
 <meta name="googlebot" content="index, follow">
 <meta name="theme-color" content="#f4f6f7">
 <meta name="color-scheme" content="light">
@@ -41,8 +41,11 @@
 <meta name="twitter:image:alt" content="Dryft: a budget that adapts to real life. Private Beta 01.">
 <!-- Favicon URL is version-busted because browsers cache favicons extremely
      aggressively (often surviving hard reloads). Bump the ?v= on every change. -->
-<link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=20260527b">
-<link rel="apple-touch-icon" href="assets/favicon.svg?v=20260527b">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" type="image/png" sizes="96x96" href="/assets/icons/favicon-96.png">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=20260529">
+<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 <link rel="alternate" hreflang="en" href="https://thedryft.com/">
 <link rel="alternate" hreflang="x-default" href="https://thedryft.com/">
@@ -67,7 +70,10 @@
      crossorigin + referrerpolicy=no-referrer and constrained by our CSP origin allowlist. -->
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script defer src="https://cdn.vercel-insights.com/v1/script.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<link rel="stylesheet" href="assets/css/styles.css?v=20260529i">
+<!-- Preload the hero background — it's the above-the-fold LCP element, so we
+     fetch it at high priority instead of waiting for the CSS to discover it. -->
+<link rel="preload" as="image" href="/assets/images/background.jpg?v=20260529" fetchpriority="high">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260529k">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -272,7 +278,7 @@
       <div class="success-msg" id="hero-success">You're in. We'll be in touch...</div>
 
       <p class="hero-fine">Private Beta 01 · 300 spots<span class="join-frag" data-join-count hidden></span> · survey takers skip the line.</p>
-      <p class="form-consent">By submitting, you accept our <a href="/privacy.html">Privacy</a> &amp; <a href="/terms.html">Terms</a>.</p>
+      <p class="form-consent">By submitting, you accept our <a href="/privacy">Privacy</a> &amp; <a href="/terms">Terms</a>.</p>
     </div>
 
     <div class="hero-demo" aria-hidden="true">
@@ -910,7 +916,7 @@
     </form>
     <div class="final-success" id="final-success">You're in. We'll email you when Private Beta 01 opens.</div>
     <p class="cta-fine">Private Beta 01 · 300 spots<span class="join-frag" data-join-count hidden></span> · survey takers get priority access.</p>
-    <p class="form-consent">By submitting, you accept our <a href="/privacy.html">Privacy</a> &amp; <a href="/terms.html">Terms</a>.</p>
+    <p class="form-consent">By submitting, you accept our <a href="/privacy">Privacy</a> &amp; <a href="/terms">Terms</a>.</p>
   </div>
 </section>
 
@@ -924,8 +930,8 @@
     <span>Dryft</span>
   </div>
   <nav class="footer-links" aria-label="Footer">
-    <a href="/privacy.html">Privacy</a>
-    <a href="/terms.html">Terms</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/terms">Terms</a>
     <a href="mailto:muqeeth082005@gmail.com">Contact</a>
   </nav>
   <p class="footer-meta">&trade; 2026 Dryft &middot; Made in Waterloo, Ontario &middot; Not financial advice &middot; Read-only bank access</p>
@@ -1200,7 +1206,7 @@
         <button type="submit" class="survey-submit">Send answers</button>
       </div>
       <p class="survey-age">By taking part, you confirm you are <strong>18 or older</strong>.</p>
-      <p class="form-consent survey-consent">Your responses are handled under our <a href="/privacy.html">Privacy Policy</a> &amp; <a href="/terms.html">Terms</a>. Request deletion anytime at <a href="mailto:muqeeth082005@gmail.com">muqeeth082005@gmail.com</a>.</p>
+      <p class="form-consent survey-consent">Your responses are handled under our <a href="/privacy">Privacy Policy</a> &amp; <a href="/terms">Terms</a>. Request deletion anytime at <a href="mailto:muqeeth082005@gmail.com">muqeeth082005@gmail.com</a>.</p>
     </form>
 
     <div class="survey-success" id="survey-success" hidden>

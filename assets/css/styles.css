@@ -275,7 +275,7 @@ body.menu-open { overflow: hidden; }
   top: 50%; left: 50%;
   width: max(140vh, 100vw);
   height: max(140vw, 100vh);
-  background: url('../images/background.jpg') center/cover no-repeat;
+  background: url('../images/background.jpg?v=20260529') center/cover no-repeat;
   transform: translate(-50%, -50%) rotate(-90deg);
   transform-origin: center;
   z-index: -2;
