@@ -67,7 +67,7 @@
      crossorigin + referrerpolicy=no-referrer and constrained by our CSP origin allowlist. -->
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script defer src="https://cdn.vercel-insights.com/v1/script.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<link rel="stylesheet" href="assets/css/styles.css?v=20260529e">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260529h">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -203,6 +203,7 @@
     <!-- <a href="#coaches">Coaches</a> --> <!-- hidden with the .coaches section -->
     <a href="#pricing">Pricing</a>
     <a href="#faq">FAQ</a>
+    <a href="/referral">Referral?</a>
   </div>
   <div class="nav-right">
     <a href="#waitlist" class="nav-cta">Join free</a>
@@ -220,6 +221,7 @@
   <!-- <a href="#coaches">Coaches</a> --> <!-- hidden with the .coaches section -->
   <a href="#pricing">Pricing</a>
   <a href="#faq">FAQ</a>
+  <a href="/referral">Referral?</a>
   <a href="#waitlist" class="mobile-menu-cta">Join free</a>
 </div>
 
@@ -269,6 +271,7 @@
       </form>
       <div class="success-msg" id="hero-success">You're in. We'll be in touch...</div>
 
+      <p class="join-count" data-join-count hidden></p>
       <p class="hero-fine">Private Beta 01 is capped at 300. Survey takers skip the line.</p>
       <p class="form-consent">By submitting, you accept our <a href="/privacy.html">Privacy</a> &amp; <a href="/terms.html">Terms</a>.</p>
     </div>
@@ -907,6 +910,7 @@
       <button type="submit">Claim my free spot</button>
     </form>
     <div class="final-success" id="final-success">You're in. We'll email you when Private Beta 01 opens.</div>
+    <p class="join-count" data-join-count hidden></p>
     <p class="cta-fine">Capped at 300. Survey takers get priority access.</p>
     <p class="form-consent">By submitting, you accept our <a href="/privacy.html">Privacy</a> &amp; <a href="/terms.html">Terms</a>.</p>
   </div>
@@ -941,6 +945,18 @@
       <p class="survey-eyebrow">Optional · 60 seconds</p>
       <h3 id="survey-title">Help shape the product.</h3>
       <p class="survey-sub"><strong>Preference for Private Beta 01, only 300 spots</strong>.</p>
+    </div>
+
+    <!-- Referral banner — populated by main.js from the /api/waitlist response.
+         Sits above the form + success so the code stays visible after submitting. -->
+    <div class="survey-referral" id="survey-referral" hidden>
+      <p class="sr-position" id="survey-position" hidden></p>
+      <p class="sr-label">Your referral code</p>
+      <div class="sr-code-row">
+        <code class="sr-code" id="survey-code">—</code>
+        <button type="button" class="sr-copy" id="survey-copy" aria-label="Copy referral code">Copy</button>
+      </div>
+      <p class="sr-hint">Share it. Every friend who joins with your code bumps you up <strong>10 spots</strong>.</p>
     </div>
 
     <form class="survey-form" id="survey-form" novalidate>
@@ -1200,6 +1216,6 @@
   </div>
 </div>
 
-<script defer src="assets/js/main.js?v=20260529c"></script>
+<script defer src="assets/js/main.js?v=20260529e"></script>
 </body>
 </html>

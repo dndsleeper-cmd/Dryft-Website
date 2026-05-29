@@ -48,4 +48,11 @@ function serverTimestamp() {
   return admin.firestore.FieldValue.serverTimestamp();
 }
 
-module.exports = { getAdmin, db, serverTimestamp, admin };
+// Atomic numeric increment sentinel. Used so a referral (+10 to priorityScore,
+// +1 to referralCount) and a survey completion (+1e9 to priorityScore) apply
+// without a read-modify-write race — each delta is committed atomically.
+function increment(n) {
+  return admin.firestore.FieldValue.increment(n);
+}
+
+module.exports = { getAdmin, db, serverTimestamp, increment, admin };

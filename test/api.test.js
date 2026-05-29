@@ -29,6 +29,84 @@ const writes = [];
 // Keyed doc store ("<collection>/<id>" → data) so we can exercise the
 // upsert/merge path used by progressive survey autosave.
 const docStore = new Map();
+// Resolve FieldValue.increment(n) sentinels against the previous doc value, so
+// the mock mirrors Firestore's atomic numeric increment (used for referral
+// credit: priorityScore += 10, referralCount += 1).
+function resolveIncrements(prev, doc) {
+  const out = {};
+  for (const k of Object.keys(doc)) {
+    const v = doc[k];
+    if (v && typeof v === 'object' && typeof v.__increment === 'number') {
+      out[k] = (typeof prev[k] === 'number' ? prev[k] : 0) + v.__increment;
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+function makeDocRef(name, id) {
+  const key = name + '/' + id;
+  return {
+    id,
+    async get() {
+      const existing = docStore.get(key);
+      return { exists: docStore.has(key), id, data: () => existing };
+    },
+    async set(doc, opts) {
+      const prev = docStore.get(key) || {};
+      const resolved = resolveIncrements(prev, doc);
+      const merged = opts && opts.merge ? { ...prev, ...resolved } : { ...resolved };
+      docStore.set(key, merged);
+      writes.push({ collection: name, id, doc: merged, op: 'set', merge: !!(opts && opts.merge) });
+      return;
+    },
+  };
+}
+
+function makeCollection(name) {
+  return {
+    async add(doc) {
+      const id = 'doc_' + crypto.randomBytes(4).toString('hex');
+      writes.push({ collection: name, id, doc });
+      docStore.set(name + '/' + id, { ...doc });
+      return { id };
+    },
+    doc(id) {
+      return makeDocRef(name, id);
+    },
+    // Bare collection count (totalCount) — counts every doc in the collection.
+    count() {
+      return {
+        async get() {
+          let count = 0;
+          for (const k of docStore.keys()) if (k.startsWith(name + '/')) count++;
+          return { data: () => ({ count }) };
+        },
+      };
+    },
+    // Minimal where().count().get() — only the '>' operator the API uses.
+    where(field, op, val) {
+      return {
+        count() {
+          return {
+            async get() {
+              let count = 0;
+              for (const [k, v] of docStore) {
+                if (!k.startsWith(name + '/')) continue;
+                const fv = v[field];
+                if (typeof fv !== 'number') continue;
+                if (op === '>' ? fv > val : fv === val) count++;
+              }
+              return { data: () => ({ count }) };
+            },
+          };
+        },
+      };
+    },
+  };
+}
+
 const mockAdmin = {
   apps: [],
   credential: { cert: () => ({}) },
@@ -39,43 +117,25 @@ const mockAdmin = {
   firestore() {
     return {
       collection(name) {
-        return {
-          async add(doc) {
-            const id = 'doc_' + crypto.randomBytes(4).toString('hex');
-            writes.push({ collection: name, id, doc });
-            docStore.set(name + '/' + id, { ...doc });
-            return { id };
-          },
-          doc(id) {
-            const key = name + '/' + id;
-            return {
-              id,
-              async get() {
-                const existing = docStore.get(key);
-                return { exists: docStore.has(key), id, data: () => existing };
-              },
-              async set(doc, opts) {
-                const prev = docStore.get(key) || {};
-                const merged = opts && opts.merge ? { ...prev, ...doc } : { ...doc };
-                docStore.set(key, merged);
-                writes.push({
-                  collection: name,
-                  id,
-                  doc: merged,
-                  op: 'set',
-                  merge: !!(opts && opts.merge),
-                });
-                return;
-              },
-            };
-          },
+        return makeCollection(name);
+      },
+      // Reads and writes are synchronous against docStore in this mock, so a
+      // transaction is just the callback invoked with get/set proxies to refs.
+      async runTransaction(fn) {
+        const tx = {
+          get: (ref) => ref.get(),
+          set: (ref, doc, opts) => ref.set(doc, opts),
+          update: (ref, doc) => ref.set(doc, { merge: true }),
+          create: (ref, doc) => ref.set(doc, { merge: false }),
         };
+        return fn(tx);
       },
     };
   },
 };
 mockAdmin.firestore.FieldValue = {
   serverTimestamp: () => '<SERVER_TIMESTAMP>',
+  increment: (n) => ({ __increment: n }),
 };
 
 // Inject into require.cache BEFORE the handlers are loaded.
@@ -97,13 +157,22 @@ require.cache[adminPath] = {
 // Now load the handlers
 const waitlist = require(path.join(projectRoot, 'api', 'waitlist.js'));
 const survey = require(path.join(projectRoot, 'api', 'survey.js'));
-// Pull the real email→docId derivation so tests assert against the actual key.
-const { emailDocId } = require(path.join(projectRoot, 'api', '_lib', 'validate.js'));
+const lookup = require(path.join(projectRoot, 'api', 'lookup.js'));
+const stats = require(path.join(projectRoot, 'api', 'stats.js'));
+// Pull the real helpers so tests assert against the actual implementations.
+const { emailDocId, makeReferralCode, sanitizeReferralCode, priorityScore } = require(
+  path.join(projectRoot, 'api', '_lib', 'validate.js'),
+);
 
 // --- Test harness ---------------------------------------------------------
 let pass = 0,
   fail = 0;
 const failures = [];
+
+// A single waitlist signup now also writes the seq counter (meta/counters) and
+// the code→owner mapping (referralCodes/<CODE>), so filter to the waitlist
+// collection when asserting on the user doc / counting signups.
+const wlWrites = () => writes.filter((w) => w.collection === 'waitlist');
 
 function ok(cond, label, detail) {
   if (cond) {
@@ -205,10 +274,10 @@ async function run() {
       'response has ok:true + id',
     );
     ok(
-      writes.length === 1 && writes[0].collection === 'waitlist',
+      wlWrites().length === 1 && wlWrites()[0].collection === 'waitlist',
       'wrote 1 doc to waitlist collection',
     );
-    const w = writes[0]?.doc || {};
+    const w = wlWrites()[0]?.doc || {};
     ok(w.email === 'jane@example.com', 'email stored verbatim');
     ok(w.emailLower === 'jane@example.com', 'emailLower stored for dedup');
     ok(w.source === 'hero', 'source stored');
@@ -217,6 +286,17 @@ async function run() {
     ok(w.ipHash !== '203.0.113.42', 'ipHash is hashed, not plaintext IP');
     ok(w.userAgent === 'Mozilla/5.0 TestRunner', 'userAgent stored');
     ok(w.createdAt === '<SERVER_TIMESTAMP>', 'createdAt set to server timestamp sentinel');
+    // New ranking + referral fields on first signup.
+    ok(w.seq === 1, 'first signup gets seq 1');
+    ok(
+      typeof w.referralCode === 'string' && w.referralCode.length === 7,
+      'referralCode generated (7 chars)',
+    );
+    ok(w.referralCount === 0, 'referralCount starts at 0');
+    ok(w.surveyComplete === false, 'surveyComplete starts false');
+    ok(w.priorityScore === -1, 'priorityScore = -seq for a fresh non-completer (-1)');
+    ok(res.body.referralCode === w.referralCode, 'response echoes referralCode');
+    ok(res.body.position === 1, 'first signup is position #1');
   }
 
   // -- Dedup: re-signing up with the SAME email updates one doc (no duplicate)
@@ -230,7 +310,7 @@ async function run() {
       source: 'final',
     });
     await waitlist(r2, w2);
-    const ids = new Set(writes.map((wr) => wr.id));
+    const ids = new Set(wlWrites().map((wr) => wr.id));
     ok(
       ids.size === 1 && ids.has(emailDocId(email)),
       'same email → one waitlist doc (case-insensitive)',
@@ -288,11 +368,11 @@ async function run() {
     await waitlist(req, res);
     ok(res.statusCode === 200, 'sanitizable email accepted (with caveat below)');
     ok(
-      writes[0]?.doc.email === 'Jane@Example.comscript',
+      wlWrites()[0]?.doc.email === 'Jane@Example.comscript',
       'angle brackets stripped; alphanumerics in the attack survive',
     );
     ok(
-      writes[0]?.doc.emailLower === 'jane@example.comscript',
+      wlWrites()[0]?.doc.emailLower === 'jane@example.comscript',
       'emailLower lowercases the sanitized form',
     );
   }
@@ -329,7 +409,168 @@ async function run() {
     });
     await waitlist(req, res);
     ok(res.statusCode === 200, 'urlencoded body accepted');
-    ok(writes[0]?.doc.email === 'urlenc@example.com', 'urlencoded email decoded');
+    ok(wlWrites()[0]?.doc.email === 'urlenc@example.com', 'urlencoded email decoded');
+  }
+
+  console.log('\n\x1b[1m== Referral helpers (unit) ==\x1b[0m');
+
+  {
+    const CROCKFORD = /^[0-9ABCDEFGHJKMNPQRSTVWXYZ]+$/;
+    const c1 = makeReferralCode('person@example.com');
+    ok(c1.length === 7 && CROCKFORD.test(c1), 'makeReferralCode → 7 Crockford chars');
+    ok(makeReferralCode('person@example.com') === c1, 'makeReferralCode is deterministic');
+    ok(makeReferralCode('Person@Example.com') === c1, 'makeReferralCode is case-insensitive');
+    ok(
+      sanitizeReferralCode(' ' + c1.toLowerCase() + ' ') === c1,
+      'sanitizeReferralCode round-trips a real code',
+    );
+    ok(sanitizeReferralCode('o0i1L') === '00111', 'sanitizeReferralCode folds O→0, I/L→1');
+    ok(sanitizeReferralCode('!!') === '', 'sanitizeReferralCode rejects too-short junk');
+    ok(
+      priorityScore({ surveyComplete: false, seq: 5, referralCount: 0 }) === -5,
+      'score = -seq for fresh non-completer',
+    );
+    ok(
+      priorityScore({ surveyComplete: false, seq: 5, referralCount: 2 }) === 15,
+      'each referral adds +10 (-5 + 20 = 15)',
+    );
+    ok(
+      priorityScore({ surveyComplete: false, seq: 5, referralCount: 0, usedReferral: true }) === 0,
+      'using a code adds +5 (-5 + 5 = 0)',
+    );
+    ok(
+      priorityScore({ surveyComplete: true, seq: 5, referralCount: 0 }) === 1e9 - 5,
+      'survey completion adds the +1e9 tier',
+    );
+  }
+
+  console.log('\n\x1b[1m== Referral flow (/api/waitlist) ==\x1b[0m');
+
+  // -- New signup returns a code + position and writes the code→owner mapping
+  {
+    writes.length = 0;
+    const { req, res } = fakeReqRes('POST', { email: 'refA@example.com', source: 'hero' });
+    await waitlist(req, res);
+    const code = res.body.referralCode;
+    ok(typeof code === 'string' && code.length === 7, 'returns a 7-char referralCode');
+    ok(
+      typeof res.body.position === 'number' && res.body.position >= 1,
+      'returns a numeric position',
+    );
+    const map = docStore.get('referralCodes/' + code) || {};
+    ok(map.ownerId === emailDocId('refA@example.com'), 'code→owner mapping doc written');
+  }
+
+  // -- Referrer gets +1 referral and +10 priority when someone uses their code
+  {
+    const aId = emailDocId('refA@example.com');
+    const aBefore = docStore.get('waitlist/' + aId) || {};
+    const codeA = aBefore.referralCode;
+    const scoreABefore = aBefore.priorityScore;
+    const refCountBefore = aBefore.referralCount || 0;
+
+    writes.length = 0;
+    const { req, res } = fakeReqRes('POST', {
+      email: 'refB@example.com',
+      source: 'referral',
+      referredByCode: codeA,
+    });
+    await waitlist(req, res);
+    const aAfter = docStore.get('waitlist/' + aId) || {};
+    const bDoc = docStore.get('waitlist/' + emailDocId('refB@example.com')) || {};
+    ok(aAfter.referralCount === refCountBefore + 1, 'referrer referralCount += 1');
+    ok(
+      aAfter.priorityScore === scoreABefore + 10,
+      'referrer priorityScore += 10 (moves up 10 spots)',
+    );
+    ok(bDoc.referredByCode === codeA, 'referred signup records referredByCode');
+    ok(bDoc.usedReferral === true, 'referred signup is flagged usedReferral');
+    ok(bDoc.priorityScore === -bDoc.seq + 5, 'referred signup gets +5 (joined with a code)');
+    ok(
+      res.statusCode === 200 && typeof res.body.position === 'number',
+      'referred signup succeeds with a position',
+    );
+    ok(
+      typeof res.body.count === 'number' && res.body.count >= 1,
+      'response includes total signup count',
+    );
+  }
+
+  // -- Self-referral / lowercased own code is ignored (no credit)
+  {
+    const email = 'selfref@example.com';
+    const ownCode = makeReferralCode(email);
+    writes.length = 0;
+    const { req, res } = fakeReqRes('POST', { email, source: 'referral', referredByCode: ownCode });
+    await waitlist(req, res);
+    const d = docStore.get('waitlist/' + emailDocId(email)) || {};
+    ok(d.referralCount === 0, 'self-referral grants no credit');
+    ok(!('referredByCode' in d), 'self-referral does not set referredByCode');
+  }
+
+  // -- Re-submitting with a code never re-credits the referrer
+  {
+    const aId = emailDocId('refA@example.com');
+    const codeA = (docStore.get('waitlist/' + aId) || {}).referralCode;
+    const countBefore = (docStore.get('waitlist/' + aId) || {}).referralCount;
+    // refB re-submits, again citing A's code.
+    const { req, res } = fakeReqRes('POST', {
+      email: 'refB@example.com',
+      source: 'referral',
+      referredByCode: codeA,
+    });
+    await waitlist(req, res);
+    const aAfter = docStore.get('waitlist/' + aId) || {};
+    ok(aAfter.referralCount === countBefore, 're-submit with a code does not double-credit');
+  }
+
+  console.log('\n\x1b[1m== /api/lookup ==\x1b[0m');
+
+  // -- Look up an existing member's code + position by email
+  {
+    // refA was signed up earlier in the referral flow section.
+    const { req, res } = fakeReqRes('POST', { email: 'refA@example.com' });
+    await lookup(req, res);
+    const expectedCode = (docStore.get('waitlist/' + emailDocId('refA@example.com')) || {})
+      .referralCode;
+    ok(res.statusCode === 200 && res.body.found === true, 'known email → found:true');
+    ok(res.body.referralCode === expectedCode, 'returns the stored referral code');
+    ok(
+      typeof res.body.position === 'number' && res.body.position >= 1,
+      'returns a numeric position',
+    );
+  }
+
+  // -- Unknown email → found:false (no doc created)
+  {
+    writes.length = 0;
+    const { req, res } = fakeReqRes('POST', { email: 'nobody-here@example.com' });
+    await lookup(req, res);
+    ok(res.statusCode === 200 && res.body.found === false, 'unknown email → found:false');
+    ok(writes.length === 0, 'lookup never writes anything');
+  }
+
+  // -- Bad email rejected; wrong method rejected
+  {
+    const { req, res } = fakeReqRes('POST', { email: 'not-an-email' });
+    await lookup(req, res);
+    ok(res.statusCode === 400 && res.body.reason === 'email', 'malformed email → 400');
+    const { req: r2, res: w2 } = fakeReqRes('GET');
+    await lookup(r2, w2);
+    ok(w2.statusCode === 405, 'GET → 405');
+  }
+
+  console.log('\n\x1b[1m== /api/stats ==\x1b[0m');
+
+  // -- Total count for the "Join N others" social-proof line
+  {
+    const { req, res } = fakeReqRes('GET');
+    await stats(req, res);
+    ok(res.statusCode === 200 && res.body.ok === true, 'GET stats → 200 ok');
+    ok(typeof res.body.count === 'number' && res.body.count >= 1, 'returns a numeric total count');
+    const { req: r2, res: w2 } = fakeReqRes('POST', { email: 'x@y.co' });
+    await stats(r2, w2);
+    ok(w2.statusCode === 405, 'POST → 405 (stats is GET-only)');
   }
 
   console.log('\n\x1b[1m== /api/survey ==\x1b[0m');
@@ -591,6 +832,40 @@ async function run() {
     );
   }
 
+  // -- Completing the survey promotes the matching waitlist doc into the
+  //    survey-completed tier (priorityScore jumps by ~1e9) and reports position.
+  {
+    const email = 'promote@example.com';
+    // First, a normal waitlist signup creates the waitlist doc (non-completer).
+    const { req: rw, res: ww } = fakeReqRes('POST', { email, source: 'hero' });
+    await waitlist(rw, ww);
+    const wlId = emailDocId(email);
+    const before = docStore.get('waitlist/' + wlId) || {};
+    ok(
+      before.surveyComplete === false && before.priorityScore < 0,
+      'pre-survey: non-completer, negative score',
+    );
+
+    const { req, res } = fakeReqRes('POST', {
+      email,
+      complete: true,
+      source: 'hero',
+      careerStage: 'University / college student',
+      lifeStage: 'Living independently',
+    });
+    await survey(req, res);
+    const after = docStore.get('waitlist/' + wlId) || {};
+    ok(
+      after.surveyComplete === true,
+      'survey completion sets surveyComplete:true on the waitlist doc',
+    );
+    ok(after.priorityScore > 9e8, 'completion lifts priorityScore into the +1e9 tier');
+    ok(
+      typeof res.body.position === 'number' && res.body.position >= 1,
+      'survey complete returns a position',
+    );
+  }
+
   // -- Partial write still requires a plausible email (it IS the doc key)
   {
     writes.length = 0;
@@ -646,7 +921,8 @@ async function run() {
     );
     await waitlist(r1, w1);
     await waitlist(r2, w2);
-    ok(writes[0].doc.ipHash === writes[1].doc.ipHash, 'same IP → same ipHash (correlation works)');
+    const ipw = wlWrites();
+    ok(ipw[0].doc.ipHash === ipw[1].doc.ipHash, 'same IP → same ipHash (correlation works)');
   }
 
   // -- IP hashing salt missing → null (no insecure fallback)
@@ -656,7 +932,10 @@ async function run() {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', { email: 'a@b.co', source: 'hero' });
     await waitlist(req, res);
-    ok(writes[0]?.doc.ipHash === null, 'missing salt → ipHash is null (fails closed, not open)');
+    ok(
+      wlWrites()[0]?.doc.ipHash === null,
+      'missing salt → ipHash is null (fails closed, not open)',
+    );
     process.env.IP_HASH_SALT = saved;
   }
 

@@ -35,14 +35,86 @@ function isPlausibleEmail(email) {
 }
 
 // --- Source ----------------------------------------------------------------
-// 'hero' or 'final' — the two waitlist forms on the page.
-const VALID_SOURCES = new Set(['hero', 'final']);
+// 'hero' / 'final' — the two waitlist forms on the landing page.
+// 'referral' — the code+email form on /referral.
+const VALID_SOURCES = new Set(['hero', 'final', 'referral']);
 function sanitizeSource(v) {
   const s = String(v == null ? '' : v)
     .trim()
     .toLowerCase()
     .slice(0, 16);
   return VALID_SOURCES.has(s) ? s : '';
+}
+
+// --- Referral codes --------------------------------------------------------
+// Codes are Crockford base32 (no I/L/O/U — unambiguous when read aloud or
+// hand-typed). Generated deterministically from the lowercased email so a
+// given person always gets the same shareable code, and we can recompute it.
+const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+const CROCKFORD_SET = new Set(CROCKFORD.split(''));
+
+// 7 chars = 35 bits of the email's SHA-256 → ~34 billion-code space. Collision
+// risk is negligible at beta scale; the mapping-doc write in /api/waitlist is
+// the authoritative uniqueness check and bumps to 8 chars on the rare clash.
+function makeReferralCode(emailLower, len = 7) {
+  const e = String(emailLower == null ? '' : emailLower)
+    .trim()
+    .toLowerCase();
+  if (!e) return '';
+  const hash = crypto.createHash('sha256').update(e).digest();
+  let buffer = 0;
+  let bits = 0;
+  let out = '';
+  for (let i = 0; i < hash.length && out.length < len; i++) {
+    buffer = (buffer << 8) | hash[i];
+    bits += 8;
+    while (bits >= 5 && out.length < len) {
+      bits -= 5;
+      out += CROCKFORD[(buffer >> bits) & 31];
+    }
+    buffer &= (1 << bits) - 1; // drop already-emitted high bits (keeps buffer < 2^13)
+  }
+  return out;
+}
+
+// Normalize a user-typed code: uppercase, fold the look-alikes people actually
+// confuse (O→0, I/L→1), strip anything outside the Crockford alphabet, and
+// require a plausible length. Returns '' for junk. A typo that drops/garbles a
+// char just won't resolve to a referrer (no credit) — never an error.
+function sanitizeReferralCode(v) {
+  const s = String(v == null ? '' : v)
+    .trim()
+    .toUpperCase()
+    .replace(/O/g, '0')
+    .replace(/[IL]/g, '1')
+    .split('')
+    .filter((c) => CROCKFORD_SET.has(c))
+    .join('');
+  if (s.length < 4 || s.length > 12) return '';
+  return s;
+}
+
+// --- Waitlist priority score ----------------------------------------------
+// The single field the waitlist is organized by (orderBy desc). Higher = closer
+// to the top. Survey-completers occupy a dominant tier (+1e9) so they always
+// rank above non-completers; within a tier, earlier signups (smaller seq) rank
+// higher. Every referral you GIVE adds +10 (jumps you ~10 spots up); USING a
+// friend's code once adds +5 (jumps the new joiner ~5 spots up).
+const SURVEY_TIER = 1e9;
+const REFERRAL_BONUS = 10; // per referral you give
+const REFERRED_BONUS = 5; // one-time, for joining with someone's code
+function priorityScore({
+  surveyComplete = false,
+  seq = 0,
+  referralCount = 0,
+  usedReferral = false,
+} = {}) {
+  return (
+    (surveyComplete ? SURVEY_TIER : 0) -
+    (Number(seq) || 0) +
+    REFERRAL_BONUS * (Number(referralCount) || 0) +
+    (usedReferral ? REFERRED_BONUS : 0)
+  );
 }
 
 // --- Career stage (chip) ---------------------------------------------------
@@ -323,6 +395,12 @@ module.exports = {
   sanitizeEmail,
   isPlausibleEmail,
   sanitizeSource,
+  sanitizeReferralCode,
+  makeReferralCode,
+  priorityScore,
+  SURVEY_TIER,
+  REFERRAL_BONUS,
+  REFERRED_BONUS,
   sanitizeCareerStage,
   sanitizeLifeStage,
   sanitizeScale,

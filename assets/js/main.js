@@ -72,6 +72,8 @@ reveals.forEach(r => revealObserver.observe(r));
 ================================================================= */
 const WAITLIST_ENDPOINT = '/api/waitlist';
 const SURVEY_ENDPOINT   = '/api/survey';
+const LOOKUP_ENDPOINT   = '/api/lookup';
+const STATS_ENDPOINT    = '/api/stats';
 
 // reCAPTCHA v3 site key, set in the <meta> in index.html. If the placeholder
 // is still in place we never call grecaptcha (and the server-side verifier
@@ -138,8 +140,9 @@ function flashButton(btn, msg, ms = 2000) {
 }
 // Map a submission source to its form + success-banner element ids.
 const FORM_IDS = {
-  hero:  { form: 'hero-form',  success: 'hero-success' },
-  final: { form: 'final-form', success: 'final-success' },
+  hero:     { form: 'hero-form',     success: 'hero-success' },
+  final:    { form: 'final-form',    success: 'final-success' },
+  referral: { form: 'referral-form', success: 'referral-success' },
 };
 function showSuccess(source) {
   const ids = FORM_IDS[source] || FORM_IDS.final;
@@ -148,6 +151,50 @@ function showSuccess(source) {
   if (f) f.style.display = 'none';
   if (s) s.style.display = 'block';
 }
+
+// Fill the survey modal's referral banner from the /api/waitlist response.
+// Shows the user's shareable code + (if known) their live waitlist position.
+// Tolerant of a missing position — the count query is best-effort server-side.
+function populateReferralBanner(data) {
+  if (!data || !data.referralCode) return;
+  const banner = document.getElementById('survey-referral');
+  const codeEl = document.getElementById('survey-code');
+  const posEl = document.getElementById('survey-position');
+  if (codeEl) codeEl.textContent = data.referralCode;
+  if (posEl) {
+    if (typeof data.position === 'number' && data.position > 0) {
+      posEl.textContent = "You're #" + data.position.toLocaleString() + ' on the waitlist';
+      posEl.hidden = false;
+    } else {
+      posEl.hidden = true;
+    }
+  }
+  if (banner) banner.hidden = false;
+}
+
+// Wire the "Copy" button once. Copies the currently-shown code to the clipboard
+// with a brief "Copied" confirmation. Guarded so it no-ops where the button is
+// absent (e.g. the legal pages don't load the survey modal).
+(function wireReferralCopy() {
+  const btn = document.getElementById('survey-copy');
+  const codeEl = document.getElementById('survey-code');
+  if (!btn || !codeEl) return;
+  btn.addEventListener('click', function () {
+    const code = (codeEl.textContent || '').trim();
+    if (!code || code === '—') return;
+    const done = function () {
+      const orig = btn.dataset.label || btn.textContent;
+      btn.dataset.label = orig;
+      btn.textContent = 'Copied';
+      setTimeout(function () { btn.textContent = btn.dataset.label || 'Copy'; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(done).catch(done);
+    } else {
+      done();
+    }
+  });
+})();
 
 async function handleWaitlistSubmit(form, source) {
   const emailInput = form.querySelector('input[type="email"]');
@@ -194,22 +241,32 @@ async function handleWaitlistSubmit(form, source) {
   showSuccess(source);
   openSurvey(email, source);
 
-  // Same-origin POST to our Vercel function — we CAN read the response
-  // (no need for no-cors), but we still don't await it because the user
-  // shouldn't wait on network latency before seeing the survey. Errors
-  // surface in the console; the server-side write is idempotent enough
-  // that a quiet retry from the user is harmless.
+  // Optional referral code (only the /referral form carries one). Server
+  // sanitizes + validates; we just pass through a trimmed value.
+  const codeInput = form.querySelector('input[name="referredByCode"]');
+  const referredByCode = codeInput ? String(codeInput.value || '').trim().slice(0, 32) : '';
+
+  // Same-origin POST to our Vercel function — we CAN read the response, so we
+  // parse it to surface the user's referral code + position in the survey
+  // banner. We still don't block the UI on it (the survey is already open);
+  // errors surface in the console and the server write is idempotent.
   getRecaptchaToken('waitlist').then(function (recaptchaToken) {
+    const payload = { email: email, source: source, dwell_ms: now - PAGE_LOAD_TS, recaptchaToken: recaptchaToken };
+    if (referredByCode) payload.referredByCode = referredByCode;
     return fetch(WAITLIST_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, source: source, dwell_ms: now - PAGE_LOAD_TS, recaptchaToken: recaptchaToken }),
+      body: JSON.stringify(payload),
       keepalive: true,  // lets the request finish even if the tab navigates
     });
+  }).then(function (resp) {
+    return resp && resp.ok ? resp.json() : null;
+  }).then(function (data) {
+    if (data && data.ok) populateReferralBanner(data);
   }).catch(function (err) { console.error('[dryft waitlist] save failed:', err); });
 }
 
-const FORM_SOURCES = { 'hero-form': 'hero', 'final-form': 'final' };
+const FORM_SOURCES = { 'hero-form': 'hero', 'final-form': 'final', 'referral-form': 'referral' };
 Object.keys(FORM_SOURCES).forEach((id) => {
   const form = document.getElementById(id);
   if (!form) return;
@@ -256,6 +313,10 @@ function openSurvey(email, source) {
   clearTimeout(surveyAutosaveTimer);
   // Reset selections + form state in case the modal was opened earlier in this session
   resetSurvey();
+  // Hide the referral banner until the waitlist response populates it (avoids
+  // flashing a stale code if the modal was opened earlier this session).
+  const refBanner = document.getElementById('survey-referral');
+  if (refBanner) refBanner.hidden = true;
   // If this same email answered before on this browser, pre-fill their prior
   // selections so they can see and continue where they left off.
   restoreSurveyAnswers(email);
@@ -956,6 +1017,123 @@ if (personaCards.length) {
     card.addEventListener('focus', () => activatePersona(target));
   });
 }
+
+/* =================================================================
+   SOCIAL PROOF — "Join N others on the waitlist"
+   Populates every [data-join-count] element from /api/stats on load.
+   Purely cosmetic: stays hidden if the count is unavailable or < 1.
+================================================================= */
+(function loadJoinCount() {
+  const els = document.querySelectorAll('[data-join-count]');
+  if (!els.length) return;
+  fetch(STATS_ENDPOINT, { headers: { Accept: 'application/json' } })
+    .then(function (r) { return r && r.ok ? r.json() : null; })
+    .then(function (data) {
+      if (!data || !data.ok || typeof data.count !== 'number' || data.count < 1) return;
+      const label = 'Join ' + data.count.toLocaleString() + ' other' + (data.count === 1 ? '' : 's') + ' on the waitlist.';
+      els.forEach(function (el) { el.textContent = label; el.hidden = false; });
+    })
+    .catch(function () { /* social proof is optional — silently skip on failure */ });
+})();
+
+/* =================================================================
+   REFERRAL CODE LOOKUP (/referral) — enter email, popup shows your code.
+================================================================= */
+(function wireCodeLookup() {
+  const form = document.getElementById('lookup-form');
+  const modal = document.getElementById('code-modal');
+  if (!form || !modal) return;
+
+  const toggle = document.getElementById('lookup-toggle');
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      const willOpen = form.hidden;
+      form.hidden = !willOpen;
+      toggle.setAttribute('aria-expanded', String(willOpen));
+      if (willOpen) { const i = document.getElementById('lookup-email'); if (i) i.focus(); }
+    });
+  }
+
+  const result = document.getElementById('code-result');
+  const notfound = document.getElementById('code-notfound');
+  const codeVal = document.getElementById('code-value');
+  const codePos = document.getElementById('code-pos');
+  const copyBtn = document.getElementById('code-copy');
+
+  function openModal() {
+    modal.hidden = false;
+    void modal.offsetWidth;
+    modal.classList.add('open');
+    document.body.classList.add('survey-open');
+    setTimeout(function () { modal.querySelector('.code-close')?.focus(); }, 50);
+  }
+  function closeModal() {
+    modal.classList.remove('open');
+    document.body.classList.remove('survey-open');
+    setTimeout(function () { modal.hidden = true; }, 300);
+  }
+  modal.querySelectorAll('[data-code-close]').forEach(function (el) { el.addEventListener('click', closeModal); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
+
+  if (copyBtn && codeVal) {
+    copyBtn.addEventListener('click', function () {
+      const code = (codeVal.textContent || '').trim();
+      if (!code || code === '—') return;
+      const done = function () {
+        const orig = copyBtn.dataset.label || copyBtn.textContent;
+        copyBtn.dataset.label = orig;
+        copyBtn.textContent = 'Copied';
+        setTimeout(function () { copyBtn.textContent = copyBtn.dataset.label || 'Copy'; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done).catch(done);
+      else done();
+    });
+  }
+
+  let lookupBusy = false;
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (lookupBusy) return;
+    const input = document.getElementById('lookup-email');
+    const btn = form.querySelector('button[type="submit"]');
+    const email = sanitizeEmail(input ? input.value : '');
+    if (!isPlausibleEmail(email)) { shakeForm(form, input); return; }
+    lookupBusy = true;
+    if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+    fetch(LOOKUP_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email }),
+    })
+      .then(function (r) { return r && r.ok ? r.json() : null; })
+      .then(function (data) {
+        const found = !!(data && data.ok && data.found);
+        if (found) {
+          if (codeVal) codeVal.textContent = data.referralCode || '—';
+          if (codePos) {
+            if (typeof data.position === 'number' && data.position > 0) {
+              codePos.textContent = "You're #" + data.position.toLocaleString() + ' on the waitlist';
+              codePos.hidden = false;
+            } else {
+              codePos.hidden = true;
+            }
+          }
+        }
+        if (result) result.hidden = !found;
+        if (notfound) notfound.hidden = found;
+        openModal();
+      })
+      .catch(function () {
+        if (result) result.hidden = true;
+        if (notfound) notfound.hidden = false;
+        openModal();
+      })
+      .finally(function () {
+        lookupBusy = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'Show my code'; }
+      });
+  });
+})();
 
 /* =================================================================
    BOOT

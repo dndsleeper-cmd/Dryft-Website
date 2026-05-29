@@ -46,15 +46,90 @@ const {
   scaleToNumber,
   sanitizeYesNo,
   sanitizeText,
+  makeReferralCode,
+  priorityScore,
   verifyRecaptcha,
   rateLimit,
 } = require('./_lib/validate');
+const { computePosition } = require('./_lib/ranking');
 
 // Likert question field names — keep this in sync with the form. Field names
 // now match the on-screen display order (q1..q10 = the ten 1–5 questions, in the
 // order shown). The order here defines storage shape; rearranging is a NO-OP for
 // stored data because each field is keyed by name.
 const LIKERT_KEYS = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10'];
+
+// When a survey is marked complete, lift the matching waitlist doc into the
+// "survey-completed" tier so it ranks above non-completers. Same email-derived
+// doc id joins the two collections. Recomputes priorityScore from the doc's
+// current seq/referralCount (idempotent — re-running yields the same score).
+// Defensive: if the waitlist doc is somehow missing (signup POST failed but the
+// survey landed), create a minimal one. Returns the resulting position, or null.
+async function syncWaitlistOnComplete(database, docId, email, emailLower) {
+  const userRef = database.collection('waitlist').doc(docId);
+  const counterRef = database.collection('meta').doc('counters');
+  const score = await database.runTransaction(async (tx) => {
+    const snap = await tx.get(userRef);
+    if (snap.exists) {
+      const prev = snap.data() || {};
+      const referralCount = Number(prev.referralCount) || 0;
+      const usedReferral = !!prev.usedReferral;
+      // Already in the completed tier with a real score — nothing to change.
+      if (prev.surveyComplete === true && typeof prev.priorityScore === 'number') {
+        return prev.priorityScore;
+      }
+      let seq = typeof prev.seq === 'number' ? prev.seq : null;
+      if (seq === null) {
+        const cs = await tx.get(counterRef);
+        seq = (Number(cs.exists && cs.data().waitlistSeq) || 0) + 1;
+        tx.set(counterRef, { waitlistSeq: seq }, { merge: true });
+      }
+      const sc = priorityScore({ surveyComplete: true, seq, referralCount, usedReferral });
+      tx.set(
+        userRef,
+        {
+          surveyComplete: true,
+          seq,
+          referralCount,
+          priorityScore: sc,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+      return sc;
+    }
+    // No waitlist doc — create a minimal completed one so the response still ranks.
+    const cs = await tx.get(counterRef);
+    const seq = (Number(cs.exists && cs.data().waitlistSeq) || 0) + 1;
+    const code = makeReferralCode(emailLower);
+    const sc = priorityScore({ surveyComplete: true, seq, referralCount: 0 });
+    tx.set(counterRef, { waitlistSeq: seq }, { merge: true });
+    tx.set(
+      userRef,
+      {
+        email,
+        emailLower,
+        source: 'survey',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        signupCount: 1,
+        seq,
+        referralCode: code,
+        referralCount: 0,
+        surveyComplete: true,
+        priorityScore: sc,
+      },
+      { merge: true },
+    );
+    tx.set(
+      database.collection('referralCodes').doc(code),
+      { ownerId: docId, emailLower },
+      { merge: true },
+    );
+    return sc;
+  });
+  return computePosition(database, score);
+}
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -160,7 +235,19 @@ module.exports = async function handler(req, res) {
     const payload = { ...fields, complete, updatedAt: serverTimestamp() };
     if (!snap.exists) payload.createdAt = serverTimestamp();
     await ref.set(payload, { merge: true });
-    return res.status(200).json({ ok: true, id: docId, complete });
+
+    // On completion, promote the matching waitlist doc into the completed tier
+    // and report the resulting position. Best-effort — a failure here must not
+    // fail the survey write the user just made.
+    let position = null;
+    if (complete && !wasComplete) {
+      try {
+        position = await syncWaitlistOnComplete(db(), docId, email, email.toLowerCase());
+      } catch (err) {
+        console.warn('[survey] waitlist sync failed:', err && err.message);
+      }
+    }
+    return res.status(200).json({ ok: true, id: docId, complete, position });
   } catch (err) {
     console.error('[survey] write failed:', err);
     return res.status(500).json({ ok: false, reason: 'server' });

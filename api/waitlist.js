@@ -16,7 +16,7 @@
  *   413 { ok: false, reason: 'payload too large' }
  *   500 { ok: false, reason: 'server' }
  */
-const { db, serverTimestamp } = require('./_lib/firestore');
+const { db, serverTimestamp, increment } = require('./_lib/firestore');
 const {
   readBody,
   clientIp,
@@ -25,10 +25,15 @@ const {
   sanitizeEmail,
   isPlausibleEmail,
   sanitizeSource,
+  sanitizeReferralCode,
+  makeReferralCode,
+  priorityScore,
+  REFERRAL_BONUS,
   sanitizeInt,
   verifyRecaptcha,
   rateLimit,
 } = require('./_lib/validate');
+const { computePosition, totalCount } = require('./_lib/ranking');
 
 module.exports = async function handler(req, res) {
   // Same-origin only (the site posts from thedryft.com). Block other methods
@@ -76,31 +81,127 @@ module.exports = async function handler(req, res) {
     return res.status(429).json({ ok: false, reason: 'rate-limited' });
   }
 
+  const docId = emailDocId(email);
+  const emailLower = email.toLowerCase();
+  const myCode = makeReferralCode(emailLower);
+  const referredByCode = sanitizeReferralCode(body.referredByCode);
+
   try {
-    // Upsert one doc per email so re-signups don't create duplicates.
-    // createdAt + first source are stamped once; the rest refreshes each time.
-    const docId = emailDocId(email);
-    const ref = db().collection('waitlist').doc(docId);
-    const snap = await ref.get();
-    const payload = {
-      email,
-      emailLower: email.toLowerCase(),
-      source,
-      dwellMs: dwell,
-      ipHash: ipHashVal,
-      userAgent: ua,
-      updatedAt: serverTimestamp(),
-    };
-    if (!snap.exists) {
-      payload.createdAt = serverTimestamp();
-      payload.signupCount = 1;
-    } else {
-      // Track re-signups without losing the original timestamp/source.
-      const prev = snap.data() || {};
-      payload.signupCount = (typeof prev.signupCount === 'number' ? prev.signupCount : 1) + 1;
-    }
-    await ref.set(payload, { merge: true });
-    return res.status(200).json({ ok: true, id: docId });
+    const database = db();
+    const userRef = database.collection('waitlist').doc(docId);
+    const counterRef = database.collection('meta').doc('counters');
+
+    // One transaction so the seq counter, the user doc, the code→owner mapping,
+    // and the referrer credit all commit together. Firestore requires ALL reads
+    // before ALL writes, so every tx.get() below precedes the tx.set() calls.
+    const result = await database.runTransaction(async (tx) => {
+      const userSnap = await tx.get(userRef);
+      const isNew = !userSnap.exists;
+      const prev = userSnap.exists ? userSnap.data() || {} : {};
+
+      // Resolve a referrer only for a brand-new signup that supplied a code and
+      // hasn't already been credited. Self-referral is ignored.
+      let referrerRef = null;
+      if (isNew && referredByCode && referredByCode !== myCode && !prev.referredByCode) {
+        const mapSnap = await tx.get(database.collection('referralCodes').doc(referredByCode));
+        if (mapSnap.exists) {
+          const ownerId = (mapSnap.data() || {}).ownerId;
+          if (ownerId && ownerId !== docId) {
+            referrerRef = database.collection('waitlist').doc(ownerId);
+          }
+        }
+      }
+
+      // A monotonic seq is assigned on first signup (and backfilled for any
+      // legacy doc that predates this feature). Read the counter up front.
+      const needsSeq = isNew || typeof prev.seq !== 'number';
+      const counterSnap = needsSeq ? await tx.get(counterRef) : null;
+
+      // ---- writes (all reads are done above) ----
+      const base = {
+        email,
+        emailLower,
+        source,
+        dwellMs: dwell,
+        ipHash: ipHashVal,
+        userAgent: ua,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (isNew) {
+        const seq = (Number(counterSnap.exists && counterSnap.data().waitlistSeq) || 0) + 1;
+        // Joining with a valid code bumps the new signup up 5 spots (+5).
+        const usedReferral = !!referrerRef;
+        const score = priorityScore({ surveyComplete: false, seq, referralCount: 0, usedReferral });
+        const payload = {
+          ...base,
+          createdAt: serverTimestamp(),
+          signupCount: 1,
+          seq,
+          referralCode: myCode,
+          referralCount: 0,
+          surveyComplete: false,
+          usedReferral,
+          priorityScore: score,
+        };
+        if (referrerRef) payload.referredByCode = referredByCode;
+        tx.set(userRef, payload, { merge: true });
+        tx.set(counterRef, { waitlistSeq: seq }, { merge: true });
+        tx.set(
+          database.collection('referralCodes').doc(myCode),
+          { ownerId: docId, emailLower },
+          { merge: true },
+        );
+        if (referrerRef) {
+          // +1 referral, +10 spots — applied atomically so no read-modify-write race.
+          tx.set(
+            referrerRef,
+            {
+              referralCount: increment(1),
+              priorityScore: increment(REFERRAL_BONUS),
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true },
+          );
+        }
+        return { referralCode: myCode, score };
+      }
+
+      // Re-signup: refresh metadata, bump signupCount; never re-seq or re-credit.
+      const payload = { ...base, signupCount: (Number(prev.signupCount) || 1) + 1 };
+      let score = typeof prev.priorityScore === 'number' ? prev.priorityScore : null;
+      if (!prev.referralCode) {
+        payload.referralCode = myCode;
+        tx.set(
+          database.collection('referralCodes').doc(myCode),
+          { ownerId: docId, emailLower },
+          { merge: true },
+        );
+      }
+      if (needsSeq) {
+        // Legacy doc with no seq/score — assign one now so it can be ranked.
+        const seq = (Number(counterSnap.exists && counterSnap.data().waitlistSeq) || 0) + 1;
+        const referralCount = Number(prev.referralCount) || 0;
+        const surveyComplete = !!prev.surveyComplete;
+        const usedReferral = !!prev.usedReferral;
+        score = priorityScore({ surveyComplete, seq, referralCount, usedReferral });
+        payload.seq = seq;
+        payload.referralCount = referralCount;
+        payload.surveyComplete = surveyComplete;
+        payload.priorityScore = score;
+        tx.set(counterRef, { waitlistSeq: seq }, { merge: true });
+      }
+      tx.set(userRef, payload, { merge: true });
+      return { referralCode: prev.referralCode || myCode, score };
+    });
+
+    const [position, count] = await Promise.all([
+      computePosition(database, result.score),
+      totalCount(database),
+    ]);
+    return res
+      .status(200)
+      .json({ ok: true, id: docId, referralCode: result.referralCode, position, count });
   } catch (err) {
     console.error('[waitlist] write failed:', err);
     return res.status(500).json({ ok: false, reason: 'server' });
