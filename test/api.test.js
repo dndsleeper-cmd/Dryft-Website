@@ -490,10 +490,6 @@ async function run() {
       res.statusCode === 200 && typeof res.body.position === 'number',
       'referred signup succeeds with a position',
     );
-    ok(
-      typeof res.body.count === 'number' && res.body.count >= 1,
-      'response includes total signup count',
-    );
   }
 
   // -- Self-referral / lowercased own code is ignored (no credit)
@@ -725,10 +721,10 @@ async function run() {
     ok(res.statusCode === 200, 'partial autosave (partial:true) → 200');
     ok(res.body.id === emailDocId(email), 'doc id is the email-derived key');
     ok(res.body.complete === false, 'partial response echoes complete:false');
-    ok(d.complete === false, 'partial write stored complete:false');
+    ok(!('complete' in d), 'partial write omits complete (so a merge can never downgrade it)');
     ok(d.careerStage === 'University / college student', 'partial captured the answered field');
     ok(d.emailLower === email, 'emailLower stored as a field for lookups');
-    ok('createdAt' in d, 'first partial write sets createdAt once');
+    ok('updatedAt' in d, 'partial write stamps updatedAt');
   }
 
   // -- Changing an answer overwrites the SAME email-keyed doc (no duplicate)
@@ -826,10 +822,7 @@ async function run() {
     const { req: r2, res: w2 } = fakeReqRes('POST', { email, partial: true, q2: '4' });
     await survey(r2, w2);
     const d = docStore.get('survey/' + emailDocId(email)) || {};
-    ok(
-      w2.body.complete === true && d.complete === true,
-      'complete stays true after a later partial',
-    );
+    ok(d.complete === true, 'stored completion survives a later partial autosave (not downgraded)');
   }
 
   // -- Completing the survey promotes the matching waitlist doc into the

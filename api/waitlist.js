@@ -33,7 +33,7 @@ const {
   verifyRecaptcha,
   rateLimit,
 } = require('./_lib/validate');
-const { computePosition, totalCount } = require('./_lib/ranking');
+const { computePosition } = require('./_lib/ranking');
 
 module.exports = async function handler(req, res) {
   // Same-origin only (the site posts from thedryft.com). Block other methods
@@ -195,13 +195,13 @@ module.exports = async function handler(req, res) {
       return { referralCode: prev.referralCode || myCode, score };
     });
 
-    const [position, count] = await Promise.all([
-      computePosition(database, result.score),
-      totalCount(database),
-    ]);
+    // Note: we intentionally do NOT compute the total signup count here — that
+    // would be a second aggregation read per signup. The client increments its
+    // displayed "N joined" by +1 optimistically; /api/stats is the source of truth.
+    const position = await computePosition(database, result.score);
     return res
       .status(200)
-      .json({ ok: true, id: docId, referralCode: result.referralCode, position, count });
+      .json({ ok: true, id: docId, referralCode: result.referralCode, position });
   } catch (err) {
     console.error('[waitlist] write failed:', err);
     return res.status(500).json({ ok: false, reason: 'server' });

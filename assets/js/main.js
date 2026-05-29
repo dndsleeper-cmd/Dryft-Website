@@ -240,6 +240,7 @@ async function handleWaitlistSubmit(form, source) {
   // would just block the UI without any benefit.
   showSuccess(source);
   openSurvey(email, source);
+  bumpJoinCount(); // optimistic +1 — the signup is committed; no extra /api pull
 
   // Optional referral code (only the /referral form carries one). Server
   // sanitizes + validates; we just pass through a trimmed value.
@@ -1024,16 +1025,32 @@ if (personaCards.length) {
    "Private Beta 01 · 300 spots · 247 joined · survey takers skip the line".
    Purely cosmetic: the fragment stays hidden if the count is unavailable / < 1.
 ================================================================= */
+// Fill every [data-join-count] fragment with the live total. Called on load
+// (from /api/stats) AND after a successful signup (from the /api/waitlist
+// response's `count`), so the number visibly ticks up to include the new
+// signup — regardless of whether the survey is completed, X'd out, or
+// dismissed. Function declaration → hoisted, so handleWaitlistSubmit can call it.
+let joinCount = null; // current displayed total (from /api/stats on load)
+function renderJoinCount(n) {
+  if (typeof n !== 'number' || n < 1) return;
+  joinCount = n;
+  const frag = ' · ' + n.toLocaleString() + ' joined';
+  document.querySelectorAll('[data-join-count]').forEach(function (el) {
+    el.textContent = frag;
+    el.hidden = false;
+  });
+}
+// Optimistic +1 after a successful join — no extra /api call. No-op until the
+// base count has loaded, so we never render a misleading "1 joined".
+function bumpJoinCount() {
+  if (typeof joinCount === 'number' && joinCount >= 1) renderJoinCount(joinCount + 1);
+}
+
 (function loadJoinCount() {
-  const els = document.querySelectorAll('[data-join-count]');
-  if (!els.length) return;
+  if (!document.querySelector('[data-join-count]')) return;
   fetch(STATS_ENDPOINT, { headers: { Accept: 'application/json' } })
     .then(function (r) { return r && r.ok ? r.json() : null; })
-    .then(function (data) {
-      if (!data || !data.ok || typeof data.count !== 'number' || data.count < 1) return;
-      const frag = ' · ' + data.count.toLocaleString() + ' joined';
-      els.forEach(function (el) { el.textContent = frag; el.hidden = false; });
-    })
+    .then(function (data) { if (data && data.ok) renderJoinCount(data.count); })
     .catch(function () { /* social proof is optional — silently skip on failure */ });
 })();
 

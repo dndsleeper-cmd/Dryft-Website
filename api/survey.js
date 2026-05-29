@@ -223,31 +223,36 @@ module.exports = async function handler(req, res) {
 
   try {
     // Upsert ONE doc per email. set+merge means a changed selection overwrites
-    // just that field, and a returning/reloading user reuses the same doc
-    // (no duplicates). createdAt is stamped only on first write.
+    // just that field and a returning/reloading user reuses the same doc.
+    //
+    // NO read on the hot path: the frequent per-answer autosave is now a PURE
+    // write (no get()), which halves Firestore ops on the survey path.
+    //   - Stickiness: `complete` is written ONLY on the final submit and OMITTED
+    //     on partials, so a merge can never downgrade a finished response —
+    //     no read needed to "remember" it.
+    //   - We don't stamp a survey-doc createdAt; the waitlist doc (written at
+    //     signup, before the survey) already holds the authoritative per-user
+    //     timestamp, so it was duplicative. `updatedAt` still tracks recency.
     const docId = emailDocId(email);
     const ref = db().collection('survey').doc(docId);
-    const snap = await ref.get();
-    // Completion is sticky: once a response is marked complete, a later partial
-    // autosave can't downgrade it back to incomplete.
-    const wasComplete = snap.exists && !!(snap.data() && snap.data().complete === true);
-    const complete = isComplete || wasComplete;
-    const payload = { ...fields, complete, updatedAt: serverTimestamp() };
-    if (!snap.exists) payload.createdAt = serverTimestamp();
+    const payload = { ...fields, updatedAt: serverTimestamp() };
+    if (isComplete) payload.complete = true; // final "Send answers" submit only
     await ref.set(payload, { merge: true });
 
-    // On completion, promote the matching waitlist doc into the completed tier
-    // and report the resulting position. Best-effort — a failure here must not
-    // fail the survey write the user just made.
+    // Only the explicit final submit promotes the waitlist doc into the
+    // survey-completed tier ("skip the line") and reports a position — partial
+    // autosaves never reach here. syncWaitlistOnComplete is idempotent, so a
+    // repeated submit is a safe no-op. Best-effort: a failure must not fail the
+    // survey write the user just made.
     let position = null;
-    if (complete && !wasComplete) {
+    if (isComplete) {
       try {
         position = await syncWaitlistOnComplete(db(), docId, email, email.toLowerCase());
       } catch (err) {
         console.warn('[survey] waitlist sync failed:', err && err.message);
       }
     }
-    return res.status(200).json({ ok: true, id: docId, complete, position });
+    return res.status(200).json({ ok: true, id: docId, complete: isComplete, position });
   } catch (err) {
     console.error('[survey] write failed:', err);
     return res.status(500).json({ ok: false, reason: 'server' });
