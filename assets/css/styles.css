@@ -95,6 +95,12 @@ img, svg { display: block; max-width: 100%; }
 h1, h2, h3 { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-weight: 500; letter-spacing: -0.025em; color: var(--ink); }
 h3 { font-weight: 600; }
 
+/* Wrapping: balance headings (even line lengths, no lone trailing word) and use
+   pretty for body/feature copy so a line never ends with a stranded 1-2 words.
+   Both degrade gracefully to normal wrapping in browsers that don't support them. */
+h1, h2, h3, h4 { text-wrap: balance; }
+p, li, .price-per, .hero-sub, .section-head p { text-wrap: pretty; }
+
 /* Italic emphasis across all headings uses Instrument Serif — matches the landing's hollow word */
 h1 em, h2 em, h3 em, .hl {
   font-family: 'DM Serif Display', 'Inter Tight', serif;
@@ -447,6 +453,15 @@ body.menu-open { overflow: hidden; }
   margin-bottom: 1.4rem; font-weight: 500;
   opacity: 0; animation: fadeUp 0.7s 0.1s ease forwards;
 }
+/* Free-for-students variant — adds a check icon and a touch more weight so the
+   single most important conversion fact (it's free) reads at a glance. */
+.eyebrow-free {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font-weight: 600;
+  border-color: rgba(14,71,84,0.32);
+  background: var(--accent-soft);
+}
+.eyebrow-free svg { color: var(--good); flex-shrink: 0; }
 
 .hero h1, .hero .demo-h2 {
   font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-weight: 500;
@@ -995,6 +1010,88 @@ body.menu-open { overflow: hidden; }
 .coach-quote.deadpan { border-left-color: var(--deadpan); }
 .coach-quote p { color: var(--ink-2); }
 
+/* =========================== PRICING ===========================
+   Two-tier comparison, student tier deliberately featured (brand ring +
+   filled primary CTA) because student signups are the conversion goal.
+   The "everyone else" tier is present for credibility but visually secondary. */
+.pricing { padding: 2.5rem 0 3rem; }
+.pricing .section-head { margin-bottom: 2rem; }
+.pricing-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 1.25rem;
+  align-items: stretch;
+  max-width: 960px;
+  margin: 0 auto;
+}
+.price-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.9rem 1.7rem 1.7rem;
+  display: flex; flex-direction: column;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.price-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--border-hi); }
+.price-card.featured {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand), var(--shadow-md);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+}
+.price-card.featured:hover { box-shadow: 0 0 0 1px var(--brand), var(--shadow-lg); }
+.price-flag {
+  position: absolute; top: -11px; left: 1.7rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
+  font-weight: 600; color: var(--bg);
+  background: var(--brand);
+  padding: 0.34rem 0.7rem; border-radius: 6px;
+}
+.price-tag {
+  display: inline-block; width: fit-content;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.66rem; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--muted); background: var(--bg-alt); border: 1px solid var(--border);
+  padding: 0.25rem 0.7rem; border-radius: 6px;
+  margin-bottom: 1rem; font-weight: 500;
+}
+.price-tag.accent { background: var(--accent-soft); border-color: rgba(26,130,148,0.3); color: var(--brand); }
+.price-amount { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem; }
+.price-num {
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 3.2rem; font-weight: 600; letter-spacing: -0.04em; line-height: 1; color: var(--ink);
+}
+.price-per { font-size: 0.86rem; color: var(--muted); font-weight: 500; line-height: 1.35; }
+/* Standalone descriptor line under the price (e.g. "free forever while you're in school") */
+.price-sub { font-size: 0.92rem; color: var(--ink-2); font-weight: 500; line-height: 1.4; margin-bottom: 0.7rem; }
+.price-note { font-size: 0.92rem; color: var(--muted); margin-bottom: 1.4rem; line-height: 1.5; }
+.price-note strong { color: var(--ink); font-weight: 600; }
+.price-feat { list-style: none; display: grid; gap: 0.7rem; margin: 0; }
+/* Relative + absolute marker (not CSS grid) so a <strong> followed by plain text
+   stays a single inline run on one line — a two-column grid would auto-place the
+   trailing text node into the marker column and wrap it word-by-word. */
+.price-feat li {
+  position: relative;
+  padding-left: 1.65rem;
+  font-size: 0.92rem; line-height: 1.5; color: var(--ink-2);
+}
+.price-feat li::before {
+  content: ''; position: absolute; left: 0; top: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background-color: rgba(26,130,148,0.12);
+  border: 1px solid rgba(26,130,148,0.4);
+  background-repeat: no-repeat; background-position: center; background-size: 10px 10px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M2 5.2 L4.3 7.5 L8 3' stroke='%231a8294' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>");
+}
+.price-feat li strong { color: var(--ink); font-weight: 600; }
+
+.pricing-foot {
+  text-align: center; margin: 1.9rem auto 0; max-width: 600px;
+  font-size: 0.96rem; color: var(--muted); line-height: 1.55;
+}
+.pricing-foot strong { color: var(--brand); font-weight: 600; }
+
 /* =========================== TRUST + FAQ =========================== */
 .trust { padding: 2.5rem 0; }
 
@@ -1204,6 +1301,7 @@ footer {
   .hero-demo { width: min(100%, 560px); min-height: 560px; }
   .diff-grid { grid-template-columns: 1fr; gap: 1.2rem; }
   .coach-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .pricing-grid { grid-template-columns: 1fr; gap: 1rem; max-width: 480px; }
   /* trust-strip already stacks at 720; smaller-tablet collapse handled there */
   .faq { grid-template-columns: 1fr; gap: 1.4rem; }
   .faq h2 { font-size: clamp(1.6rem, 4vw, 2rem); }
@@ -1233,6 +1331,10 @@ footer {
   .diff-chart { aspect-ratio: 600 / 460; }
   .compare-block { padding: 1.2rem; }
   .compare-block h3 { font-size: 1.25rem; }
+  .pricing { padding: 2rem 0; }
+  .price-card { padding: 1.6rem 1.3rem 1.4rem; }
+  .price-num { font-size: 2.8rem; }
+  .pricing-foot { font-size: 0.9rem; }
   .coaches { padding: 2rem 0; }
   .coach-card { padding: 1.4rem 1.2rem 1.2rem; }
   .coach-card h3 { font-size: 1.3rem; }
@@ -1252,6 +1354,9 @@ footer {
    chat bleeds slightly off the viewport (.hero overflow:hidden clips it). */
 @media (max-width: 560px) {
   .hero { padding: 3.5rem 1.1rem 2rem; }
+  /* Shrink the hero sub on phones so each half of the sentence (split by <br>)
+     stays on one line — keeping it to 2 lines total. */
+  .hero-sub { font-size: 0.9rem; line-height: 1.45; }
   .hero-demo { min-height: 0; width: 100%; }
   .demo-stage {
     height: auto;
@@ -1287,6 +1392,7 @@ footer {
   .brand-word { font-size: 1.1rem; }
   .nav-cta { font-size: 0.75rem; padding: 0.45rem 0.75rem; }
   .statement-h1 { font-size: clamp(2.4rem, 12vw, 3.2rem); }
+  .hero-sub { font-size: 0.85rem; }
   .hero .demo-h2 { font-size: clamp(1.55rem, 7vw, 2rem); letter-spacing: -0.02em; }
   .section-head h2, .diff-head h2 { font-size: clamp(1.7rem, 7vw, 2.2rem); }
   .dryft-phone { width: min(206px, 60vw); }

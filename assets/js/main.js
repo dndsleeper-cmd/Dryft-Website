@@ -136,16 +136,17 @@ function flashButton(btn, msg, ms = 2000) {
   btn.disabled = true;
   setTimeout(() => { btn.textContent = original; btn.disabled = false; }, ms);
 }
+// Map a submission source to its form + success-banner element ids.
+const FORM_IDS = {
+  hero:  { form: 'hero-form',  success: 'hero-success' },
+  final: { form: 'final-form', success: 'final-success' },
+};
 function showSuccess(source) {
-  if (source === 'hero') {
-    const f = document.getElementById('hero-form'); const s = document.getElementById('hero-success');
-    if (f) f.style.display = 'none';
-    if (s) s.style.display = 'block';
-  } else {
-    const f = document.getElementById('final-form'); const s = document.getElementById('final-success');
-    if (f) f.style.display = 'none';
-    if (s) s.style.display = 'block';
-  }
+  const ids = FORM_IDS[source] || FORM_IDS.final;
+  const f = document.getElementById(ids.form);
+  const s = document.getElementById(ids.success);
+  if (f) f.style.display = 'none';
+  if (s) s.style.display = 'block';
 }
 
 async function handleWaitlistSubmit(form, source) {
@@ -208,10 +209,11 @@ async function handleWaitlistSubmit(form, source) {
   }).catch(function (err) { console.error('[dryft waitlist] save failed:', err); });
 }
 
-['hero-form', 'final-form'].forEach((id) => {
+const FORM_SOURCES = { 'hero-form': 'hero', 'final-form': 'final' };
+Object.keys(FORM_SOURCES).forEach((id) => {
   const form = document.getElementById(id);
   if (!form) return;
-  const source = id === 'hero-form' ? 'hero' : 'final';
+  const source = FORM_SOURCES[id];
   form.setAttribute('novalidate', '');
   form.addEventListener('submit', (e) => { e.preventDefault(); handleWaitlistSubmit(form, source); });
 });
@@ -724,7 +726,7 @@ const NOTIFICATIONS = [
   { app: 'Dryft', time: 'now', body: '<strong>Dryft caught.</strong> Delivery $112 over. One groceries run gets you back on plan.', tag: { label: 'Fixable', cls: 'warn' }, extra: '+$112 over pace' },
   { app: 'Dryft', time: '2d ago', body: '<strong>Subscriptions hit before payday.</strong> Move one or delay it.', tag: { label: 'Risk', cls: 'warn' }, extra: '2 renewals' },
   { app: 'Dryft', time: '5d ago', body: '<strong>Back on track.</strong> Buffer for March is secured.', tag: { label: 'On plan', cls: 'ok' }, extra: 'Buffer +$86' },
-  { app: 'Dryft', time: '1w ago', body: '<strong>Plan adjusted — $64 moved to bills.</strong> All clear.', tag: { label: 'Adjusted', cls: 'ok' }, extra: '$64 moved' },
+  { app: 'Dryft', time: '1w ago', body: '<strong>Plan adjusted. $64 moved to bills.</strong> All clear.', tag: { label: 'Adjusted', cls: 'ok' }, extra: '$64 moved' },
 ];
 
 function makeNotifNode({ app, time, body, tag, extra }) {
@@ -788,7 +790,7 @@ async function runNotificationLoop(stack) {
    HERO PHONE — CHAT (looping conversation)
 ================================================================= */
 const CHAT_SEQUENCE = [
-  { typed: 'Can I order takeout tonight?', typeSpeed: 55, thinkLabel: 'Checking plan', thinkDuration: 1100, response: 'Yes — under $24 and skip Friday\'s.', streamSpeed: 18, afterPause: 1800 },
+  { typed: 'Can I order takeout tonight?', typeSpeed: 55, thinkLabel: 'Checking plan', thinkDuration: 1100, response: 'Yes, under $24 and skip Friday\'s.', streamSpeed: 18, afterPause: 1800 },
   { typed: 'Why is food up this week?', typeSpeed: 60, thinkLabel: 'Finding the pattern', thinkDuration: 1300, response: 'Delivery is +38% vs last week.', streamSpeed: 20, showImpact: true, followup: 'Cap delivery to 2 this week.', followupSpeed: 16, afterPause: 2400 },
 ];
 
