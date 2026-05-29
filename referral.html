@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dryft: Got a referral code? Skip ahead.</title>
-<meta name="description" content="Got a Dryft referral code? Enter it with your email to join the Private Beta 01 waitlist. Every code moves your friend up 10 spots, and you get your own code to share.">
+<title>Dryft: Got an invite code? Skip ahead.</title>
+<meta name="description" content="Got a Dryft invite code? Enter it with your email to join the Private Beta 01 waitlist. Every code moves your friend up 10 spots, and you get your own invite code to share.">
 <meta name="robots" content="noindex, follow">
 <meta name="theme-color" content="#f4f6f7">
 <meta name="color-scheme" content="light">
@@ -74,15 +74,15 @@
 <!-- REFERRAL -->
 <section class="ref-page">
   <div class="ref-wrap">
-    <p class="section-label">Referral.</p>
-    <h1 class="ref-h1">Got a code?<br><em>Skip ahead.</em></h1>
+    <p class="section-label">Invite.</p>
+    <h1 class="ref-h1">Got an invite?<br><em>Skip ahead.</em></h1>
     <p class="ref-sub">
      Moves them up <strong>10 spots</strong> and moves you up <strong>5</strong>.
     </p>
 
     <form class="ref-form" id="referral-form" autocomplete="on" novalidate>
-      <label class="sr-only" for="referral-code">Referral code</label>
-      <input type="text" id="referral-code" name="referredByCode" placeholder="Referral code" maxlength="16" autocomplete="off" spellcheck="false" autocapitalize="characters" />
+      <label class="sr-only" for="referral-code">Invite code</label>
+      <input type="text" id="referral-code" name="referredByCode" placeholder="Invite code" maxlength="16" autocomplete="off" spellcheck="false" autocapitalize="characters" />
       <label class="sr-only" for="referral-email">Your email</label>
       <input type="email" id="referral-email" name="email" placeholder="you@example.com" autocomplete="email" inputmode="email" maxlength="254" required spellcheck="false" />
       <label class="hp-field" aria-hidden="true">
@@ -90,14 +90,14 @@
       </label>
       <button type="submit">Join the waitlist</button>
     </form>
-    <div class="ref-success" id="referral-success" hidden>You're on the list. We'll email you when Private Beta 01 opens. Check the code below to climb the list.</div>
+    <div class="ref-success" id="referral-success" hidden>You're on the list. We'll email you when Private Beta 01 opens. Check your invite code below to climb the list.</div>
 
     <p class="ref-fine">Free forever for students · no credit card. No code? <a href="/#waitlist">Join the waitlist here</a>.</p>
     <p class="form-consent">By submitting, you accept our <a href="/privacy">Privacy</a> &amp; <a href="/terms">Terms</a>.</p>
 
     <!-- Look up your own code (already on the waitlist) -->
     <div class="ref-lookup">
-      <p class="ref-lookup-intro">Already joined? <button type="button" class="ref-lookup-toggle" id="lookup-toggle" aria-expanded="false" aria-controls="lookup-form">Find your referral code</button></p>
+      <p class="ref-lookup-intro">Already joined? <button type="button" class="ref-lookup-toggle" id="lookup-toggle" aria-expanded="false" aria-controls="lookup-form">Find your invite code</button></p>
       <form class="ref-lookup-form" id="lookup-form" autocomplete="on" novalidate hidden>
         <label class="sr-only" for="lookup-email">Your email</label>
         <input type="email" id="lookup-email" name="email" placeholder="you@example.com" autocomplete="email" inputmode="email" maxlength="254" required spellcheck="false" />
@@ -141,12 +141,12 @@
     <!-- Referral banner — populated by main.js from the /api/waitlist response. -->
     <div class="survey-referral" id="survey-referral" hidden>
       <p class="sr-position" id="survey-position" hidden></p>
-      <p class="sr-label">Your referral code</p>
+      <p class="sr-label">Your invite code</p>
       <div class="sr-code-row">
         <code class="sr-code" id="survey-code">—</code>
-        <button type="button" class="sr-copy" id="survey-copy" aria-label="Copy referral code">Copy</button>
+        <button type="button" class="sr-copy" id="survey-copy" aria-label="Copy invite code">Copy</button>
       </div>
-      <p class="sr-hint">Share it. Every friend who joins with your code bumps you up <strong>10 spots</strong>.</p>
+      <p class="sr-hint">Share it. Every friend who joins with your invite bumps you up <strong>10 spots</strong>.</p>
     </div>
 
     <form class="survey-form" id="survey-form" novalidate>
@@ -414,17 +414,17 @@
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     </button>
     <div class="code-result" id="code-result">
-      <p class="code-eyebrow">Your referral code</p>
+      <p class="code-eyebrow">Your invite code</p>
       <div class="code-row">
         <code class="code-value" id="code-value">—</code>
-        <button type="button" class="code-copy" id="code-copy" aria-label="Copy referral code">Copy</button>
+        <button type="button" class="code-copy" id="code-copy" aria-label="Copy invite code">Copy</button>
       </div>
       <p class="code-pos" id="code-pos" hidden></p>
       <p class="code-hint">Each friend who joins with it bumps you up <strong>10 spots</strong>.</p>
     </div>
     <div class="code-notfound" id="code-notfound" hidden>
       <p class="code-eyebrow">Not on the list yet</p>
-      <p class="code-notfound-msg">We couldn't find that email. Join the waitlist first and you'll get a code to share.</p>
+      <p class="code-notfound-msg">We couldn't find that email. Join the waitlist first and you'll get an invite code to share.</p>
     </div>
   </div>
 </div>
