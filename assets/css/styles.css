@@ -477,8 +477,11 @@ body.menu-open { overflow: hidden; }
 .hero h1 .hl, .hero .demo-h2 .hl { font-style: italic; color: var(--brand); font-weight: 500; }
 
 .hero-sub {
-  font-size: 1.06rem; color: var(--muted);
-  margin-bottom: 1.6rem; max-width: 480px; line-height: 1.55;
+  /* Fluid size so the two lines (split by <br>) scale uniformly across devices
+     instead of re-wrapping — same 2-line shape, just smaller/bigger. The vw
+     term is tuned so each half fits one line down to ~320px. */
+  font-size: clamp(0.72rem, 3.9vw, 1.06rem); color: var(--muted);
+  margin-bottom: 1.6rem; max-width: 480px; line-height: 1.5;
   opacity: 0; animation: fadeUp 0.85s 0.45s ease forwards;
 }
 .hero-sub strong { color: var(--ink); font-weight: 600; }
@@ -518,8 +521,9 @@ body.menu-open { overflow: hidden; }
   margin-top: 1rem;
   /* Auto-shrink to stay on ONE line: a viewport-scaled size keeps the same
      chars-per-line at any width, capped at 0.84rem on desktop. nowrap forbids
-     wrapping; the vw term guarantees it still fits on narrow phones. */
-  font-size: clamp(0.58rem, 2.8vw, 0.84rem);
+     wrapping; the vw term guarantees it still fits on narrow phones — sized for
+     the longest (with live join-count) version of the line. */
+  font-size: clamp(0.5rem, 2.5vw, 0.84rem);
   white-space: nowrap;
   line-height: 1.5;
   color: var(--muted);
@@ -1246,11 +1250,11 @@ nav#nav.nav-solid .nav-cta { background: var(--ink); color: var(--bg); border-co
 nav#nav.nav-solid .nav-cta:hover { background: var(--brand); border-color: var(--brand); }
 
 /* "Join N others on the waitlist" social-proof line (below the signup forms). */
-.join-count {
-  font-size: 0.9rem;
-  font-weight: 600;
+/* Live signup count injected inline into the cap/survey fine line. Brand color
+   so the social-proof number stands out within the muted line. */
+.join-frag {
   color: var(--brand);
-  margin: 0.1rem 0 0.35rem;
+  font-weight: 600;
 }
 
 /* =========================== REFERRAL CODE LOOKUP (/referral) =========================== */
@@ -1512,7 +1516,7 @@ nav#nav.nav-solid .nav-cta:hover { background: var(--brand); border-color: var(-
   color: var(--brand); padding: 0.95rem 1.4rem;
   border-radius: 999px; font-weight: 500; font-size: 0.95rem;
 }
-.cta-fine { margin-top: 1.3rem !important; font-size: clamp(0.58rem, 2.8vw, 0.82rem) !important; white-space: nowrap; color: var(--subtle) !important; }
+.cta-fine { margin-top: 1.3rem !important; font-size: clamp(0.5rem, 2.5vw, 0.82rem) !important; white-space: nowrap; color: var(--subtle) !important; }
 
 /* =========================== FOOTER ===========================
    Two-row layout:
@@ -1658,9 +1662,6 @@ footer {
    chat bleeds slightly off the viewport (.hero overflow:hidden clips it). */
 @media (max-width: 560px) {
   .hero { padding: 3.5rem 1.1rem 2rem; }
-  /* Shrink the hero sub on phones so each half of the sentence (split by <br>)
-     stays on one line — keeping it to 2 lines total. */
-  .hero-sub { font-size: 0.9rem; line-height: 1.45; }
   .hero-demo { min-height: 0; width: 100%; }
   .demo-stage {
     height: auto;
@@ -1696,7 +1697,6 @@ footer {
   .brand-word { font-size: 1.1rem; }
   .nav-cta { font-size: 0.75rem; padding: 0.45rem 0.75rem; }
   .statement-h1 { font-size: clamp(2.4rem, 12vw, 3.2rem); }
-  .hero-sub { font-size: 0.85rem; }
   .hero .demo-h2 { font-size: clamp(1.55rem, 7vw, 2rem); letter-spacing: -0.02em; }
   .section-head h2, .diff-head h2 { font-size: clamp(1.7rem, 7vw, 2.2rem); }
   .dryft-phone { width: min(206px, 60vw); }

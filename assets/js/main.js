@@ -1019,9 +1019,10 @@ if (personaCards.length) {
 }
 
 /* =================================================================
-   SOCIAL PROOF — "Join N others on the waitlist"
-   Populates every [data-join-count] element from /api/stats on load.
-   Purely cosmetic: stays hidden if the count is unavailable or < 1.
+   SOCIAL PROOF — live signup count, injected INTO the cap/survey fine line.
+   Fills every [data-join-count] fragment from /api/stats on load, e.g.
+   "Private Beta 01 · 300 spots · 247 joined · survey takers skip the line".
+   Purely cosmetic: the fragment stays hidden if the count is unavailable / < 1.
 ================================================================= */
 (function loadJoinCount() {
   const els = document.querySelectorAll('[data-join-count]');
@@ -1030,8 +1031,8 @@ if (personaCards.length) {
     .then(function (r) { return r && r.ok ? r.json() : null; })
     .then(function (data) {
       if (!data || !data.ok || typeof data.count !== 'number' || data.count < 1) return;
-      const label = 'Join ' + data.count.toLocaleString() + ' other' + (data.count === 1 ? '' : 's') + ' on the waitlist.';
-      els.forEach(function (el) { el.textContent = label; el.hidden = false; });
+      const frag = ' · ' + data.count.toLocaleString() + ' joined';
+      els.forEach(function (el) { el.textContent = frag; el.hidden = false; });
     })
     .catch(function () { /* social proof is optional — silently skip on failure */ });
 })();
