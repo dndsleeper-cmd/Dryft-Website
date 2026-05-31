@@ -2553,19 +2553,6 @@ footer {
   color: var(--muted); font-size: 0.95rem;
   margin-bottom: 1.3rem;
 }
-/* Updated waitlist position — highlighted badge that stands apart from the
-   muted body copy. Higher specificity to override the generic `p` rule above. */
-.survey-success p.survey-success-pos {
-  display: inline-block;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.9rem; font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--brand);
-  background: var(--accent-soft);
-  border-radius: 999px;
-  padding: 0.5rem 1.1rem;
-  margin: 0 0 1.3rem;
-}
 .survey-done {
   font-family: inherit; font-size: 0.92rem; font-weight: 500;
   color: var(--bg); background: var(--ink);

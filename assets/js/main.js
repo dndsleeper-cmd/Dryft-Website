@@ -761,14 +761,14 @@ if (surveyModal && surveyForm) {
 
     // Always show success — fire-and-forget per the no-cors fetch above
     surveyForm.style.display = 'none';
-    // Surface the responder's updated waitlist position when the server gave us one.
-    const posEl = document.getElementById('survey-success-pos');
-    if (posEl) {
-      if (surveyPosition !== null) {
-        posEl.textContent = "You're now #" + surveyPosition.toLocaleString() + ' on the waitlist.';
+    // Completing the survey changes the responder's rank, so refresh the
+    // position line already shown in the referral banner above (rather than
+    // adding a second readout). No-op if the banner/position isn't on screen.
+    if (surveyPosition !== null) {
+      const posEl = document.getElementById('survey-position');
+      if (posEl) {
+        posEl.textContent = "You're #" + surveyPosition.toLocaleString() + ' on the waitlist';
         posEl.hidden = false;
-      } else {
-        posEl.hidden = true;
       }
     }
     if (surveySuccess) surveySuccess.hidden = false;
