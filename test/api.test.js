@@ -520,6 +520,50 @@ async function run() {
     ok(aAfter.referralCount === countBefore, 're-submit with a code does not double-credit');
   }
 
+  // -- An ALREADY-SIGNED-UP member cannot self-bump by applying a code later.
+  //    refC joins first with NO code, then re-submits citing A's code. The code
+  //    must not retroactively grant refC the +5 "joined via referral" bonus, must
+  //    not stamp referredByCode, and must not credit the code owner (A).
+  {
+    const cEmail = 'refC@example.com';
+    const cId = emailDocId(cEmail);
+    const aId = emailDocId('refA@example.com');
+    const codeA = (docStore.get('waitlist/' + aId) || {}).referralCode;
+
+    // First signup — plain join, no code.
+    const { req: r1, res: w1 } = fakeReqRes('POST', { email: cEmail, source: 'final' });
+    await waitlist(r1, w1);
+    const cFirst = docStore.get('waitlist/' + cId) || {};
+    const aCountBefore = (docStore.get('waitlist/' + aId) || {}).referralCount;
+    ok(cFirst.usedReferral === false, 'plain first signup is not flagged usedReferral');
+
+    // Second submit — now tries to ride someone else's code.
+    const { req: r2, res: w2 } = fakeReqRes('POST', {
+      email: cEmail,
+      source: 'referral',
+      referredByCode: codeA,
+    });
+    await waitlist(r2, w2);
+    const cAfter = docStore.get('waitlist/' + cId) || {};
+    const aAfter = docStore.get('waitlist/' + aId) || {};
+    ok(
+      cAfter.usedReferral === false,
+      'existing member gets no usedReferral bonus from a later code',
+    );
+    ok(
+      cAfter.priorityScore === cFirst.priorityScore,
+      "existing member's score is unchanged by a later code",
+    );
+    ok(
+      !('referredByCode' in cAfter),
+      'existing member cannot acquire referredByCode after first signup',
+    );
+    ok(
+      aAfter.referralCount === aCountBefore,
+      'code owner is not credited by an existing member re-submitting',
+    );
+  }
+
   console.log('\n\x1b[1m== /api/lookup ==\x1b[0m');
 
   // -- Look up an existing member's code + position by email
