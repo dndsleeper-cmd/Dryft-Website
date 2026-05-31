@@ -713,6 +713,11 @@ if (surveyModal && surveyForm) {
     // The server re-sanitizes every field; we scrub here for a clean wire format.
     const payload = currentSurveyPayload(true);
 
+    // Completing the survey lifts the responder into the "skip the line" tier,
+    // so the server returns their refreshed waitlist position. We surface it in
+    // the success screen below. Stays null on any hiccup → line simply hidden.
+    let surveyPosition = null;
+
     try {
       // Attach a fresh reCAPTCHA token (or '' if disabled). Token must be
       // generated AT submit time — v3 tokens expire after ~2 minutes.
@@ -728,8 +733,18 @@ if (surveyModal && surveyForm) {
         body: JSON.stringify(payload),
         keepalive: true,
       });
-      if (!resp.ok) console.warn('[dryft survey] non-OK response:', resp.status);
-      else surveyAutosaveSnapshot = JSON.stringify(payload);
+      if (!resp.ok) {
+        console.warn('[dryft survey] non-OK response:', resp.status);
+      } else {
+        surveyAutosaveSnapshot = JSON.stringify(payload);
+        // Best-effort: pull the updated waitlist position from the response.
+        try {
+          const data = await resp.json();
+          if (data && typeof data.position === 'number' && data.position > 0) {
+            surveyPosition = data.position;
+          }
+        } catch (_) { /* body unreadable — position stays null */ }
+      }
     } catch (err) {
       console.error('[dryft survey] save failed:', err);
     } finally {
@@ -746,6 +761,16 @@ if (surveyModal && surveyForm) {
 
     // Always show success — fire-and-forget per the no-cors fetch above
     surveyForm.style.display = 'none';
+    // Surface the responder's updated waitlist position when the server gave us one.
+    const posEl = document.getElementById('survey-success-pos');
+    if (posEl) {
+      if (surveyPosition !== null) {
+        posEl.textContent = "You're now #" + surveyPosition.toLocaleString() + ' on the waitlist.';
+        posEl.hidden = false;
+      } else {
+        posEl.hidden = true;
+      }
+    }
     if (surveySuccess) surveySuccess.hidden = false;
   });
 
