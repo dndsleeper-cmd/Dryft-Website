@@ -23,9 +23,9 @@
  *   source       "hero" | "final" (required for non-partial writes)
  *   careerStage  one of VALID_CAREER_STAGES (required for non-partial)
  *   lifeStage    one of VALID_LIFE_STAGES (required for non-partial)
- *   q1..q10      Likert scale, "1".."5" (strings on the wire, stored as ints)
- *   q11          Yes/No
- *   q12          open-ended text (optional)
+ *   q1..q7       Likert scale, "1".."5" (strings on the wire, stored as ints)
+ *   q8           Yes/No
+ *   q9           open-ended text (optional)
  *
  * Likert questions are stored as integers (1..5) so they're aggregatable
  * in BigQuery/Looker without parseInt every time. Missing answers store as
@@ -54,10 +54,10 @@ const {
 const { computePosition } = require('./_lib/ranking');
 
 // Likert question field names — keep this in sync with the form. Field names
-// now match the on-screen display order (q1..q10 = the ten 1–5 questions, in the
-// order shown). The order here defines storage shape; rearranging is a NO-OP for
-// stored data because each field is keyed by name.
-const LIKERT_KEYS = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10'];
+// match the on-screen display order (q1..q7 = the seven 1–5 questions, in the
+// order shown; q8 = Yes/No, q9 = open text). The order here defines storage
+// shape; rearranging is a NO-OP for stored data because each field is keyed by name.
+const LIKERT_KEYS = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7'];
 
 // When a survey is marked complete, lift the matching waitlist doc into the
 // "survey-completed" tier so it ranks above non-completers. Same email-derived
@@ -209,17 +209,17 @@ module.exports = async function handler(req, res) {
   // previously saved answer. This is what lets a returning user's new answers
   // ACCUMULATE into their existing record instead of wiping the rest of it
   // (e.g. reopening the survey on a fresh, empty form and answering one more
-  // question must not null out the other ten).
+  // question must not null out the others).
   for (const k of LIKERT_KEYS) {
     const n = scaleToNumber(body[k]); // 1..5, or null when missing/invalid
     if (n !== null) fields[k] = n;
   }
   if (careerStage) fields.careerStage = careerStage;
   if (lifeStage) fields.lifeStage = lifeStage;
-  const q11 = sanitizeYesNo(body.q11);
-  if (q11) fields.q11 = q11; // 'Yes' | 'No'
-  const q12 = sanitizeText(body.q12);
-  if (q12) fields.q12 = q12; // free text, max 2000 chars
+  const q8 = sanitizeYesNo(body.q8);
+  if (q8) fields.q8 = q8; // 'Yes' | 'No'
+  const q9 = sanitizeText(body.q9);
+  if (q9) fields.q9 = q9; // free text, max 2000 chars
 
   try {
     // Upsert ONE doc per email. set+merge means a changed selection overwrites

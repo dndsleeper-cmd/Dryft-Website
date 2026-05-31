@@ -121,14 +121,13 @@ function priorityScore({
 // Kept as a Set so allowlist membership is O(1). Must match the data-value
 // attributes in index.html exactly — including the en-dash in "0–2" etc.
 const VALID_CAREER_STAGES = new Set([
-  'University / college student',
-  'Recent graduate (0–2 years working)',
-  'Early-career professional (3–7 years)',
-  'Mid-career professional',
-  'Senior professional / executive',
-  'Self-employed / freelancer',
-  'Founder / entrepreneur',
-  'Between jobs',
+  'Student',
+  'Early-career (0-3yrs)',
+  'Mid-career (4-10yrs)',
+  'Experienced-career (10+ yrs)',
+  'Self-employed',
+  'Business owner',
+  'Not working',
   'Retired',
   'Prefer not to say',
 ]);
@@ -141,15 +140,13 @@ function sanitizeCareerStage(v) {
 
 // --- Life / family stage (chip) -------------------------------------------
 const VALID_LIFE_STAGES = new Set([
-  'Living with parents or family',
-  'Living independently',
-  'In a long-term relationship',
-  'Married / partnered',
-  'Parent with young children',
-  'Parent with teenage or adult children',
-  'Caring for family members',
+  'Living with family',
+  'Living alone',
+  'Living with partner',
+  'Living with partner + children',
+  'Single parent',
+  'Caregiving for family member(s)',
   'Empty nester',
-  'Retired',
   'Prefer not to say',
 ]);
 function sanitizeLifeStage(v) {

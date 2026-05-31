@@ -577,8 +577,8 @@ async function run() {
     const payload = {
       email: 'mid@example.com',
       source: 'final',
-      careerStage: 'Mid-career professional',
-      lifeStage: 'Living independently',
+      careerStage: 'Mid-career (4-10yrs)',
+      lifeStage: 'Living alone',
       q1: '5',
       q2: '4',
       q3: '3',
@@ -586,11 +586,8 @@ async function run() {
       q5: '1',
       q6: '4',
       q7: '5',
-      q8: '3',
-      q9: '4',
-      q10: '5',
-      q11: 'Yes',
-      q12: 'Subscriptions sneak up on me each month.',
+      q8: 'Yes',
+      q9: 'Subscriptions sneak up on me each month.',
     };
     const { req, res } = fakeReqRes('POST', payload);
     await survey(req, res);
@@ -600,11 +597,11 @@ async function run() {
       'wrote 1 doc to survey collection',
     );
     const d = writes[0]?.doc || {};
-    ok(d.careerStage === 'Mid-career professional', 'careerStage allowlist accepts known value');
-    ok(d.lifeStage === 'Living independently', 'lifeStage allowlist accepts known value');
-    ok(d.q1 === 5 && d.q10 === 5, 'Likert stored as integer, not string');
-    ok(d.q11 === 'Yes', 'q11 Yes/No stored');
-    ok(d.q12 === 'Subscriptions sneak up on me each month.', 'q12 free text stored');
+    ok(d.careerStage === 'Mid-career (4-10yrs)', 'careerStage allowlist accepts known value');
+    ok(d.lifeStage === 'Living alone', 'lifeStage allowlist accepts known value');
+    ok(d.q1 === 5 && d.q7 === 5, 'Likert stored as integer, not string');
+    ok(d.q8 === 'Yes', 'q8 Yes/No stored');
+    ok(d.q9 === 'Subscriptions sneak up on me each month.', 'q9 free text stored');
   }
 
   // -- Required field validation
@@ -643,7 +640,7 @@ async function run() {
       email: 'a@b.co',
       source: 'hero',
       careerStage: 'Astronaut',
-      lifeStage: 'Living independently',
+      lifeStage: 'Living alone',
     });
     await survey(req, res);
     ok(
@@ -660,14 +657,14 @@ async function run() {
       email: 'sparse@example.com',
       source: 'hero',
       careerStage: 'Retired',
-      lifeStage: 'Retired',
+      lifeStage: 'Living alone',
       q1: '4', // only q1, others missing
     });
     await survey(req, res);
     ok(res.statusCode === 200, 'sparse survey accepted (Likert is optional per question)');
     const d = writes[0]?.doc || {};
     ok(d.q1 === 4, 'q1 stored as integer 4');
-    ok(!('q5' in d) && !('q10' in d), 'unanswered Likert fields are omitted, not written');
+    ok(!('q5' in d) && !('q7' in d), 'unanswered Likert fields are omitted, not written');
   }
 
   // -- Out-of-range / non-numeric Likert is omitted (never stored as junk)
@@ -677,7 +674,7 @@ async function run() {
       email: 'oof@example.com',
       source: 'hero',
       careerStage: 'Retired',
-      lifeStage: 'Retired',
+      lifeStage: 'Living alone',
       q1: '7',
       q2: 'haha',
       q3: '-1',
@@ -690,18 +687,18 @@ async function run() {
     );
   }
 
-  // -- q11 Yes/No allowlist — invalid value is omitted
+  // -- q8 Yes/No allowlist — invalid value is omitted
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
       email: 'yn@example.com',
       source: 'hero',
       careerStage: 'Retired',
-      lifeStage: 'Retired',
-      q11: 'Maybe',
+      lifeStage: 'Living alone',
+      q8: 'Maybe',
     });
     await survey(req, res);
-    ok(!('q11' in (writes[0]?.doc || {})), 'q11 outside Yes/No allowlist is omitted');
+    ok(!('q8' in (writes[0]?.doc || {})), 'q8 outside Yes/No allowlist is omitted');
   }
 
   console.log('\n\x1b[1m== Survey progressive autosave (email-keyed upsert) ==\x1b[0m');
@@ -714,7 +711,7 @@ async function run() {
     const { req, res } = fakeReqRes('POST', {
       email,
       partial: true,
-      careerStage: 'University / college student',
+      careerStage: 'Student',
     });
     await survey(req, res);
     const d = docStore.get('survey/' + emailDocId(email)) || {};
@@ -722,7 +719,7 @@ async function run() {
     ok(res.body.id === emailDocId(email), 'doc id is the email-derived key');
     ok(res.body.complete === false, 'partial response echoes complete:false');
     ok(!('complete' in d), 'partial write omits complete (so a merge can never downgrade it)');
-    ok(d.careerStage === 'University / college student', 'partial captured the answered field');
+    ok(d.careerStage === 'Student', 'partial captured the answered field');
     ok(d.emailLower === email, 'emailLower stored as a field for lookups');
     ok('updatedAt' in d, 'partial write stamps updatedAt');
   }
@@ -778,7 +775,7 @@ async function run() {
       complete: true,
       source: 'hero',
       careerStage: 'Retired',
-      lifeStage: 'Retired',
+      lifeStage: 'Living alone',
       q1: '3',
     });
     await survey(r2, w2);
@@ -815,7 +812,7 @@ async function run() {
       complete: true,
       source: 'hero',
       careerStage: 'Retired',
-      lifeStage: 'Retired',
+      lifeStage: 'Living alone',
       q1: '3',
     });
     await survey(r1, w1);
@@ -843,8 +840,8 @@ async function run() {
       email,
       complete: true,
       source: 'hero',
-      careerStage: 'University / college student',
-      lifeStage: 'Living independently',
+      careerStage: 'Student',
+      lifeStage: 'Living alone',
     });
     await survey(req, res);
     const after = docStore.get('waitlist/' + wlId) || {};
@@ -867,22 +864,22 @@ async function run() {
     ok(res.statusCode === 400 && res.body.reason === 'email', 'partial without email → 400 email');
   }
 
-  // -- q12 formula injection defused
+  // -- q9 formula injection defused
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
       email: 'inj@example.com',
       source: 'hero',
       careerStage: 'Retired',
-      lifeStage: 'Retired',
-      q12: '=HYPERLINK("https://evil.com","Click me")',
+      lifeStage: 'Living alone',
+      q9: '=HYPERLINK("https://evil.com","Click me")',
     });
     await survey(req, res);
-    const got = writes[0]?.doc.q12;
-    ok(got.startsWith("'="), 'q12 formula injection: leading = prefixed with apostrophe');
+    const got = writes[0]?.doc.q9;
+    ok(got.startsWith("'="), 'q9 formula injection: leading = prefixed with apostrophe');
   }
 
-  // -- q12 control char strip + length cap
+  // -- q9 control char strip + length cap
   {
     writes.length = 0;
     const bigText = 'A'.repeat(3000) + '\x00 nullbyte';
@@ -890,13 +887,13 @@ async function run() {
       email: 'big@example.com',
       source: 'hero',
       careerStage: 'Retired',
-      lifeStage: 'Retired',
-      q12: bigText,
+      lifeStage: 'Living alone',
+      q9: bigText,
     });
     await survey(req, res);
-    const got = writes[0]?.doc.q12;
-    ok(got.length === 2000, 'q12 capped at 2000 chars');
-    ok(!got.includes('\x00'), 'q12 null byte stripped');
+    const got = writes[0]?.doc.q9;
+    ok(got.length === 2000, 'q9 capped at 2000 chars');
+    ok(!got.includes('\x00'), 'q9 null byte stripped');
   }
 
   // -- IP hashing stability — explicit same IP across two requests
@@ -1072,7 +1069,7 @@ async function run() {
         email: 'separate@example.com',
         source: 'hero',
         careerStage: 'Retired',
-        lifeStage: 'Retired',
+        lifeStage: 'Living alone',
       },
       { ip: burstIp },
     );

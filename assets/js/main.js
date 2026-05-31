@@ -428,32 +428,29 @@ if (surveyModal && surveyForm) {
   // make sure nothing other than the expected values reaches the server.
   // (The server re-validates against the same allowlists — this is defense in depth.)
   const VALID_CAREER_STAGES = new Set([
-    'University / college student',
-    'Recent graduate (0–2 years working)',
-    'Early-career professional (3–7 years)',
-    'Mid-career professional',
-    'Senior professional / executive',
-    'Self-employed / freelancer',
-    'Founder / entrepreneur',
-    'Between jobs',
+    'Student',
+    'Early-career (0-3yrs)',
+    'Mid-career (4-10yrs)',
+    'Experienced-career (10+ yrs)',
+    'Self-employed',
+    'Business owner',
+    'Not working',
     'Retired',
     'Prefer not to say',
   ]);
   const VALID_LIFE_STAGES = new Set([
-    'Living with parents or family',
-    'Living independently',
-    'In a long-term relationship',
-    'Married / partnered',
-    'Parent with young children',
-    'Parent with teenage or adult children',
-    'Caring for family members',
+    'Living with family',
+    'Living alone',
+    'Living with partner',
+    'Living with partner + children',
+    'Single parent',
+    'Caregiving for family member(s)',
     'Empty nester',
-    'Retired',
     'Prefer not to say',
   ]);
   // Likert scale: empty string (unanswered) or "1"–"5"
   const VALID_SCALE = new Set(['', '1', '2', '3', '4', '5']);
-  // Yes/No question (q11): empty string (unanswered) or "Yes"/"No"
+  // Yes/No question (q8): empty string (unanswered) or "Yes"/"No"
   const VALID_YESNO = new Set(['', 'Yes', 'No']);
   // Survey-level throttle to mirror the waitlist anti-abuse posture
   let surveySubmitCount = 0;
@@ -489,10 +486,10 @@ if (surveyModal && surveyForm) {
     const s = String(v == null ? '' : v).trim().slice(0, 8);
     return VALID_YESNO.has(s) ? s : '';
   }
-  // Open-ended free-text answer (q12). Strips control chars (keeps \n, \t),
+  // Open-ended free-text answer (q9). Strips control chars (keeps \n, \t),
   // collapses long runs of whitespace, defuses spreadsheet formula injection
   // (=, +, -, @, tab at start), and caps length so a single user can't bloat
-  // the sheet row. Empty strings are fine — q12 is optional.
+  // the sheet row. Empty strings are fine — q9 is optional.
   // The Apps Script writeRow ALSO applies a formula-injection guard, so this
   // is defense in depth — even if that guard is ever removed, the textarea
   // value still arrives at the sheet as plain text.
@@ -522,11 +519,11 @@ if (surveyModal && surveyForm) {
       source: String(surveySource || '').replace(/[^a-z]/gi, '').slice(0, 16),
       careerStage: sanitizeCareerStage(data.get('careerStage')),
       lifeStage: sanitizeLifeStage(data.get('lifeStage')),
-      q11: sanitizeYesNo(data.get('q11')),
-      q12: sanitizeText(data.get('q12')),
+      q8: sanitizeYesNo(data.get('q8')),
+      q9: sanitizeText(data.get('q9')),
       complete: !!complete,
     };
-    ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10']
+    ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7']
       .forEach((k) => { payload[k] = sanitizeScale(data.get(k)); });
     return payload;
   }
@@ -580,7 +577,7 @@ if (surveyModal && surveyForm) {
   const SURVEY_DRAFT_PREFIX = 'dryft.survey.';
   const SURVEY_DRAFT_FIELDS = [
     'careerStage', 'lifeStage',
-    'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12',
+    'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9',
   ];
   function draftKey(email) {
     return SURVEY_DRAFT_PREFIX + String(email || '').trim().toLowerCase();
@@ -627,11 +624,11 @@ if (surveyModal && surveyForm) {
     });
   };
 
-  // Open-ended textarea (q12): debounce while typing, flush on blur.
-  const q12Field = surveyForm.querySelector('textarea[name="q12"]');
-  if (q12Field) {
-    q12Field.addEventListener('input', () => triggerSurveyAutosave());
-    q12Field.addEventListener('blur', () => flushSurveyAutosave());
+  // Open-ended textarea (q9): debounce while typing, flush on blur.
+  const q9Field = surveyForm.querySelector('textarea[name="q9"]');
+  if (q9Field) {
+    q9Field.addEventListener('input', () => triggerSurveyAutosave());
+    q9Field.addEventListener('blur', () => flushSurveyAutosave());
   }
 
   // Last-ditch capture if the user leaves with the survey open: beacon the
