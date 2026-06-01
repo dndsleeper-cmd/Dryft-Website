@@ -2,20 +2,20 @@
  * POST /api/lookup
  *
  * Self-service referral-code lookup for someone already on the waitlist: they
- * enter their email and get their shareable code + current position back. Used
- * by the "Find your referral code" popup on /referral.
+ * enter their phone number and get their shareable code + current position
+ * back. Used by the "Find your invite code" popup on /referral.
  *
  * Referral codes are not secret (they're meant to be shared) and position isn't
  * sensitive, so this is low-risk; it is rate-limited per IP to throttle the
- * (minor) email-enumeration surface. Read-only — no reCAPTCHA.
+ * (minor) number-enumeration surface. Read-only — no reCAPTCHA.
  *
  * Body (JSON or form-urlencoded):
- *   email  required
+ *   phone  required
  *
  * Response:
  *   200 { ok: true, found: true,  referralCode, position }
  *   200 { ok: true, found: false }                        // not on the waitlist yet
- *   400 { ok: false, reason: 'email' }
+ *   400 { ok: false, reason: 'phone' }
  *   429 { ok: false, reason: 'rate-limited' }
  *   500 { ok: false, reason: 'server' }
  */
@@ -24,9 +24,9 @@ const {
   readBody,
   clientIp,
   hashIp,
-  emailDocId,
-  sanitizeEmail,
-  isPlausibleEmail,
+  phoneDocId,
+  sanitizePhone,
+  isPlausiblePhone,
   makeReferralCode,
   rateLimit,
 } = require('./_lib/validate');
@@ -49,8 +49,8 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  const email = sanitizeEmail(body.email);
-  if (!isPlausibleEmail(email)) return res.status(400).json({ ok: false, reason: 'email' });
+  const phone = sanitizePhone(body.phone);
+  if (!isPlausiblePhone(phone)) return res.status(400).json({ ok: false, reason: 'phone' });
 
   const ip = clientIp(req);
   const rl = await rateLimit('rl:lookup:' + (hashIp(ip) || ip || 'unknown'), {
@@ -64,12 +64,12 @@ module.exports = async function handler(req, res) {
 
   try {
     const database = db();
-    const docId = emailDocId(email);
+    const docId = phoneDocId(phone);
     const snap = await database.collection('waitlist').doc(docId).get();
     if (!snap.exists) return res.status(200).json({ ok: true, found: false });
 
     const data = snap.data() || {};
-    const referralCode = data.referralCode || makeReferralCode(email.toLowerCase());
+    const referralCode = data.referralCode || makeReferralCode(phone);
     const position = await computePosition(
       database,
       typeof data.priorityScore === 'number' ? data.priorityScore : null,

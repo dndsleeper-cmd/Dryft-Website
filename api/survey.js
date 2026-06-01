@@ -1,9 +1,9 @@
 /**
  * POST /api/survey
  *
- * Captures a survey response, keyed by email so we collect data even from users
+ * Captures a survey response, keyed by phone so we collect data even from users
  * who never reach the final "Send answers" button. Every write UPSERTS a single
- * Firestore doc whose id is derived from the email (surveyDocId), so:
+ * Firestore doc whose id is derived from the phone (phoneDocId), so:
  *   - changing an answer overwrites the previous value (set + merge), and
  *   - the same person reopening/reloading the survey reuses ONE doc
  *     (abandoners are deduped, not duplicated).
@@ -14,10 +14,10 @@
  *      reCAPTCHA skipped, looser rate-limit bucket. Stored complete:false.
  *   2. COMPLETE submit — the final "Send answers" (`complete: true`, no
  *      `partial`). Strict required-field contract + reCAPTCHA. Stored
- *      complete:true on the SAME (email-keyed) doc.
+ *      complete:true on the SAME (phone-keyed) doc.
  *
  * Body (JSON or form-urlencoded):
- *   email        required — the doc key (and joins a response to its signup)
+ *   phone        required — the doc key (and joins a response to its signup)
  *   partial      optional boolean — true marks an in-progress autosave
  *   complete     optional boolean — true marks the response finished
  *   source       "hero" | "final" (required for non-partial writes)
@@ -37,9 +37,9 @@ const {
   readBody,
   clientIp,
   hashIp,
-  emailDocId,
-  sanitizeEmail,
-  isPlausibleEmail,
+  phoneDocId,
+  sanitizePhone,
+  isPlausiblePhone,
   sanitizeSource,
   sanitizeCareerStage,
   sanitizeLifeStage,
@@ -60,12 +60,12 @@ const { computePosition } = require('./_lib/ranking');
 const LIKERT_KEYS = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7'];
 
 // When a survey is marked complete, lift the matching waitlist doc into the
-// "survey-completed" tier so it ranks above non-completers. Same email-derived
+// "survey-completed" tier so it ranks above non-completers. Same phone-derived
 // doc id joins the two collections. Recomputes priorityScore from the doc's
 // current seq/referralCount (idempotent — re-running yields the same score).
 // Defensive: if the waitlist doc is somehow missing (signup POST failed but the
 // survey landed), create a minimal one. Returns the resulting position, or null.
-async function syncWaitlistOnComplete(database, docId, email, emailLower) {
+async function syncWaitlistOnComplete(database, docId, phone) {
   const userRef = database.collection('waitlist').doc(docId);
   const counterRef = database.collection('meta').doc('counters');
   const score = await database.runTransaction(async (tx) => {
@@ -101,14 +101,13 @@ async function syncWaitlistOnComplete(database, docId, email, emailLower) {
     // No waitlist doc — create a minimal completed one so the response still ranks.
     const cs = await tx.get(counterRef);
     const seq = (Number(cs.exists && cs.data().waitlistSeq) || 0) + 1;
-    const code = makeReferralCode(emailLower);
+    const code = makeReferralCode(phone);
     const sc = priorityScore({ surveyComplete: true, seq, referralCount: 0 });
     tx.set(counterRef, { waitlistSeq: seq }, { merge: true });
     tx.set(
       userRef,
       {
-        email,
-        emailLower,
+        phone,
         source: 'survey',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -123,7 +122,7 @@ async function syncWaitlistOnComplete(database, docId, email, emailLower) {
     );
     tx.set(
       database.collection('referralCodes').doc(code),
-      { ownerId: docId, emailLower },
+      { ownerId: docId, phone },
       { merge: true },
     );
     return sc;
@@ -148,7 +147,7 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  const email = sanitizeEmail(body.email);
+  const phone = sanitizePhone(body.phone);
   const source = sanitizeSource(body.source);
   const careerStage = sanitizeCareerStage(body.careerStage);
   const lifeStage = sanitizeLifeStage(body.lifeStage);
@@ -159,8 +158,8 @@ module.exports = async function handler(req, res) {
   const isPartial = body.partial === true || body.partial === 'true';
   const isComplete = body.complete === true || body.complete === 'true';
 
-  // Email is ALWAYS required — it's both the doc key and the join to a signup.
-  if (!isPlausibleEmail(email)) return res.status(400).json({ ok: false, reason: 'email' });
+  // Phone is ALWAYS required — it's both the doc key and the join to a signup.
+  if (!isPlausiblePhone(phone)) return res.status(400).json({ ok: false, reason: 'phone' });
 
   // Non-partial (complete / legacy) submissions keep the strict contract.
   if (!isPartial) {
@@ -197,8 +196,7 @@ module.exports = async function handler(req, res) {
 
   // Always-written metadata.
   const fields = {
-    email,
-    emailLower: email.toLowerCase(),
+    phone,
     ipHash: ipHashVal,
     userAgent: ua,
   };
@@ -222,7 +220,7 @@ module.exports = async function handler(req, res) {
   if (q9) fields.q9 = q9; // free text, max 2000 chars
 
   try {
-    // Upsert ONE doc per email. set+merge means a changed selection overwrites
+    // Upsert ONE doc per phone. set+merge means a changed selection overwrites
     // just that field and a returning/reloading user reuses the same doc.
     //
     // NO read on the hot path: the frequent per-answer autosave is now a PURE
@@ -233,7 +231,7 @@ module.exports = async function handler(req, res) {
     //   - We don't stamp a survey-doc createdAt; the waitlist doc (written at
     //     signup, before the survey) already holds the authoritative per-user
     //     timestamp, so it was duplicative. `updatedAt` still tracks recency.
-    const docId = emailDocId(email);
+    const docId = phoneDocId(phone);
     const ref = db().collection('survey').doc(docId);
     const payload = { ...fields, updatedAt: serverTimestamp() };
     if (isComplete) payload.complete = true; // final "Send answers" submit only
@@ -247,7 +245,7 @@ module.exports = async function handler(req, res) {
     let position = null;
     if (isComplete) {
       try {
-        position = await syncWaitlistOnComplete(db(), docId, email, email.toLowerCase());
+        position = await syncWaitlistOnComplete(db(), docId, phone);
       } catch (err) {
         console.warn('[survey] waitlist sync failed:', err && err.message);
       }

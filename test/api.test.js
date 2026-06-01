@@ -160,9 +160,23 @@ const survey = require(path.join(projectRoot, 'api', 'survey.js'));
 const lookup = require(path.join(projectRoot, 'api', 'lookup.js'));
 const stats = require(path.join(projectRoot, 'api', 'stats.js'));
 // Pull the real helpers so tests assert against the actual implementations.
-const { emailDocId, makeReferralCode, sanitizeReferralCode, priorityScore } = require(
+const { phoneDocId, makeReferralCode, sanitizeReferralCode, priorityScore } = require(
   path.join(projectRoot, 'api', '_lib', 'validate.js'),
 );
+
+// Deterministic, distinct, VALID NANP numbers keyed by a human-readable label,
+// so "same person" tests reuse one number. Format: +1 416 555 XXXX (area 416,
+// exchange 555, sequential 4-digit line). Re-asking for a label returns the
+// same E.164 string.
+const _phoneMap = new Map();
+let _phoneSeq = 0;
+function phoneFor(label) {
+  if (!_phoneMap.has(label)) {
+    _phoneSeq++;
+    _phoneMap.set(label, '+1416555' + String(_phoneSeq).padStart(4, '0'));
+  }
+  return _phoneMap.get(label);
+}
 
 // --- Test harness ---------------------------------------------------------
 let pass = 0,
@@ -259,7 +273,8 @@ async function run() {
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'jane@example.com',
+      phone: phoneFor('jane'),
+      region: 'CA',
       source: 'hero',
       dwell_ms: 4321,
     });
@@ -278,8 +293,8 @@ async function run() {
       'wrote 1 doc to waitlist collection',
     );
     const w = wlWrites()[0]?.doc || {};
-    ok(w.email === 'jane@example.com', 'email stored verbatim');
-    ok(w.emailLower === 'jane@example.com', 'emailLower stored for dedup');
+    ok(w.phone === phoneFor('jane'), 'phone stored verbatim (E.164)');
+    ok(w.region === 'CA', 'region stored');
     ok(w.source === 'hero', 'source stored');
     ok(w.dwellMs === 4321, 'dwellMs parsed to integer');
     ok(typeof w.ipHash === 'string' && w.ipHash.length === 16, 'ipHash present, 16 hex chars');
@@ -299,23 +314,25 @@ async function run() {
     ok(res.body.position === 1, 'first signup is position #1');
   }
 
-  // -- Dedup: re-signing up with the SAME email updates one doc (no duplicate)
+  // -- Dedup: re-signing up with the SAME number updates one doc (no duplicate)
   {
     writes.length = 0;
-    const email = 'repeat@example.com';
-    const { req: r1, res: w1 } = fakeReqRes('POST', { email, source: 'hero' });
+    const phone = phoneFor('repeat');
+    const digits = phone.slice(2); // strip "+1"
+    const pretty = '+1 (' + digits.slice(0, 3) + ') ' + digits.slice(3, 6) + '-' + digits.slice(6);
+    const { req: r1, res: w1 } = fakeReqRes('POST', { phone, source: 'hero' });
     await waitlist(r1, w1);
     const { req: r2, res: w2 } = fakeReqRes('POST', {
-      email: 'Repeat@Example.com',
+      phone: pretty, // same number, with punctuation/spaces
       source: 'final',
     });
     await waitlist(r2, w2);
     const ids = new Set(wlWrites().map((wr) => wr.id));
     ok(
-      ids.size === 1 && ids.has(emailDocId(email)),
-      'same email → one waitlist doc (case-insensitive)',
+      ids.size === 1 && ids.has(phoneDocId(phone)),
+      'same number → one waitlist doc (punctuation-insensitive)',
     );
-    const d = docStore.get('waitlist/' + emailDocId(email)) || {};
+    const d = docStore.get('waitlist/' + phoneDocId(phone)) || {};
     ok(d.signupCount === 2, 'signupCount increments on re-signup instead of duplicating');
     ok(d.source === 'final', 'latest source recorded');
   }
@@ -328,22 +345,22 @@ async function run() {
     ok(res.headers.allow === 'POST', 'Allow header set on 405');
   }
 
-  // -- Bad email
+  // -- Bad phone
   {
     writes.length = 0;
-    const { req, res } = fakeReqRes('POST', { email: 'not-an-email', source: 'hero' });
+    const { req, res } = fakeReqRes('POST', { phone: '12345', source: 'hero' });
     await waitlist(req, res);
     ok(
-      res.statusCode === 400 && res.body.reason === 'email',
-      'rejects malformed email with reason:email',
+      res.statusCode === 400 && res.body.reason === 'phone',
+      'rejects malformed phone with reason:phone',
     );
-    ok(writes.length === 0, 'nothing written when email is bad');
+    ok(writes.length === 0, 'nothing written when phone is bad');
   }
 
   // -- Bad source
   {
     writes.length = 0;
-    const { req, res } = fakeReqRes('POST', { email: 'a@b.co', source: 'evil; DROP TABLE' });
+    const { req, res } = fakeReqRes('POST', { phone: phoneFor('src'), source: 'evil; DROP TABLE' });
     await waitlist(req, res);
     ok(
       res.statusCode === 400 && res.body.reason === 'source',
@@ -351,40 +368,40 @@ async function run() {
     );
   }
 
-  // -- Email sanitization: behavior is "strip non-whitelisted chars, THEN
-  // validate the result". For `Jane@Example.com<script>`, the brackets are
-  // stripped (not in the whitelist) but `script` survives — so the stored
-  // email becomes `Jane@Example.comscript`, which still passes the email
-  // regex (the TLD `comscript` looks valid). This is permissive-but-safe
-  // because we never echo the value as HTML; worst case is garbage in the
-  // DB row, not code execution. Documented here so future-me doesn't get
-  // confused.
+  // -- Phone normalization: punctuation/spaces and a leading country code are
+  // stripped, and a bare 10-digit NANP number is assumed +1. All three forms
+  // below normalize to the same stored E.164 string.
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: '  Jane@Example.com<script>  ',
+      phone: '  +1 (416) 555-9001  ',
       source: 'final',
     });
     await waitlist(req, res);
-    ok(res.statusCode === 200, 'sanitizable email accepted (with caveat below)');
+    ok(res.statusCode === 200, 'punctuated number accepted');
     ok(
-      wlWrites()[0]?.doc.email === 'Jane@Example.comscript',
-      'angle brackets stripped; alphanumerics in the attack survive',
-    );
-    ok(
-      wlWrites()[0]?.doc.emailLower === 'jane@example.comscript',
-      'emailLower lowercases the sanitized form',
+      wlWrites()[0]?.doc.phone === '+14165559001',
+      'punctuation/spaces stripped → canonical E.164',
     );
   }
 
-  // -- Email that is unsalvageable gets rejected
+  // -- Bare 10-digit number (no country code) → assumed +1
   {
     writes.length = 0;
-    const { req, res } = fakeReqRes('POST', { email: '!!!@!!!', source: 'hero' });
+    const { req, res } = fakeReqRes('POST', { phone: '4165559002', source: 'hero' });
+    await waitlist(req, res);
+    ok(res.statusCode === 200, 'bare 10-digit NANP number accepted');
+    ok(wlWrites()[0]?.doc.phone === '+14165559002', 'bare number normalized to +1…');
+  }
+
+  // -- Phone that can't be salvaged (invalid NANP area/exchange) is rejected
+  {
+    writes.length = 0;
+    const { req, res } = fakeReqRes('POST', { phone: '+11115559003', source: 'hero' });
     await waitlist(req, res);
     ok(
-      res.statusCode === 400 && res.body.reason === 'email',
-      'no-alphanumerics email → rejected by validator',
+      res.statusCode === 400 && res.body.reason === 'phone',
+      'invalid NANP area code (starts with 1) → rejected by validator',
     );
   }
 
@@ -403,23 +420,22 @@ async function run() {
   // -- x-www-form-urlencoded compatibility (matches Apps Script style)
   {
     writes.length = 0;
-    const body = Buffer.from('email=urlenc%40example.com&source=hero&dwell_ms=2000');
+    const body = Buffer.from('phone=%2B14165559004&source=hero&dwell_ms=2000');
     const { req, res } = fakeReqRes('POST', body, {
       contentType: 'application/x-www-form-urlencoded',
     });
     await waitlist(req, res);
     ok(res.statusCode === 200, 'urlencoded body accepted');
-    ok(wlWrites()[0]?.doc.email === 'urlenc@example.com', 'urlencoded email decoded');
+    ok(wlWrites()[0]?.doc.phone === '+14165559004', 'urlencoded phone decoded');
   }
 
   console.log('\n\x1b[1m== Referral helpers (unit) ==\x1b[0m');
 
   {
     const CROCKFORD = /^[0-9ABCDEFGHJKMNPQRSTVWXYZ]+$/;
-    const c1 = makeReferralCode('person@example.com');
+    const c1 = makeReferralCode('+14165551234');
     ok(c1.length === 7 && CROCKFORD.test(c1), 'makeReferralCode → 7 Crockford chars');
-    ok(makeReferralCode('person@example.com') === c1, 'makeReferralCode is deterministic');
-    ok(makeReferralCode('Person@Example.com') === c1, 'makeReferralCode is case-insensitive');
+    ok(makeReferralCode('+14165551234') === c1, 'makeReferralCode is deterministic');
     ok(
       sanitizeReferralCode(' ' + c1.toLowerCase() + ' ') === c1,
       'sanitizeReferralCode round-trips a real code',
@@ -449,7 +465,7 @@ async function run() {
   // -- New signup returns a code + position and writes the code→owner mapping
   {
     writes.length = 0;
-    const { req, res } = fakeReqRes('POST', { email: 'refA@example.com', source: 'hero' });
+    const { req, res } = fakeReqRes('POST', { phone: phoneFor('refA'), source: 'hero' });
     await waitlist(req, res);
     const code = res.body.referralCode;
     ok(typeof code === 'string' && code.length === 7, 'returns a 7-char referralCode');
@@ -458,12 +474,12 @@ async function run() {
       'returns a numeric position',
     );
     const map = docStore.get('referralCodes/' + code) || {};
-    ok(map.ownerId === emailDocId('refA@example.com'), 'code→owner mapping doc written');
+    ok(map.ownerId === phoneDocId(phoneFor('refA')), 'code→owner mapping doc written');
   }
 
   // -- Referrer gets +1 referral and +10 priority when someone uses their code
   {
-    const aId = emailDocId('refA@example.com');
+    const aId = phoneDocId(phoneFor('refA'));
     const aBefore = docStore.get('waitlist/' + aId) || {};
     const codeA = aBefore.referralCode;
     const scoreABefore = aBefore.priorityScore;
@@ -471,13 +487,13 @@ async function run() {
 
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'refB@example.com',
+      phone: phoneFor('refB'),
       source: 'referral',
       referredByCode: codeA,
     });
     await waitlist(req, res);
     const aAfter = docStore.get('waitlist/' + aId) || {};
-    const bDoc = docStore.get('waitlist/' + emailDocId('refB@example.com')) || {};
+    const bDoc = docStore.get('waitlist/' + phoneDocId(phoneFor('refB'))) || {};
     ok(aAfter.referralCount === refCountBefore + 1, 'referrer referralCount += 1');
     ok(
       aAfter.priorityScore === scoreABefore + 10,
@@ -492,26 +508,26 @@ async function run() {
     );
   }
 
-  // -- Self-referral / lowercased own code is ignored (no credit)
+  // -- Self-referral with one's own code is ignored (no credit)
   {
-    const email = 'selfref@example.com';
-    const ownCode = makeReferralCode(email);
+    const phone = phoneFor('selfref');
+    const ownCode = makeReferralCode(phone);
     writes.length = 0;
-    const { req, res } = fakeReqRes('POST', { email, source: 'referral', referredByCode: ownCode });
+    const { req, res } = fakeReqRes('POST', { phone, source: 'referral', referredByCode: ownCode });
     await waitlist(req, res);
-    const d = docStore.get('waitlist/' + emailDocId(email)) || {};
+    const d = docStore.get('waitlist/' + phoneDocId(phone)) || {};
     ok(d.referralCount === 0, 'self-referral grants no credit');
     ok(!('referredByCode' in d), 'self-referral does not set referredByCode');
   }
 
   // -- Re-submitting with a code never re-credits the referrer
   {
-    const aId = emailDocId('refA@example.com');
+    const aId = phoneDocId(phoneFor('refA'));
     const codeA = (docStore.get('waitlist/' + aId) || {}).referralCode;
     const countBefore = (docStore.get('waitlist/' + aId) || {}).referralCount;
     // refB re-submits, again citing A's code.
     const { req, res } = fakeReqRes('POST', {
-      email: 'refB@example.com',
+      phone: phoneFor('refB'),
       source: 'referral',
       referredByCode: codeA,
     });
@@ -525,13 +541,13 @@ async function run() {
   //    must not retroactively grant refC the +5 "joined via referral" bonus, must
   //    not stamp referredByCode, and must not credit the code owner (A).
   {
-    const cEmail = 'refC@example.com';
-    const cId = emailDocId(cEmail);
-    const aId = emailDocId('refA@example.com');
+    const cPhone = phoneFor('refC');
+    const cId = phoneDocId(cPhone);
+    const aId = phoneDocId(phoneFor('refA'));
     const codeA = (docStore.get('waitlist/' + aId) || {}).referralCode;
 
     // First signup — plain join, no code.
-    const { req: r1, res: w1 } = fakeReqRes('POST', { email: cEmail, source: 'final' });
+    const { req: r1, res: w1 } = fakeReqRes('POST', { phone: cPhone, source: 'final' });
     await waitlist(r1, w1);
     const cFirst = docStore.get('waitlist/' + cId) || {};
     const aCountBefore = (docStore.get('waitlist/' + aId) || {}).referralCount;
@@ -539,7 +555,7 @@ async function run() {
 
     // Second submit — now tries to ride someone else's code.
     const { req: r2, res: w2 } = fakeReqRes('POST', {
-      email: cEmail,
+      phone: cPhone,
       source: 'referral',
       referredByCode: codeA,
     });
@@ -566,14 +582,14 @@ async function run() {
 
   console.log('\n\x1b[1m== /api/lookup ==\x1b[0m');
 
-  // -- Look up an existing member's code + position by email
+  // -- Look up an existing member's code + position by phone
   {
     // refA was signed up earlier in the referral flow section.
-    const { req, res } = fakeReqRes('POST', { email: 'refA@example.com' });
+    const { req, res } = fakeReqRes('POST', { phone: phoneFor('refA') });
     await lookup(req, res);
-    const expectedCode = (docStore.get('waitlist/' + emailDocId('refA@example.com')) || {})
+    const expectedCode = (docStore.get('waitlist/' + phoneDocId(phoneFor('refA'))) || {})
       .referralCode;
-    ok(res.statusCode === 200 && res.body.found === true, 'known email → found:true');
+    ok(res.statusCode === 200 && res.body.found === true, 'known number → found:true');
     ok(res.body.referralCode === expectedCode, 'returns the stored referral code');
     ok(
       typeof res.body.position === 'number' && res.body.position >= 1,
@@ -581,20 +597,20 @@ async function run() {
     );
   }
 
-  // -- Unknown email → found:false (no doc created)
+  // -- Unknown number → found:false (no doc created)
   {
     writes.length = 0;
-    const { req, res } = fakeReqRes('POST', { email: 'nobody-here@example.com' });
+    const { req, res } = fakeReqRes('POST', { phone: phoneFor('nobody-here') });
     await lookup(req, res);
-    ok(res.statusCode === 200 && res.body.found === false, 'unknown email → found:false');
+    ok(res.statusCode === 200 && res.body.found === false, 'unknown number → found:false');
     ok(writes.length === 0, 'lookup never writes anything');
   }
 
-  // -- Bad email rejected; wrong method rejected
+  // -- Bad phone rejected; wrong method rejected
   {
-    const { req, res } = fakeReqRes('POST', { email: 'not-an-email' });
+    const { req, res } = fakeReqRes('POST', { phone: '12345' });
     await lookup(req, res);
-    ok(res.statusCode === 400 && res.body.reason === 'email', 'malformed email → 400');
+    ok(res.statusCode === 400 && res.body.reason === 'phone', 'malformed number → 400');
     const { req: r2, res: w2 } = fakeReqRes('GET');
     await lookup(r2, w2);
     ok(w2.statusCode === 405, 'GET → 405');
@@ -608,7 +624,7 @@ async function run() {
     await stats(req, res);
     ok(res.statusCode === 200 && res.body.ok === true, 'GET stats → 200 ok');
     ok(typeof res.body.count === 'number' && res.body.count >= 1, 'returns a numeric total count');
-    const { req: r2, res: w2 } = fakeReqRes('POST', { email: 'x@y.co' });
+    const { req: r2, res: w2 } = fakeReqRes('POST', { phone: phoneFor('x') });
     await stats(r2, w2);
     ok(w2.statusCode === 405, 'POST → 405 (stats is GET-only)');
   }
@@ -619,7 +635,7 @@ async function run() {
   {
     writes.length = 0;
     const payload = {
-      email: 'mid@example.com',
+      phone: phoneFor('mid'),
       source: 'final',
       careerStage: 'Mid-career (4-10yrs)',
       lifeStage: 'Living alone',
@@ -652,7 +668,7 @@ async function run() {
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'a@b.co',
+      phone: phoneFor('svA'),
       source: 'hero' /* no careerStage */,
     });
     await survey(req, res);
@@ -666,7 +682,7 @@ async function run() {
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'a@b.co',
+      phone: phoneFor('svB'),
       source: 'hero',
       careerStage: 'Retired',
     });
@@ -681,7 +697,7 @@ async function run() {
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'a@b.co',
+      phone: phoneFor('svC'),
       source: 'hero',
       careerStage: 'Astronaut',
       lifeStage: 'Living alone',
@@ -698,7 +714,7 @@ async function run() {
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'sparse@example.com',
+      phone: phoneFor('sparse'),
       source: 'hero',
       careerStage: 'Retired',
       lifeStage: 'Living alone',
@@ -715,7 +731,7 @@ async function run() {
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'oof@example.com',
+      phone: phoneFor('oof'),
       source: 'hero',
       careerStage: 'Retired',
       lifeStage: 'Living alone',
@@ -735,7 +751,7 @@ async function run() {
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'yn@example.com',
+      phone: phoneFor('yn'),
       source: 'hero',
       careerStage: 'Retired',
       lifeStage: 'Living alone',
@@ -745,77 +761,80 @@ async function run() {
     ok(!('q8' in (writes[0]?.doc || {})), 'q8 outside Yes/No allowlist is omitted');
   }
 
-  console.log('\n\x1b[1m== Survey progressive autosave (email-keyed upsert) ==\x1b[0m');
+  console.log('\n\x1b[1m== Survey progressive autosave (phone-keyed upsert) ==\x1b[0m');
 
-  // -- Partial autosave: partial:true → upserts one email-keyed doc with
+  // -- Partial autosave: partial:true → upserts one phone-keyed doc with
   //    relaxed validation (no source/careerStage/lifeStage required).
   {
     writes.length = 0;
-    const email = 'partial@example.com';
+    const phone = phoneFor('partial');
     const { req, res } = fakeReqRes('POST', {
-      email,
+      phone,
       partial: true,
       careerStage: 'Student',
     });
     await survey(req, res);
-    const d = docStore.get('survey/' + emailDocId(email)) || {};
+    const d = docStore.get('survey/' + phoneDocId(phone)) || {};
     ok(res.statusCode === 200, 'partial autosave (partial:true) → 200');
-    ok(res.body.id === emailDocId(email), 'doc id is the email-derived key');
+    ok(res.body.id === phoneDocId(phone), 'doc id is the phone-derived key');
     ok(res.body.complete === false, 'partial response echoes complete:false');
     ok(!('complete' in d), 'partial write omits complete (so a merge can never downgrade it)');
     ok(d.careerStage === 'Student', 'partial captured the answered field');
-    ok(d.emailLower === email, 'emailLower stored as a field for lookups');
+    ok(d.phone === phone, 'phone stored as a field for lookups');
     ok('updatedAt' in d, 'partial write stamps updatedAt');
   }
 
-  // -- Changing an answer overwrites the SAME email-keyed doc (no duplicate)
+  // -- Changing an answer overwrites the SAME phone-keyed doc (no duplicate)
   {
     writes.length = 0;
-    const email = 'ow@example.com';
-    const base = { email, partial: true };
+    const phone = phoneFor('ow');
+    const base = { phone, partial: true };
     const { req: r1, res: w1 } = fakeReqRes('POST', { ...base, q1: '2' });
     await survey(r1, w1);
     const { req: r2, res: w2 } = fakeReqRes('POST', { ...base, q1: '5' });
     await survey(r2, w2);
-    const d = docStore.get('survey/' + emailDocId(email)) || {};
+    const d = docStore.get('survey/' + phoneDocId(phone)) || {};
     ok(d.q1 === 5, 'changed answer overwrites in place (q1: 2 → 5)');
     const ids = new Set(writes.map((w) => w.id));
-    ok(ids.size === 1 && ids.has(emailDocId(email)), 'both writes hit the one email doc (no dup)');
+    ok(ids.size === 1 && ids.has(phoneDocId(phone)), 'both writes hit the one phone doc (no dup)');
   }
 
-  // -- Abandoner dedup: a second SESSION for the same email reuses the doc,
-  //    and case-insensitivity means EMAIL == email map to the same key.
-  //    (The client re-sends the full snapshot each save, so session 2 carries
-  //    q1 forward and adds q2 — mirroring real behavior.)
+  // -- Abandoner dedup: a second SESSION for the same number reuses the doc,
+  //    and punctuation-insensitivity means a formatted number maps to the same
+  //    key. (The client re-sends the full snapshot each save, so session 2
+  //    carries q1 forward and adds q2 — mirroring real behavior.)
   {
     writes.length = 0;
+    const phone = phoneFor('dedup');
+    const digits = phone.slice(2);
+    const pretty = '(' + digits.slice(0, 3) + ') ' + digits.slice(3, 6) + '-' + digits.slice(6);
     const { req: r1, res: w1 } = fakeReqRes('POST', {
-      email: 'Dedup@Example.com',
+      phone: pretty, // formatted, no country code
       partial: true,
       q1: '1',
     });
     await survey(r1, w1);
     const { req: r2, res: w2 } = fakeReqRes('POST', {
-      email: 'dedup@example.com',
+      phone, // canonical E.164
       partial: true,
       q1: '1',
       q2: '4',
     });
     await survey(r2, w2);
-    const key = emailDocId('dedup@example.com');
+    const key = phoneDocId(phone);
     const d = docStore.get('survey/' + key) || {};
-    ok(w1.body.id === key && w2.body.id === key, 'mixed-case email maps to one doc key');
-    ok(d.q1 === 1 && d.q2 === 4, 'second session reuses the same email doc (no duplicate)');
+    ok(w1.body.id === key && w2.body.id === key, 'formatted vs E.164 number maps to one doc key');
+    ok(d.q1 === 1 && d.q2 === 4, 'second session reuses the same phone doc (no duplicate)');
   }
 
-  // -- Complete submit for the same email flips complete:true in place
+  // -- Complete submit for the same number flips complete:true in place
   {
     writes.length = 0;
-    const email = 'c@example.com';
-    const { req: r1, res: w1 } = fakeReqRes('POST', { email, partial: true, q1: '3' });
+    const phone = phoneFor('complete');
+    const { req: r1, res: w1 } = fakeReqRes('POST', { phone, partial: true, q1: '3' });
     await survey(r1, w1);
     const { req: r2, res: w2 } = fakeReqRes('POST', {
-      email,
+      phone,
       complete: true,
       source: 'hero',
       careerStage: 'Retired',
@@ -823,10 +842,10 @@ async function run() {
       q1: '3',
     });
     await survey(r2, w2);
-    const d = docStore.get('survey/' + emailDocId(email)) || {};
+    const d = docStore.get('survey/' + phoneDocId(phone)) || {};
     ok(w2.statusCode === 200, 'complete submit → 200');
     ok(w2.body.complete === true, 'response echoes complete:true');
-    ok(d.complete === true, 'complete submit flips complete:true on the same email doc');
+    ok(d.complete === true, 'complete submit flips complete:true on the same phone doc');
     ok(d.q1 === 3, 'answers preserved through the complete write');
   }
 
@@ -835,14 +854,14 @@ async function run() {
   //    question must accumulate, not clobber the rest.
   {
     writes.length = 0;
-    const email = 'nowipe@example.com';
+    const phone = phoneFor('nowipe');
     // First save: only q1.
-    const { req: r1, res: w1 } = fakeReqRes('POST', { email, partial: true, q1: '5' });
+    const { req: r1, res: w1 } = fakeReqRes('POST', { phone, partial: true, q1: '5' });
     await survey(r1, w1);
     // Later save: only q2 (q1 absent entirely — simulates a fresh form).
-    const { req: r2, res: w2 } = fakeReqRes('POST', { email, partial: true, q2: '2' });
+    const { req: r2, res: w2 } = fakeReqRes('POST', { phone, partial: true, q2: '2' });
     await survey(r2, w2);
-    const d = docStore.get('survey/' + emailDocId(email)) || {};
+    const d = docStore.get('survey/' + phoneDocId(phone)) || {};
     ok(d.q1 === 5, 'earlier answer (q1) preserved when a later write omits it');
     ok(d.q2 === 2, 'new answer (q2) accumulates into the same record');
   }
@@ -850,9 +869,9 @@ async function run() {
   // -- Completion is sticky: a partial autosave after completion can't downgrade it
   {
     writes.length = 0;
-    const email = 'sticky@example.com';
+    const phone = phoneFor('sticky');
     const { req: r1, res: w1 } = fakeReqRes('POST', {
-      email,
+      phone,
       complete: true,
       source: 'hero',
       careerStage: 'Retired',
@@ -860,20 +879,20 @@ async function run() {
       q1: '3',
     });
     await survey(r1, w1);
-    const { req: r2, res: w2 } = fakeReqRes('POST', { email, partial: true, q2: '4' });
+    const { req: r2, res: w2 } = fakeReqRes('POST', { phone, partial: true, q2: '4' });
     await survey(r2, w2);
-    const d = docStore.get('survey/' + emailDocId(email)) || {};
+    const d = docStore.get('survey/' + phoneDocId(phone)) || {};
     ok(d.complete === true, 'stored completion survives a later partial autosave (not downgraded)');
   }
 
   // -- Completing the survey promotes the matching waitlist doc into the
   //    survey-completed tier (priorityScore jumps by ~1e9) and reports position.
   {
-    const email = 'promote@example.com';
+    const phone = phoneFor('promote');
     // First, a normal waitlist signup creates the waitlist doc (non-completer).
-    const { req: rw, res: ww } = fakeReqRes('POST', { email, source: 'hero' });
+    const { req: rw, res: ww } = fakeReqRes('POST', { phone, source: 'hero' });
     await waitlist(rw, ww);
-    const wlId = emailDocId(email);
+    const wlId = phoneDocId(phone);
     const before = docStore.get('waitlist/' + wlId) || {};
     ok(
       before.surveyComplete === false && before.priorityScore < 0,
@@ -881,7 +900,7 @@ async function run() {
     );
 
     const { req, res } = fakeReqRes('POST', {
-      email,
+      phone,
       complete: true,
       source: 'hero',
       careerStage: 'Student',
@@ -900,19 +919,19 @@ async function run() {
     );
   }
 
-  // -- Partial write still requires a plausible email (it IS the doc key)
+  // -- Partial write still requires a plausible phone (it IS the doc key)
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', { partial: true, q1: '3' });
     await survey(req, res);
-    ok(res.statusCode === 400 && res.body.reason === 'email', 'partial without email → 400 email');
+    ok(res.statusCode === 400 && res.body.reason === 'phone', 'partial without phone → 400 phone');
   }
 
   // -- q9 formula injection defused
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'inj@example.com',
+      phone: phoneFor('inj'),
       source: 'hero',
       careerStage: 'Retired',
       lifeStage: 'Living alone',
@@ -928,7 +947,7 @@ async function run() {
     writes.length = 0;
     const bigText = 'A'.repeat(3000) + '\x00 nullbyte';
     const { req, res } = fakeReqRes('POST', {
-      email: 'big@example.com',
+      phone: phoneFor('big'),
       source: 'hero',
       careerStage: 'Retired',
       lifeStage: 'Living alone',
@@ -945,12 +964,12 @@ async function run() {
     writes.length = 0;
     const { req: r1, res: w1 } = fakeReqRes(
       'POST',
-      { email: 'a@b.co', source: 'hero' },
+      { phone: phoneFor('iphash1'), source: 'hero' },
       { ip: '198.51.100.7' },
     );
     const { req: r2, res: w2 } = fakeReqRes(
       'POST',
-      { email: 'c@d.co', source: 'hero' },
+      { phone: phoneFor('iphash2'), source: 'hero' },
       { ip: '198.51.100.7' },
     );
     await waitlist(r1, w1);
@@ -964,7 +983,7 @@ async function run() {
     const saved = process.env.IP_HASH_SALT;
     delete process.env.IP_HASH_SALT;
     writes.length = 0;
-    const { req, res } = fakeReqRes('POST', { email: 'a@b.co', source: 'hero' });
+    const { req, res } = fakeReqRes('POST', { phone: phoneFor('nosalt'), source: 'hero' });
     await waitlist(req, res);
     ok(
       wlWrites()[0]?.doc.ipHash === null,
@@ -979,7 +998,7 @@ async function run() {
   {
     delete process.env.RECAPTCHA_SECRET_KEY;
     writes.length = 0;
-    const { req, res } = fakeReqRes('POST', { email: 'norecaptcha@example.com', source: 'hero' });
+    const { req, res } = fakeReqRes('POST', { phone: phoneFor('norecaptcha'), source: 'hero' });
     await waitlist(req, res);
     ok(res.statusCode === 200, 'no RECAPTCHA_SECRET_KEY → verification skipped, request accepted');
   }
@@ -994,7 +1013,7 @@ async function run() {
 
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'notok@example.com',
+      phone: phoneFor('notok'),
       source: 'hero' /* no recaptchaToken */,
     });
     await waitlist(req, res);
@@ -1015,7 +1034,7 @@ async function run() {
 
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'human@example.com',
+      phone: phoneFor('human'),
       source: 'hero',
       recaptchaToken: 'tok_human',
     });
@@ -1034,7 +1053,7 @@ async function run() {
 
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'bot@example.com',
+      phone: phoneFor('bot'),
       source: 'hero',
       recaptchaToken: 'tok_bot',
     });
@@ -1055,7 +1074,7 @@ async function run() {
 
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
-      email: 'degraded@example.com',
+      phone: phoneFor('degraded'),
       source: 'hero',
       recaptchaToken: 'tok',
     });
@@ -1078,7 +1097,7 @@ async function run() {
     for (let i = 0; i < 7; i++) {
       const { req, res } = fakeReqRes(
         'POST',
-        { email: 'burst' + i + '@example.com', source: 'hero' },
+        { phone: phoneFor('burst' + i), source: 'hero' },
         { ip: burstIp },
       );
       await waitlist(req, res);
@@ -1094,7 +1113,7 @@ async function run() {
   {
     const { req, res } = fakeReqRes(
       'POST',
-      { email: 'still-over@example.com', source: 'hero' },
+      { phone: phoneFor('still-over'), source: 'hero' },
       { ip: burstIp },
     );
     await waitlist(req, res);
@@ -1110,7 +1129,7 @@ async function run() {
     const { req, res } = fakeReqRes(
       'POST',
       {
-        email: 'separate@example.com',
+        phone: phoneFor('separate'),
         source: 'hero',
         careerStage: 'Retired',
         lifeStage: 'Living alone',

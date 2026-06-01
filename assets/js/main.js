@@ -63,7 +63,7 @@ reveals.forEach(r => revealObserver.observe(r));
      4. Per-page-load rate limit (in-memory) — protects the API endpoint
         from one tab hammering. Resets on reload, which is fine for the threat we
         actually care about (bots, not determined humans).
-     5. Strict email validation + sanitization
+     5. Strict phone validation + sanitization
 
    The endpoints below are same-origin Vercel serverless functions that
    write to Firestore via the Firebase Admin SDK. Server-side validation
@@ -102,27 +102,40 @@ const PAGE_LOAD_TS = Date.now();
 const MIN_HUMAN_DWELL_MS = 1200;
 const MIN_SUBMIT_INTERVAL_MS = 800;
 const MAX_SUBMITS_PER_SESSION = 5;
-// Local-part: 1-64 chars from a safe subset. Domain: labels of 1-63 chars, TLD 2+ letters.
-// Hyphen placed at the end of each class so it's literal without escaping.
-const EMAIL_REGEX = /^[A-Za-z0-9._%+-]{1,64}@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,24}$/;
-const DOTSEQ = /\.{2,}/;
+// Phone: Canada / United States — both +1 (North American Numbering Plan). The
+// region <select> carries its dial code via data-dial; we combine it with the
+// typed national number into E.164 (+1 + 10 NANP digits, area/exchange 2-9).
+const NANP_REGEX = /^\+1[2-9]\d{2}[2-9]\d{6}$/;
 let submitCount = 0;
 let lastSubmitAt = 0;
-const submittedEmails = new Set();
+const submittedPhones = new Set();
 
-function sanitizeEmail(input) {
-  return String(input || '')
-    .trim()
-    .slice(0, 254)
-    .replace(/[^A-Za-z0-9._%+\-@]/g, '');
+// Combine the selected dial code with whatever the user typed into E.164.
+// Tolerant of punctuation, spaces, and a leading country code ("(416) 555-0123",
+// "1 416 555 0123", "+14165550123" all normalize the same way). Returns '' if
+// the digit count doesn't fit the plan.
+function toE164(rawInput, dialCode) {
+  let digits = String(rawInput || '').replace(/\D/g, '').slice(0, 15);
+  if (!digits) return '';
+  const dc = String(dialCode || '1');
+  if (dc === '1') {
+    if (digits.length === 11 && digits[0] === '1') digits = digits.slice(1);
+    return digits.length === 10 ? '+1' + digits : '';
+  }
+  return '+' + dc + digits;
 }
-function isPlausibleEmail(email) {
-  if (!email || email.length > 254) return false;
-  if (DOTSEQ.test(email)) return false;
-  if (email.startsWith('.') || email.endsWith('.')) return false;
-  if (email.includes('@.') || email.includes('.@')) return false;
-  if ((email.match(/@/g) || []).length !== 1) return false;
-  return EMAIL_REGEX.test(email);
+function isPlausiblePhone(e164) {
+  return NANP_REGEX.test(String(e164 || ''));
+}
+// Read the region <select> + tel <input> from a form and return the normalized
+// E.164 number, the chosen region code, and the input element (for focus/shake).
+function readPhone(form) {
+  const input = form.querySelector('input[type="tel"]');
+  const select = form.querySelector('select[name="region"]');
+  const opt = select && select.options[select.selectedIndex];
+  const dial = (opt && opt.getAttribute('data-dial')) || '1';
+  const region = (select && select.value) || 'CA';
+  return { e164: toE164(input ? input.value : '', dial), region: region, input: input };
 }
 function shakeForm(wrap, input) {
   wrap.style.borderColor = 'var(--damage)';
@@ -197,17 +210,17 @@ function populateReferralBanner(data) {
 })();
 
 async function handleWaitlistSubmit(form, source) {
-  const emailInput = form.querySelector('input[type="email"]');
+  const phoneInput = form.querySelector('input[type="tel"]');
   const honeypot = form.querySelector('input[name="company"]');
   const btn = form.querySelector('button[type="submit"]');
-  if (!emailInput || !btn) return;
+  if (!phoneInput || !btn) return;
 
   // Honeypot — any value means bot. Silent reject.
   if (honeypot && honeypot.value !== '') { form.reset(); return; }
 
   // Dwell — instant submits are bots
   const now = Date.now();
-  if (now - PAGE_LOAD_TS < MIN_HUMAN_DWELL_MS) { shakeForm(form, emailInput); return; }
+  if (now - PAGE_LOAD_TS < MIN_HUMAN_DWELL_MS) { shakeForm(form, phoneInput); return; }
 
   // Per-form throttle (prevents accidental double-submits, doesn't block retries)
   if (now - lastSubmitAt < MIN_SUBMIT_INTERVAL_MS) return;
@@ -218,28 +231,25 @@ async function handleWaitlistSubmit(form, source) {
     return;
   }
 
-  const email = sanitizeEmail(emailInput.value);
-  if (!isPlausibleEmail(email)) { shakeForm(form, emailInput); return; }
+  const { e164: phone, region } = readPhone(form);
+  if (!isPlausiblePhone(phone)) { shakeForm(form, phoneInput); return; }
 
   // Duplicate in this page-load — show success without re-posting (no enumeration leak).
-  const lower = email.toLowerCase();
-  if (submittedEmails.has(lower)) { showSuccess(source); return; }
+  if (submittedPhones.has(phone)) { showSuccess(source); return; }
 
   // All checks passed — commit
   lastSubmitAt = now;
   submitCount++;
-  submittedEmails.add(lower);
+  submittedPhones.add(phone);
 
   btn.textContent = 'Saving…';
   btn.disabled = true;
-  emailInput.disabled = true;
+  phoneInput.disabled = true;
 
-  // Show success + open the survey IMMEDIATELY. The Apps Script POST is fired
-  // below as fire-and-forget — we don't make the user wait on network latency.
-  // mode:'no-cors' means we can't read the response anyway, so awaiting it
-  // would just block the UI without any benefit.
+  // Show success + open the survey IMMEDIATELY. The POST is fired below as
+  // fire-and-forget — we don't make the user wait on network latency.
   showSuccess(source);
-  openSurvey(email, source);
+  openSurvey(phone, source);
   bumpJoinCount(); // optimistic +1 — the signup is committed; no extra /api pull
 
   // Optional referral code (only the /referral form carries one). Server
@@ -252,7 +262,7 @@ async function handleWaitlistSubmit(form, source) {
   // banner. We still don't block the UI on it (the survey is already open);
   // errors surface in the console and the server write is idempotent.
   getRecaptchaToken('waitlist').then(function (recaptchaToken) {
-    const payload = { email: email, source: source, dwell_ms: now - PAGE_LOAD_TS, recaptchaToken: recaptchaToken };
+    const payload = { phone: phone, region: region, source: source, dwell_ms: now - PAGE_LOAD_TS, recaptchaToken: recaptchaToken };
     if (referredByCode) payload.referredByCode = referredByCode;
     return fetch(WAITLIST_ENDPOINT, {
       method: 'POST',
@@ -278,19 +288,19 @@ Object.keys(FORM_SOURCES).forEach((id) => {
 
 /* =================================================================
    SURVEY MODAL — fired after a successful waitlist submission.
-   Email is already captured; this is purely optional signal collection.
+   Phone is already captured; this is purely optional signal collection.
    Single-select chips (stage) + 6 Likert scales (0-5).
 ================================================================= */
 const surveyModal = document.getElementById('survey-modal');
 const surveyForm = document.getElementById('survey-form');
 const surveySuccess = document.getElementById('survey-success');
-let surveyEmail = '';
+let surveyPhone = '';
 let surveySource = '';
 let surveyLastFocus = null;
 
 // --- Progressive autosave state -------------------------------------------
 // Every selection is saved to Firebase as it happens (debounced). The server
-// keys the doc by the user's email, so changing an answer overwrites it in one
+// keys the doc by the user's phone, so changing an answer overwrites it in one
 // doc and reopening the survey reuses that same doc. This captures partial data
 // even if the user abandons before "Send answers".
 let surveyAutosaveSnapshot = '';  // last payload we sent (dedupe identical saves)
@@ -303,11 +313,11 @@ let triggerSurveyAutosave = function () {};
 let flushSurveyAutosave = function () {};
 let restoreSurveyAnswers = function () {};
 
-function openSurvey(email, source) {
+function openSurvey(phone, source) {
   if (!surveyModal) return;
-  surveyEmail = email;
+  surveyPhone = phone;
   surveySource = source;
-  // Clean autosave state. The doc is keyed server-side by email, so reopening
+  // Clean autosave state. The doc is keyed server-side by phone, so reopening
   // the survey for the same person continues their existing doc.
   surveyAutosaveSnapshot = '';
   surveyCompleted = false;
@@ -318,9 +328,9 @@ function openSurvey(email, source) {
   // flashing a stale code if the modal was opened earlier this session).
   const refBanner = document.getElementById('survey-referral');
   if (refBanner) refBanner.hidden = true;
-  // If this same email answered before on this browser, pre-fill their prior
+  // If this same phone answered before on this browser, pre-fill their prior
   // selections so they can see and continue where they left off.
-  restoreSurveyAnswers(email);
+  restoreSurveyAnswers(phone);
   surveyLastFocus = document.activeElement;
   surveyModal.hidden = false;
   // Force reflow before adding .open so the CSS transition fires
@@ -515,7 +525,7 @@ if (surveyModal && surveyForm) {
   function currentSurveyPayload(complete) {
     const data = new FormData(surveyForm);
     const payload = {
-      email: sanitizeEmail(surveyEmail || ''),
+      phone: String(surveyPhone || ''),
       source: String(surveySource || '').replace(/[^a-z]/gi, '').slice(0, 16),
       careerStage: sanitizeCareerStage(data.get('careerStage')),
       lifeStage: sanitizeLifeStage(data.get('lifeStage')),
@@ -533,7 +543,7 @@ if (surveyModal && surveyForm) {
   // the last payload so we don't spam identical writes.
   function autosaveNow(useBeacon) {
     if (surveyCompleted) return;          // final submit already wrote the doc
-    if (!surveyEmail) return;             // email is the server-side doc key
+    if (!surveyPhone) return;             // phone is the server-side doc key
     saveSurveyDraft();                    // keep the local (this-browser) copy fresh
     const payload = currentSurveyPayload(false);
     payload.partial = true;               // relaxed validation + autosave bucket
@@ -569,9 +579,9 @@ if (surveyModal && surveyForm) {
 
   // ----- Local draft (this browser) -----
   // We can't securely fetch a person's prior answers from the server (there's
-  // no login/email verification, so returning answers by email would leak them
-  // to anyone who types that email). Instead we keep a per-email draft in this
-  // browser's localStorage purely to PRE-FILL the form when the same email
+  // no login/phone verification, so returning answers by number would leak them
+  // to anyone who types that number). Instead we keep a per-phone draft in this
+  // browser's localStorage purely to PRE-FILL the form when the same number
   // returns here. Accumulating answers into the one server record still works
   // cross-device — this is only the "show what you picked before" convenience.
   const SURVEY_DRAFT_PREFIX = 'dryft.survey.';
@@ -579,11 +589,11 @@ if (surveyModal && surveyForm) {
     'careerStage', 'lifeStage',
     'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9',
   ];
-  function draftKey(email) {
-    return SURVEY_DRAFT_PREFIX + String(email || '').trim().toLowerCase();
+  function draftKey(phone) {
+    return SURVEY_DRAFT_PREFIX + String(phone || '').trim().toLowerCase();
   }
   function saveSurveyDraft() {
-    if (!surveyEmail) return;
+    if (!surveyPhone) return;
     try {
       const data = new FormData(surveyForm);
       const answers = {};
@@ -591,13 +601,13 @@ if (surveyModal && surveyForm) {
         const v = data.get(k);
         if (v != null && String(v) !== '') answers[k] = String(v);
       });
-      localStorage.setItem(draftKey(surveyEmail), JSON.stringify(answers));
+      localStorage.setItem(draftKey(surveyPhone), JSON.stringify(answers));
     } catch (_) { /* storage unavailable/full — non-fatal */ }
   }
-  restoreSurveyAnswers = function (email) {
+  restoreSurveyAnswers = function (phone) {
     let answers;
     try {
-      const raw = localStorage.getItem(draftKey(email));
+      const raw = localStorage.getItem(draftKey(phone));
       if (!raw) return;
       answers = JSON.parse(raw);
     } catch (_) { return; }
@@ -1077,7 +1087,7 @@ function bumpJoinCount() {
 })();
 
 /* =================================================================
-   REFERRAL CODE LOOKUP (/referral) — enter email, popup shows your code.
+   REFERRAL CODE LOOKUP (/referral) — enter phone, popup shows your code.
 ================================================================= */
 (function wireCodeLookup() {
   const form = document.getElementById('lookup-form');
@@ -1090,7 +1100,7 @@ function bumpJoinCount() {
       const willOpen = form.hidden;
       form.hidden = !willOpen;
       toggle.setAttribute('aria-expanded', String(willOpen));
-      if (willOpen) { const i = document.getElementById('lookup-email'); if (i) i.focus(); }
+      if (willOpen) { const i = document.getElementById('lookup-phone'); if (i) i.focus(); }
     });
   }
 
@@ -1134,16 +1144,16 @@ function bumpJoinCount() {
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (lookupBusy) return;
-    const input = document.getElementById('lookup-email');
+    const input = document.getElementById('lookup-phone');
     const btn = form.querySelector('button[type="submit"]');
-    const email = sanitizeEmail(input ? input.value : '');
-    if (!isPlausibleEmail(email)) { shakeForm(form, input); return; }
+    const { e164: phone } = readPhone(form);
+    if (!isPlausiblePhone(phone)) { shakeForm(form, input); return; }
     lookupBusy = true;
     if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
     fetch(LOOKUP_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email }),
+      body: JSON.stringify({ phone: phone }),
     })
       .then(function (r) { return r && r.ok ? r.json() : null; })
       .then(function (data) {

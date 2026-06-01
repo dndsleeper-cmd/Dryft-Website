@@ -1,12 +1,13 @@
 /**
  * POST /api/waitlist
  *
- * Captures a waitlist signup. UPSERTS one document per email (doc id derived
- * from the email via emailDocId), so re-signing up with the same email updates
- * the existing record instead of creating a duplicate.
+ * Captures a waitlist signup. UPSERTS one document per phone number (doc id
+ * derived from the E.164 phone via phoneDocId), so re-signing up with the same
+ * number updates the existing record instead of creating a duplicate.
  *
  * Body (JSON or form-urlencoded):
- *   email     required — sanitized + validated server-side
+ *   phone     required — mobile number for SMS; sanitized + validated server-side
+ *   region    optional — "CA" | "US" (dial-code dropdown selection)
  *   source    required — "hero" or "final"
  *   dwell_ms  optional — ms the user spent on the page before submit
  *
@@ -21,9 +22,10 @@ const {
   readBody,
   clientIp,
   hashIp,
-  emailDocId,
-  sanitizeEmail,
-  isPlausibleEmail,
+  phoneDocId,
+  sanitizePhone,
+  isPlausiblePhone,
+  sanitizeRegion,
   sanitizeSource,
   sanitizeReferralCode,
   makeReferralCode,
@@ -54,11 +56,12 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  const email = sanitizeEmail(body.email);
+  const phone = sanitizePhone(body.phone);
+  const region = sanitizeRegion(body.region);
   const source = sanitizeSource(body.source);
   const dwell = sanitizeInt(body.dwell_ms);
 
-  if (!isPlausibleEmail(email)) return res.status(400).json({ ok: false, reason: 'email' });
+  if (!isPlausiblePhone(phone)) return res.status(400).json({ ok: false, reason: 'phone' });
   if (!source) return res.status(400).json({ ok: false, reason: 'source' });
 
   const ip = clientIp(req);
@@ -81,9 +84,8 @@ module.exports = async function handler(req, res) {
     return res.status(429).json({ ok: false, reason: 'rate-limited' });
   }
 
-  const docId = emailDocId(email);
-  const emailLower = email.toLowerCase();
-  const myCode = makeReferralCode(emailLower);
+  const docId = phoneDocId(phone);
+  const myCode = makeReferralCode(phone);
   const referredByCode = sanitizeReferralCode(body.referredByCode);
 
   try {
@@ -119,14 +121,14 @@ module.exports = async function handler(req, res) {
 
       // ---- writes (all reads are done above) ----
       const base = {
-        email,
-        emailLower,
+        phone,
         source,
         dwellMs: dwell,
         ipHash: ipHashVal,
         userAgent: ua,
         updatedAt: serverTimestamp(),
       };
+      if (region) base.region = region;
 
       if (isNew) {
         const seq = (Number(counterSnap.exists && counterSnap.data().waitlistSeq) || 0) + 1;
@@ -149,7 +151,7 @@ module.exports = async function handler(req, res) {
         tx.set(counterRef, { waitlistSeq: seq }, { merge: true });
         tx.set(
           database.collection('referralCodes').doc(myCode),
-          { ownerId: docId, emailLower },
+          { ownerId: docId, phone },
           { merge: true },
         );
         if (referrerRef) {
@@ -174,7 +176,7 @@ module.exports = async function handler(req, res) {
         payload.referralCode = myCode;
         tx.set(
           database.collection('referralCodes').doc(myCode),
-          { ownerId: docId, emailLower },
+          { ownerId: docId, phone },
           { merge: true },
         );
       }

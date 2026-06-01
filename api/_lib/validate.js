@@ -11,32 +11,44 @@
  */
 const crypto = require('crypto');
 
-// --- Email -----------------------------------------------------------------
-// Same regex shape as the client, plus structural checks.
-// Hyphen placed at the END of each character class so it's literal without
-// needing to be escaped (ESLint flags the redundant backslash).
-const EMAIL_REGEX =
-  /^[A-Za-z0-9._%+-]{1,64}@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,24}$/;
-const DOTSEQ = /\.{2,}/;
+// --- Phone (SMS contact, E.164 / NANP) -------------------------------------
+// We collect a mobile number for SMS instead of an email. The site offers
+// Canada (+1) and the United States (+1) — both in the North American
+// Numbering Plan — so a valid number is +1 followed by a 10-digit NANP number
+// whose area code and exchange code each start 2–9. Stored canonically as
+// E.164 ("+14165550123"); the doc id is derived from this canonical form.
+const NANP_REGEX = /^\+1[2-9]\d{2}[2-9]\d{6}$/;
 
-function sanitizeEmail(v) {
-  return String(v == null ? '' : v)
-    .trim()
-    .slice(0, 254)
-    .replace(/[^A-Za-z0-9._%+\-@]/g, '');
+// Normalize whatever the client sends — "+1 (416) 555-0123", "14165550123",
+// "4165550123" — to E.164. Strip everything except digits, assume +1 when the
+// country code is absent (10-digit NANP), then prefix a single '+'.
+function sanitizePhone(v) {
+  let digits = String(v == null ? '' : v)
+    .replace(/\D/g, '')
+    .slice(0, 15);
+  if (!digits) return '';
+  if (digits.length === 10) digits = '1' + digits; // bare NANP → assume +1
+  return '+' + digits;
 }
-function isPlausibleEmail(email) {
-  if (!email || email.length > 254) return false;
-  if (DOTSEQ.test(email)) return false;
-  if (email.startsWith('.') || email.endsWith('.')) return false;
-  if (email.includes('@.') || email.includes('.@')) return false;
-  if ((email.match(/@/g) || []).length !== 1) return false;
-  return EMAIL_REGEX.test(email);
+function isPlausiblePhone(phone) {
+  return NANP_REGEX.test(String(phone == null ? '' : phone));
+}
+
+// --- Region (country chosen in the dial-code dropdown) ----------------------
+// Canada / United States — both +1, so this is stored for analytics, not for
+// dialing. Must match the <option value> attributes in the forms.
+const VALID_REGIONS = new Set(['CA', 'US']);
+function sanitizeRegion(v) {
+  const s = String(v == null ? '' : v)
+    .trim()
+    .toUpperCase()
+    .slice(0, 2);
+  return VALID_REGIONS.has(s) ? s : '';
 }
 
 // --- Source ----------------------------------------------------------------
 // 'hero' / 'final' — the two waitlist forms on the landing page.
-// 'referral' — the code+email form on /referral.
+// 'referral' — the code+phone form on /referral.
 const VALID_SOURCES = new Set(['hero', 'final', 'referral']);
 function sanitizeSource(v) {
   const s = String(v == null ? '' : v)
@@ -48,16 +60,18 @@ function sanitizeSource(v) {
 
 // --- Referral codes --------------------------------------------------------
 // Codes are Crockford base32 (no I/L/O/U — unambiguous when read aloud or
-// hand-typed). Generated deterministically from the lowercased email so a
-// given person always gets the same shareable code, and we can recompute it.
+// hand-typed). Generated deterministically from the canonical contact (the
+// E.164 phone) so a given person always gets the same shareable code, and we
+// can recompute it.
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const CROCKFORD_SET = new Set(CROCKFORD.split(''));
 
-// 7 chars = 35 bits of the email's SHA-256 → ~34 billion-code space. Collision
-// risk is negligible at beta scale; the mapping-doc write in /api/waitlist is
-// the authoritative uniqueness check and bumps to 8 chars on the rare clash.
-function makeReferralCode(emailLower, len = 7) {
-  const e = String(emailLower == null ? '' : emailLower)
+// 7 chars = 35 bits of the SHA-256 of the canonical contact (now the E.164
+// phone) → ~34 billion-code space. Collision risk is negligible at beta scale;
+// the mapping-doc write in /api/waitlist is the authoritative uniqueness check
+// and bumps to 8 chars on the rare clash.
+function makeReferralCode(value, len = 7) {
+  const e = String(value == null ? '' : value)
     .trim()
     .toLowerCase();
   if (!e) return '';
@@ -214,26 +228,25 @@ function hashIp(ip) {
     .slice(0, 16);
 }
 
-// --- Email-keyed doc id ----------------------------------------------------
-// Deterministic Firestore doc id derived from the (lowercased) email, so every
-// write for one person upserts ONE doc — this dedupes both waitlist signups and
-// survey responses (incl. abandoners who reopen/reload) instead of creating a
-// new doc each time. Used as the doc id in BOTH the `waitlist` and `survey`
-// collections (same id, different collections).
+// --- Phone-keyed doc id ----------------------------------------------------
+// Deterministic Firestore doc id derived from the canonical (E.164) phone, so
+// every write for one person upserts ONE doc — this dedupes both waitlist
+// signups and survey responses (incl. abandoners who reopen/reload) instead of
+// creating a new doc each time. Used as the doc id in BOTH the `waitlist` and
+// `survey` collections (same id, different collections).
 //
-// We hash (rather than use the raw email as the id) to keep PII out of the
-// document PATH — ids surface in logs, exports, and backups. The email itself
-// is still stored in the `email`/`emailLower` FIELDS for joins/lookups.
+// We hash (rather than use the raw number as the id) to keep PII out of the
+// document PATH — ids surface in logs, exports, and backups. The number itself
+// is still stored in the `phone` FIELD for joins/lookups. We canonicalize via
+// sanitizePhone first so "+1 (416) 555-0123" and "+14165550123" map to one id.
 //
 // Unsalted on purpose: it must be stable across deploys AND recomputable for a
-// known email (so you can look a record up). It is not a secret — client
+// known number (so you can look a record up). It is not a secret — client
 // access to Firestore is deny-all, the Admin SDK bypasses rules.
-function emailDocId(email) {
-  const e = String(email == null ? '' : email)
-    .trim()
-    .toLowerCase();
-  if (!e) return null;
-  return 'e_' + crypto.createHash('sha256').update(e).digest('hex');
+function phoneDocId(phone) {
+  const p = sanitizePhone(phone);
+  if (!p) return null;
+  return 'p_' + crypto.createHash('sha256').update(p).digest('hex');
 }
 
 // --- Request body parsing --------------------------------------------------
@@ -389,8 +402,9 @@ async function rateLimit(key, { max = 5, windowSec = 60 } = {}) {
 }
 
 module.exports = {
-  sanitizeEmail,
-  isPlausibleEmail,
+  sanitizePhone,
+  isPlausiblePhone,
+  sanitizeRegion,
   sanitizeSource,
   sanitizeReferralCode,
   makeReferralCode,
@@ -406,7 +420,7 @@ module.exports = {
   sanitizeText,
   sanitizeInt,
   hashIp,
-  emailDocId,
+  phoneDocId,
   clientIp,
   readBody,
   verifyRecaptcha,

@@ -145,12 +145,12 @@
 
   <p class="legal-eyebrow">Legal</p>
   <h1>Privacy Policy</h1>
-  <p class="legal-meta">Effective: May 27, 2026 · Last updated: May 28, 2026 (revised to describe progressive/partial survey saving and email-keyed storage)</p>
+  <p class="legal-meta">Effective: May 27, 2026 · Last updated: May 31, 2026 (revised to collect a mobile phone number for SMS instead of email, with phone-keyed storage)</p>
 
   <div class="legal-notice">
     <strong>Draft.</strong> This Privacy Policy reflects our current practices for the
     pre-launch waitlist. It is a working draft and will be reviewed by counsel before
-    Cohort 01 opens. Material changes will be announced by email and on this page.
+    Cohort 01 opens. Material changes will be announced by text message and on this page.
   </div>
 
   <div class="legal-toc" aria-label="Table of contents">
@@ -196,10 +196,10 @@
   <h2 id="what-we-collect">2. What we collect</h2>
   <p>On this website, we collect only what we need to operate the waitlist and improve the experience:</p>
   <ul>
-    <li><strong>Email address</strong> — when you submit the waitlist form or the optional survey.</li>
-    <li><strong>Survey responses</strong> (optional) — answers about how you currently manage money, including any free-text answer you choose to provide. <strong>We save your answers progressively, as you select them — including a partial response if you start the survey but do not finish or submit it.</strong> Each response is stored in a single record keyed to your email, so re-answering a question overwrites your earlier choice rather than creating a new record. You can ask us to delete a partial or completed response at any time (see <a href="#your-rights">Section 7</a>).</li>
+    <li><strong>Mobile phone number</strong> — when you submit the waitlist form or the optional survey. We use it to send you SMS text updates about the beta (e.g. when your cohort opens). Message and data rates may apply; reply STOP at any time to opt out.</li>
+    <li><strong>Survey responses</strong> (optional) — answers about how you currently manage money, including any free-text answer you choose to provide. <strong>We save your answers progressively, as you select them — including a partial response if you start the survey but do not finish or submit it.</strong> Each response is stored in a single record keyed to your phone number, so re-answering a question overwrites your earlier choice rather than creating a new record. You can ask us to delete a partial or completed response at any time (see <a href="#your-rights">Section 7</a>).</li>
     <li><strong>Abuse-prevention metadata</strong> — when you submit a form, we store a one-way <strong>hash</strong> of your IP address (not the IP itself), your browser&rsquo;s user-agent string, and the time you spent on the page before submitting. These are kept alongside your submission so we can detect and stop automated abuse. The IP hash uses a per-deployment secret salt, so it is not reversible into the original IP.</li>
-    <li><strong>Aggregate analytics</strong> — IP-derived approximate region, browser type, device type, referring site, and pages viewed. This is collected by our privacy-focused analytics provider (see <a href="#cookies">Section 9</a>) and is not tied to your email.</li>
+    <li><strong>Aggregate analytics</strong> — IP-derived approximate region, browser type, device type, referring site, and pages viewed. This is collected by our privacy-focused analytics provider (see <a href="#cookies">Section 9</a>) and is not tied to your phone number.</li>
   </ul>
   <p>
     When the Dryft product launches, additional categories of personal and financial data
@@ -228,7 +228,7 @@
   <p>We share personal information only with the third parties needed to run the site and the waitlist:</p>
   <ul>
     <li><strong>Vercel</strong> — hosting and privacy-focused performance analytics. Vercel processes requests and basic technical data on our behalf in the United States.</li>
-    <li><strong>Google Firebase (Cloud Firestore)</strong> — stores your waitlist email and survey responses so we can contact you and analyze responses. Data is encrypted at rest by Google and processed in the region we have selected (currently a U.S. multi-region). Firebase's privacy practices are at <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noreferrer">firebase.google.com/support/privacy</a>.</li>
+    <li><strong>Google Firebase (Cloud Firestore)</strong> — stores your waitlist phone number and survey responses so we can contact you and analyze responses. Data is encrypted at rest by Google and processed in the region we have selected (currently a U.S. multi-region). Firebase's privacy practices are at <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noreferrer">firebase.google.com/support/privacy</a>.</li>
     <li><strong>Google reCAPTCHA Enterprise (v3)</strong> — when enabled, runs invisibly in your browser to score each form submission for likelihood of automation. Google receives information about your visit needed to compute that score. See Google&rsquo;s <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer">Terms</a>.</li>
     <li><strong>Upstash</strong> — when enabled, provides a low-latency rate-limit counter (your hashed IP plus a request counter, kept for 60 seconds at a time). Upstash&rsquo;s privacy practices are at <a href="https://upstash.com/trust/privacy.pdf" target="_blank" rel="noreferrer">upstash.com/trust</a>.</li>
     <li><strong>Plaid</strong> (future) — when the product launches, Plaid will provide read-only bank-transaction access. Plaid has its own privacy practices at <a href="https://plaid.com/legal/" target="_blank" rel="noreferrer">plaid.com/legal</a>.</li>
@@ -241,7 +241,7 @@
 
   <h2 id="retention">6. How long we keep it</h2>
   <ul>
-    <li><strong>Waitlist email</strong> — until you unsubscribe or request deletion, or until two (2) years after Cohort 01 closes if you never join the product.</li>
+    <li><strong>Waitlist phone number</strong> — until you opt out (reply STOP) or request deletion, or until two (2) years after Cohort 01 closes if you never join the product.</li>
     <li><strong>Survey responses</strong> (including partial, unfinished responses) — for the duration of the waitlist plus two (2) years for product-research purposes, or until you request deletion.</li>
     <li><strong>Analytics data</strong> — aggregated and retained per Vercel's defaults (currently up to 12 months).</li>
   </ul>
@@ -252,7 +252,7 @@
     <li><strong>Access</strong> a copy of the personal information we hold about you.</li>
     <li><strong>Correct</strong> inaccurate information.</li>
     <li><strong>Delete</strong> your information (the &ldquo;right to be forgotten&rdquo;).</li>
-    <li><strong>Withdraw consent</strong> at any time — including unsubscribing from emails by replying &ldquo;unsubscribe&rdquo; or using the link in any commercial email.</li>
+    <li><strong>Withdraw consent</strong> at any time — including opting out of text messages by replying STOP to any message we send.</li>
     <li><strong>Port</strong> a copy of your information to another service.</li>
     <li><strong>Object</strong> to or restrict certain processing.</li>
     <li><strong>Complain</strong> to your data protection authority (e.g. the Office of the Privacy Commissioner of Canada, your EU/EEA supervisory authority, or the California AG).</li>
@@ -312,7 +312,7 @@
   <p>
     We may update this policy as our practices evolve or as required by law. The
     &ldquo;Last updated&rdquo; date at the top of this page reflects the most recent
-    revision. For material changes, we will notify waitlist subscribers by email at
+    revision. For material changes, we will notify waitlist subscribers by text message at
     least 14 days before the change takes effect.
   </p>
 
