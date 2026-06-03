@@ -70,7 +70,7 @@
 <!-- Preload the hero background — it's the above-the-fold LCP element, so we
      fetch it at high priority instead of waiting for the CSS to discover it. -->
 <link rel="preload" as="image" href="/assets/images/background.jpg?v=20260529" fetchpriority="high">
-<link rel="stylesheet" href="assets/css/styles.css?v=20260531c">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260603y">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -189,6 +189,45 @@
 <!-- Accessibility: skip-to-content link, only visible when focused via keyboard -->
 <a class="skip-link" href="#main-content">Skip to main content</a>
 
+<!-- INTRO LOADER — animated graph (your life vs. financial progress), then a
+     welcome, then it fades to reveal the page. Driven by main.js; the CSS
+     failsafe hides it if JS never runs. -->
+<div id="intro" class="intro" role="presentation">
+  <div class="intro-graph" data-intro-graph>
+    <svg class="intro-svg" viewBox="0 0 540 380" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <!-- axes + arrowheads -->
+      <g class="intro-axes">
+        <line x1="64" y1="26" x2="64" y2="324"/>
+        <line x1="64" y1="324" x2="514" y2="324"/>
+        <polyline points="58,36 64,24 70,36"/>
+        <polyline points="504,318 516,324 504,330"/>
+      </g>
+      <!-- your goal: straight dashed line trending up -->
+      <path class="intro-goal" data-goal fill="none"/>
+      <!-- your daily life: the wave (drawn by JS) -->
+      <path class="intro-life" data-life fill="none"/>
+      <!-- leading dots at the front of each line -->
+      <circle class="intro-dot intro-dot-goal" data-goal-dot r="4.5" cx="64" cy="312"/>
+      <circle class="intro-dot intro-dot-life" data-life-dot r="5.5" cx="64" cy="312"/>
+      <!-- line labels -->
+      <text class="intro-lbl intro-lbl-goal" data-goal-lbl x="470" y="58" text-anchor="end">your financial plan</text>
+      <text class="intro-lbl intro-lbl-life" data-life-lbl x="150" y="300" text-anchor="start">your daily life</text>
+    </svg>
+  </div>
+  <div class="intro-welcome" data-intro-welcome>
+    <span class="iw-pre">welcome to</span>
+    <span class="iw-brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="26" height="26">
+          <path d="M 8 4 L 56 4 C 58 4, 60 6, 60 8 L 60 56 C 60 58, 58 60, 56 60 L 8 60 C 6 60, 4 58, 4 56 L 4 8 C 4 6, 6 4, 8 4 Z M 14 14 L 14 50 L 30 50 C 42 50, 50 42, 50 32 C 50 22, 42 14, 30 14 Z" fill="currentColor" fill-rule="evenodd"/>
+        </svg>
+      </span>
+      <span class="iw-word">Dryft</span>
+    </span>
+    <span class="iw-sub">a habit based company</span>
+  </div>
+</div>
+
 <!-- NAV -->
 <nav id="nav">
   <a href="#top" class="brand" aria-label="Dryft home">
@@ -199,46 +238,25 @@
     </span>
     <span class="brand-word">Dryft</span>
   </a>
-  <div class="nav-links" id="nav-links">
-    <a href="#difference">What's Different?</a>
-    <a href="#how-it-works">How it works</a>
-    <a href="#overplan">Overspending?</a>
-    <!-- <a href="#coaches">Coaches</a> --> <!-- hidden with the .coaches section -->
-    <a href="#pricing">Pricing</a>
-    <a href="#faq">FAQ</a>
-    <a href="/referral">Invite?</a>
-  </div>
   <div class="nav-right">
+    <a href="/referral" class="nav-invite">Invite code</a>
     <a href="#waitlist" class="nav-cta">Join free</a>
-    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
-      <span class="nav-toggle-bar"></span>
-      <span class="nav-toggle-bar"></span>
-      <span class="nav-toggle-bar"></span>
-    </button>
   </div>
 </nav>
-<div class="mobile-menu" id="mobile-menu" hidden>
-  <a href="#difference">What's Different?</a>
-  <a href="#how-it-works">How it works</a>
-  <a href="#overplan">Overspending?</a>
-  <!-- <a href="#coaches">Coaches</a> --> <!-- hidden with the .coaches section -->
-  <a href="#pricing">Pricing</a>
-  <a href="#faq">FAQ</a>
-  <a href="/referral">Invite?</a>
-  <a href="#waitlist" class="mobile-menu-cta">Join free</a>
-</div>
 
 <main id="main-content">
 
-<!-- STATEMENT — full viewport, ocean bg + dark overlay -->
+<!-- HERO — full-viewport ocean statement -->
 <section class="statement" id="top">
   <div class="statement-bg" aria-hidden="true"></div>
   <div class="statement-overlay" aria-hidden="true"></div>
   <div class="statement-content">
-    <h1 class="statement-h1">
-      a budget that<br>
-      <span class="hl">adapts</span> to <span class="underlined">real life</span>.
-    </h1>
+    <div class="statement-main">
+      <h1 class="statement-h1">
+        save without<br>
+        <span class="statement-line2"><span class="rotator-sizer" aria-hidden="true">tracking every dollar</span><span class="accent-word rotator" id="statement-rotator">tracking every dollar</span></span>
+      </h1>
+    </div>
     <a href="#demo" class="hero-side-scroll" aria-label="Scroll down to see how">
       <span class="hss-label">Scroll</span>
       <span class="hss-arrow" aria-hidden="true">
@@ -787,7 +805,12 @@
   </div>
 </section>
 
-<!-- PRICING -->
+<!-- PRICING — SAVING FOR LATER (temporarily removed from the page).
+     To restore: delete this opening comment line and the closing comment
+     marker at the very end of this block, then re-add the "Pricing" nav links
+     in referral.html. NOTE: the inner HTML comment markers below were
+     flattened to plain text because HTML comments cannot nest.
+
 <section class="pricing" id="pricing">
   <div class="section-wrap">
     <div class="section-head reveal">
@@ -798,7 +821,7 @@
 
     <div class="pricing-grid reveal">
 
-      <!-- STUDENT TIER — featured -->
+      STUDENT TIER — featured
       <article class="price-card featured">
         <div class="price-flag">★ For students</div>
         <div class="price-head">
@@ -818,7 +841,7 @@
         </ul>
       </article>
 
-      <!-- EVERYONE ELSE -->
+      EVERYONE ELSE
       <article class="price-card">
         <div class="price-head">
           <span class="price-tag">Everyone else</span>
@@ -840,6 +863,7 @@
     </div>
   </div>
 </section>
+-->
 
 <!-- TRUST + FAQ -->
 <section class="trust" id="faq">
@@ -1161,6 +1185,6 @@
   </div>
 </div>
 
-<script defer src="assets/js/main.js?v=20260531c"></script>
+<script defer src="assets/js/main.js?v=20260603y"></script>
 </body>
 </html>

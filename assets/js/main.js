@@ -1191,5 +1191,190 @@ function bumpJoinCount() {
 const notifPhone = document.querySelector('[data-phone="notif"]');
 const chatPhone  = document.querySelector('[data-phone="chat"]');
 const notifStack = notifPhone && notifPhone.querySelector('[data-notif-stack]');
-if (notifStack) runNotificationLoop(notifStack);
+// The notification phone inside the pinned scene is driven by that scene
+// (scroll-scrub -> timed); don't also auto-start the loop here.
+if (notifStack && !notifPhone.hasAttribute('data-pz-phone')) runNotificationLoop(notifStack);
 if (chatPhone) runChatLoop(chatPhone);
+
+/* ---------------- rotating statement phrase ----------------
+   "save without ___" cycles. The first phrase the user sees is always
+   "tracking every dollar"; cycling only begins once the intro loader has
+   revealed the page (so the first visible phrase isn't skipped behind it). */
+(function () {
+  const el = document.getElementById('statement-rotator');
+  if (!el) return;
+
+  const phrases = [
+    'tracking every dollar',
+    'strict budgets',
+    'feeling guilty',
+    'monk-like discipline',
+  ];
+  el.textContent = phrases[0];   // first visible phrase
+
+  if (reduceMotion) return;      // no cycling
+
+  const FADE = 267;   // matches the CSS transition (0.27s) — 1.5x faster switch
+  const HOLD = 1867;  // visible time per phrase — 1.5x faster than before (was 2800)
+  let i = 0, started = false;
+
+  function next() {
+    el.classList.add('is-out');
+    setTimeout(() => {
+      i = (i + 1) % phrases.length;
+      el.textContent = phrases[i];
+      el.classList.remove('is-out');
+      setTimeout(next, HOLD);
+    }, FADE);
+  }
+  function start() {
+    if (started) return;
+    started = true;
+    setTimeout(next, HOLD);
+  }
+
+  if (document.getElementById('intro')) {
+    window.addEventListener('dryft:introdone', start, { once: true });
+    setTimeout(start, 13000);   // fallback if the intro never signals
+  } else {
+    start();
+  }
+})();
+
+/* ---------------- intro loader ----------------
+   Animated graph: "your goal" (straight dashed, trending up) vs. "your daily
+   life" (a wave that swings above and below the goal but averages upward and
+   meets it at the end). The wave grows in, then keeps undulating/intertwining
+   for ~3s. Then a welcome, then the overlay fades to reveal the page. */
+(function () {
+  const overlay = document.getElementById('intro');
+  if (!overlay) return;
+
+  const goalPath = overlay.querySelector('[data-goal]');
+  const lifePath = overlay.querySelector('[data-life]');
+  const goalDot  = overlay.querySelector('[data-goal-dot]');
+  const lifeDot  = overlay.querySelector('[data-life-dot]');
+  const graph    = overlay.querySelector('[data-intro-graph]');
+  const welcome  = overlay.querySelector('[data-intro-welcome]');
+
+  // graph geometry (matches the SVG viewBox / axes)
+  const x0 = 64, y0 = 312, x1 = 502, y1 = 64;     // start (bottom-left) -> end (top-right)
+  const goalY = (x) => y0 + (y1 - y0) * ((x - x0) / (x1 - x0));
+
+  // smoothstep helper
+  const ss = (a, b, t) => { const u = Math.max(0, Math.min(1, (t - a) / (b - a))); return u * u * (3 - 2 * u); };
+
+  // Deterministic value noise → the "daily life" line is genuinely erratic
+  // (random-looking up/down spikes around the plan line) instead of a smooth
+  // rolling wave, while staying continuous frame-to-frame so it never flickers.
+  const hash = (n) => {                              // pseudo-random in [-1, 1]
+    const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return 2 * (s - Math.floor(s)) - 1;
+  };
+  const vnoise = (u) => {                            // LINEAR interp → pointy, angular reversals (not rounded)
+    const i = Math.floor(u), f = u - i;
+    return hash(i) + (hash(i + 1) - hash(i)) * f;
+  };
+  // Fractal sum: the base octave already reverses often (high base frequency in
+  // wavePoint), and the two finer octaves vary each bump's size and slope so the
+  // line zig-zags irregularly — erratic, not a tidy repeating ripple.
+  const fbm = (u) => vnoise(u)        * 0.46
+                   + vnoise(u * 2.2)  * 0.32
+                   + vnoise(u * 4.5)  * 0.22;
+
+  // A point on the "daily life" line at parameter t (0..1) and phase. The line
+  // jitters erratically above and below the dashed plan line; the noise field
+  // scrolls with phase so the spikes travel and the leading dot bobs up and
+  // down. Amplitude ramps in from the origin and eases (not to zero) near the
+  // top so it stays on-graph while the end dot still moves.
+  function wavePoint(t, phase) {
+    const x = x0 + (x1 - x0) * t;
+    const env = ss(0, 0.07, t) * (1 - 0.5 * ss(0.86, 1, t));   // ramp in; ease near top
+    const amp = 70 * env;                                       // big, pronounced spikes
+    const wig = fbm(t * 16 + phase * 0.6);                      // many irregular reversals
+    return { x: x, y: goalY(x) - amp * wig };                  // minus -> up
+  }
+
+  // Build the wave path up to `reveal` (0..1) of its width (grow-in).
+  function buildWave(phase, reveal) {
+    const N = 240;
+    const maxI = Math.max(2, Math.round(N * reveal));
+    let d = '';
+    for (let i = 0; i <= maxI; i++) {
+      const p = wavePoint(i / N, phase);
+      d += (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1);
+    }
+    return d;
+  }
+
+  function placeDot(dot, x, y) {
+    if (!dot) return;
+    dot.setAttribute('cx', x.toFixed(1));
+    dot.setAttribute('cy', y.toFixed(1));
+  }
+
+  // straight goal point at parameter t (0..1) along the line
+  const goalPoint = (t) => ({ x: x0 + (x1 - x0) * t, y: y0 + (y1 - y0) * t });
+
+  document.body.classList.add('intro-active');
+
+  const reveal = () => {
+    overlay.classList.add('intro--out');
+    window.dispatchEvent(new Event('dryft:introdone'));   // start the hero rotator
+    setTimeout(() => {
+      document.body.classList.remove('intro-active');
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }, 750);
+  };
+
+  const toWelcome = () => {
+    graph.classList.add('intro-graph--out');
+    welcome.classList.add('intro-welcome--show');
+    setTimeout(reveal, 2000);   // welcome stays ~2s, then reveal the page
+  };
+
+  // Track when the page has fully loaded (images, fonts, etc.).
+  let pageLoaded = document.readyState === 'complete';
+  if (!pageLoaded) {
+    window.addEventListener('load', () => { pageLoaded = true; }, { once: true });
+  }
+
+  // Reduced motion: skip the animation — settled full graph with dots at the tip.
+  if (reduceMotion) {
+    lifePath.setAttribute('d', buildWave(0, 1));
+    goalPath.setAttribute('d', `M${x0},${y0} L${x1},${y1}`);
+    placeDot(lifeDot, x1, y1);
+    placeDot(goalDot, x1, y1);
+    const go = () => setTimeout(toWelcome, 600);
+    if (pageLoaded) go();
+    else window.addEventListener('load', go, { once: true });
+    return;
+  }
+
+  const MIN_MS = 5500;   // graph screen shows for ~5.5s
+  const start = performance.now();
+
+  // No draw-from-origin — the full chart is shown and simply animates: the
+  // "daily life" wave rises and falls (3x slower) with its leading dot, and the
+  // dashed plan line's dashes march backward.
+  goalPath.setAttribute('d', `M${x0},${y0} L${x1},${y1}`);
+  placeDot(goalDot, x1, y1);
+
+  function frame(now) {
+    const e = now - start;
+    const phase = e / 720;   // 3x slower wave motion
+
+    lifePath.setAttribute('d', buildWave(phase, 1));
+    const lifeLead = wavePoint(1, phase);
+    placeDot(lifeDot, lifeLead.x, lifeLead.y);   // leading dot rides the ups/downs
+
+    goalPath.style.strokeDashoffset = String(e * 0.025);
+
+    if (e < MIN_MS || !pageLoaded) {
+      requestAnimationFrame(frame);
+    } else {
+      toWelcome();
+    }
+  }
+  requestAnimationFrame(frame);
+})();
