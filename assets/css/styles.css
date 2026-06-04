@@ -398,6 +398,10 @@ body.menu-open { overflow: hidden; }
   font-weight: 700;
   letter-spacing: -0.045em;
 }
+/* Both designed hero lines stay on their own single line at every width; the h1
+   font scales down on small screens (below) so they shrink instead of wrapping. */
+.statement-line1 { display: inline-block; }
+.statement-line1, .statement-line2 { white-space: nowrap; }
 .rotator-sizer { visibility: hidden; }
 /* rotating phrase, bold white, no underline, centered over the sizer */
 .statement-h1 .accent-word {
@@ -1831,7 +1835,7 @@ footer {
   .brand-mark { width: 22px; height: 22px; }
   /* Note: .statement padding is already overridden in the scroll-cue block above
      (4rem 1.2rem 2.5rem), do not re-set it here. */
-  .statement-h1 { font-size: clamp(1.68rem, 5.04vw, 3.22rem); }
+  .statement-h1 { font-size: clamp(1.5rem, 5.04vw, 3.22rem); }
   .hero { padding: 4.5rem 1.1rem 2.5rem; }
   .hero-copy { max-width: 100%; }
   .section-wrap { padding: 0 1.1rem; }
@@ -1905,7 +1909,7 @@ footer {
 @media (max-width: 380px) {
   .brand-word { font-size: 1.1rem; }
   .nav-cta { font-size: 0.75rem; padding: 0.45rem 0.75rem; }
-  .statement-h1 { font-size: clamp(2.4rem, 12vw, 3.2rem); }
+  .statement-h1 { font-size: clamp(1.2rem, 6.2vw, 2.2rem); }
   .hero .demo-h2 { font-size: clamp(1.55rem, 7vw, 2rem); letter-spacing: -0.02em; }
   .section-head h2, .diff-head h2 { font-size: clamp(1.7rem, 7vw, 2.2rem); }
   .dryft-phone { width: min(206px, 60vw); }
@@ -2073,7 +2077,9 @@ footer {
 }
 .hiw-step h4 {
   font-family: 'Inter Tight', 'Inter', sans-serif;
-  font-size: clamp(0.92rem, 9.2cqi, 1.05rem);
+  /* one line, auto-shrink to the tile width at any breakpoint instead of wrapping */
+  white-space: nowrap;
+  font-size: clamp(0.6rem, 8.4cqi, 1.05rem);
   font-weight: 500;
   letter-spacing: -0.02em;
   color: var(--ink);
