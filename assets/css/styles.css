@@ -3129,6 +3129,118 @@ body.survey-open { overflow: hidden; }
   margin-top: clamp(-290px, -23vw, -210px);
 }
 
+/* ===========================================================
+   TEAM
+   =========================================================== */
+.team { padding: clamp(3.5rem, 8vw, 6rem) 0; position: relative; z-index: 3; }
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(1rem, 2.2vw, 1.6rem);
+  margin-top: 2.6rem;
+}
+.team-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card-sm);
+  transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+}
+.team-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-hi);
+}
+.team-photo {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  background: var(--bg-alt);
+  overflow: hidden;
+}
+.team-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: none;
+  transition: filter 0.5s ease, transform 0.6s ease;
+}
+.team-card:hover .team-photo img {
+  filter: grayscale(1) contrast(1.03) brightness(0.6);
+  transform: scale(1.04);
+}
+/* experience overlay: hidden until hover, then fades over the desaturated photo */
+.team-exp {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.05rem;
+  padding: 1.4rem 1.35rem;
+  color: #fff;
+  background: linear-gradient(180deg, rgba(8,22,29,0.30) 0%, rgba(8,22,29,0.55) 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.team-card:hover .team-exp { opacity: 1; }
+.team-exp-label {
+  display: block;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-soft);
+  margin-bottom: 0.32rem;
+}
+.team-exp .team-meta {
+  color: rgba(255,255,255,0.95);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+.team-info { padding: 1.1rem 1.2rem 1.3rem; }
+.team-name {
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.2rem;
+}
+.team-role {
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--brand);
+  margin-bottom: 0.55rem;
+}
+.team-meta {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* touch devices have no hover, so keep the experience visible at the foot of each photo */
+@media (hover: none) {
+  .team-exp {
+    opacity: 1;
+    justify-content: flex-end;
+    gap: 0.8rem;
+    background: linear-gradient(180deg, rgba(8,22,29,0) 28%, rgba(8,22,29,0.82) 100%);
+  }
+}
+
+@media (max-width: 880px) {
+  .team-grid { grid-template-columns: repeat(2, 1fr); gap: 1.1rem; }
+}
+@media (max-width: 480px) {
+  .team-grid { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+  .team-info { padding: 0.9rem 0.95rem 1.05rem; }
+  .team-name { font-size: 1rem; }
+  .team-role { font-size: 0.84rem; }
+  .team-meta { font-size: 0.76rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
