@@ -277,40 +277,41 @@ body.menu-open { overflow: hidden; }
   overflow: hidden;
   isolation: isolate;
   background: #04080c;  /* deep fallback if image fails */
+  text-transform: lowercase;   /* landing copy stays lowercase (scroll cue is exempted) */
 }
-/* Ocean image, rotated 90° counter-clockwise, sized large enough to cover after rotation */
+/* Misty mountains image (flipped 180); stored rotated so the CSS -90deg below
+   lands it at a net 180deg flip, sized large enough to cover after rotation */
 .statement-bg {
   position: absolute;
   top: 50%; left: 50%;
   width: max(140vh, 100vw);
   height: max(140vw, 100vh);
-  background: url('../images/background.jpg?v=20260529') center/cover no-repeat;
+  background: url('../images/background.jpg?v=20260603mtn') center/cover no-repeat;
   transform: translate(-50%, -50%) rotate(-90deg);
   transform-origin: center;
   z-index: -2;
-  filter: brightness(0.6) contrast(1.08) saturate(0.9);
+  filter: saturate(1.08);
 }
-/* Black overlay on top of the image, vignette + bottom fade into the next section */
+/* No darkening: the overlay only fades the image's bottom into the page */
 .statement-overlay {
   position: absolute; inset: 0;
-  background:
-    /* vignette, pulls focus to the headline, fintech-dark edges */
-    radial-gradient(ellipse 80% 60% at 50% 48%, rgba(3,7,12,0.12) 0%, rgba(3,7,12,0.48) 72%, rgba(2,5,9,0.66) 100%),
-    /* cool teal-black base tint */
-    linear-gradient(180deg, rgba(4,11,18,0.38) 0%, rgba(3,8,14,0.46) 100%);
+  background: linear-gradient(180deg, transparent 0%, transparent 52%, var(--bg) 100%);
   z-index: -1;
 }
 /* gradient transition: the dark ocean melts into the light section below, so the
-   landing → next-section seam is a soft fade rather than a hard color edge */
+   landing → next-section seam is a soft fade rather than a hard color edge. Both
+   this and the overlay resolve to the exact page background (--bg) so there is no
+   shade mismatch at the seam. */
 .statement::after {
   content: '';
   position: absolute;
   left: 0; right: 0; bottom: -1px;
-  height: 42%;
+  height: 58%;
   background: linear-gradient(180deg,
-    rgba(232, 235, 236, 0) 0%,
-    rgba(232, 235, 236, 0.45) 68%,
-    rgba(232, 235, 236, 1) 100%);
+    rgba(244, 246, 247, 0) 0%,
+    rgba(244, 246, 247, 0.35) 55%,
+    rgba(244, 246, 247, 0.85) 82%,
+    rgba(244, 246, 247, 1) 100%);
   z-index: -1;
   pointer-events: none;
 }
@@ -353,9 +354,21 @@ body.menu-open { overflow: hidden; }
   text-align: center;
   max-width: 1200px;
   color: #ffffff;
-  text-shadow: 0 2px 40px rgba(0,0,0,0.35);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.28), 0 2px 26px rgba(0,0,0,0.5);
   opacity: 0;
   animation: fadeUp 1s 0.2s ease forwards;
+}
+.statement-sub {
+  margin-top: 0.95rem;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: clamp(0.95rem, 1.7vw, 1.28rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 16px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  animation: fadeUp 0.9s 0.5s ease forwards;
 }
 .statement-h1 .hl {
   /* Inter (wider, more open than Inter Tight) at a light weight with positive
@@ -445,6 +458,7 @@ body.menu-open { overflow: hidden; }
   writing-mode: vertical-rl;
   text-orientation: mixed;
   transform: rotate(180deg);
+  text-transform: none;   /* the one exception to the lowercase landing */
 }
 .hss-arrow {
   display: inline-flex;
@@ -734,7 +748,7 @@ body.menu-open { overflow: hidden; }
   position: absolute; inset: 0;
   background:
     radial-gradient(ellipse 80% 60% at 50% 46%, rgba(3,7,12,0.20) 0%, rgba(2,5,9,0.62) 100%),
-    url('../images/background.jpg?v=20260529') center/cover no-repeat;
+    url('../images/background.jpg?v=20260603mtn') center/cover no-repeat;
   filter: brightness(0.62) saturate(0.92);
 }
 /* headline at normal full-viewport hero sizing. Sits inside .hero now, so the
@@ -2098,21 +2112,28 @@ footer {
 .howitworks.reveal.visible .hiw-step:nth-child(3) { transition-delay: 0.45s; opacity: 1; transform: none; }
 .howitworks.reveal.visible .hiw-step:nth-child(4) { transition-delay: 0.6s; opacity: 1; transform: none; }
 
-/* "on repeat" loop caption under the four steps */
+/* "on repeat" loop caption under the four steps. container-type makes the row a
+   sizing context so the caption auto-shrinks to stay on ONE line at any width
+   (smaller screen → smaller text) rather than wrapping. */
 .hiw-loop {
   display: flex; align-items: center; justify-content: center;
   gap: 0.6rem;
   margin-top: 1.4rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.78rem;
   letter-spacing: 0.04em;
   color: var(--muted);
+  container-type: inline-size;
+}
+.hiw-loop span {
+  white-space: nowrap;
+  font-size: 0.78rem;                       /* fallback if container-query units unsupported */
+  font-size: clamp(0.42rem, 2.4cqi, 0.78rem);
 }
 .hiw-loop svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
 
 /* ===== live algorithm panel (light card, matches the section) ===== */
 .algo-live {
-  max-width: 780px;
+  max-width: 860px;
   margin: 1.6rem auto 1.9rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -2121,12 +2142,13 @@ footer {
   overflow: hidden;
 }
 .al-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.7rem 1.05rem;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem 1.05rem;
   border-bottom: 1px solid var(--border);
-  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 0.05em;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.98rem; letter-spacing: 0.05em;
 }
-.al-live { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--ink); font-weight: 600; }
+.al-live { display: inline-flex; align-items: center; gap: 0.55rem; color: var(--ink); font-weight: 600; }
+.al-arrow { color: var(--brand); font-weight: 700; }
 .al-dot { width: 7px; height: 7px; border-radius: 50%; background: #1bbf7a; box-shadow: 0 0 8px rgba(27,191,122,0.7); animation: dotBlink 1.8s ease-in-out infinite; }
 .al-acct { color: var(--muted); }
 .al-stage { position: relative; background: var(--surface-2); }
@@ -3047,8 +3069,14 @@ body.survey-open { overflow: hidden; }
 .outcome h2 { font-size: clamp(2.4rem, 5.5vw, 3.9rem); line-height: 1.02; margin: 0.6rem 0 0; }
 .outcome-sub { color: var(--muted); font-size: 1.12rem; line-height: 1.55; margin: 1.3rem auto 0; max-width: 42ch; }
 
-/* How-it-works: a normal light section, matches Trust & clarity */
-.how-section { padding: 2.5rem 0; }
+/* How-it-works: pulled up so the live algorithm panel straddles the hero seam,
+   the top of the graph peeking onto the ocean image while the rest sits on white */
+.how-section {
+  padding: 2.5rem 0;
+  position: relative;
+  z-index: 3;
+  margin-top: clamp(-290px, -23vw, -210px);
+}
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

@@ -1069,7 +1069,7 @@ function renderJoinCount(n) {
   if (typeof n !== 'number' || n < 1) return;
   joinCount = n;
   const left = Math.max(0, BETA_CAP - n);
-  const frag = left > 0 ? ' · ' + left.toLocaleString() + ' left' : ' · spots full';
+  const frag = left > 0 ? ' · ' + left.toLocaleString() + ' spots left' : ' · spots full';
   document.querySelectorAll('[data-join-count]').forEach(function (el) {
     el.textContent = frag;
     el.hidden = false;
@@ -1193,8 +1193,21 @@ function bumpJoinCount() {
     ctx.beginPath(); ctx.moveTo(x0, py(x0)); ctx.lineTo(x1, py(x1)); ctx.stroke(); ctx.setLineDash([]);
     ctx.font = '600 10px JetBrains Mono, monospace'; ctx.fillStyle = 'rgba(13,14,16,0.38)';
     ctx.fillText('FOOD LIMIT', x0 + 2, py(x0) - 6);
-    const amp = 6;
-    function noise(u) { return Math.sin(u) * 0.6 + Math.sin(u * 2.3 + 1.1) * 0.28 + Math.sin(u * 0.7 + 0.4) * 0.45; }
+    const amp = 7;
+    // Spending doesn't oscillate evenly; it holds at a level for a while, then
+    // steps to a new one (a quiet stretch, then a spendy one). We build that as a
+    // staircase, a level per segment held roughly flat, then smoothstep-eased into
+    // the next, so the steps read as gentle waves instead of a sawtooth.
+    const hash = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+    function noise(u) {
+      const seg = 3.4;                                    // clock-units each spend level holds
+      const s = u / seg, i = Math.floor(s), f = s - i;
+      const a = hash(i) * 2 - 1, b = hash(i + 1) * 2 - 1; // this level & the next, -1..1
+      const holdFrac = 0.45;                              // flat hold, then ease to the next
+      const t = f < holdFrac ? 0 : (f - holdFrac) / (1 - holdFrac);
+      const ease = t * t * (3 - 2 * t);                   // smoothstep, no sharp corners
+      return (a + (b - a) * ease) + Math.sin(u * 2.1) * 0.05;  // + faint hold-time texture
+    }
     // LIVE FEED: push the current above-limit level (+ organic jitter) in at
     // "now" at a fixed rate and let it scroll left into history, so the wave is
     // always moving, the drift builds and the turn travels, never a static pose.
