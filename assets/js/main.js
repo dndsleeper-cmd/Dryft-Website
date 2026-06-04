@@ -1086,6 +1086,11 @@ function renderJoinCount(n) {
     el.textContent = frag;
     el.hidden = false;
   });
+  // Nav CTA shows the live spots-left count as a standalone label (no separator).
+  const ctaLabel = left > 0 ? left.toLocaleString() + ' spots left' : 'Spots full';
+  document.querySelectorAll('[data-spots-cta]').forEach(function (el) {
+    el.textContent = ctaLabel;
+  });
 }
 // Optimistic +1 after a successful join, no extra /api call. No-op until the
 // base count has loaded, so we never render a misleading "1 joined".

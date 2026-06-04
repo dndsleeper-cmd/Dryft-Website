@@ -41,10 +41,10 @@
 <meta name="twitter:image:alt" content="Dryft: become better at money, without thinking about it. Private Beta 01.">
 <!-- Favicon URL is version-busted because browsers cache favicons extremely
      aggressively (often surviving hard reloads). Bump the ?v= on every change. -->
-<link rel="icon" href="/favicon.ico" sizes="32x32">
-<link rel="icon" type="image/png" sizes="96x96" href="/assets/icons/favicon-96.png?v=20260604">
+<link rel="icon" href="/favicon.ico?v=20260604b" sizes="32x32">
+<link rel="icon" type="image/png" sizes="96x96" href="/assets/icons/favicon-96.png?v=20260604b">
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=20260529">
-<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png?v=20260604">
+<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png?v=20260604b">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 <link rel="alternate" hreflang="en" href="https://thedryft.com/">
 <link rel="alternate" hreflang="x-default" href="https://thedryft.com/">
@@ -112,13 +112,6 @@
       "url": "https://thedryft.com/",
       "description": "A money plan that learns who you are. Dryft predicts when you'll drift off plan, nudges at the right moment with the right message, and adapts the plan as life changes, so you get better at money without tracking a dollar.",
       "publisher": { "@id": "https://thedryft.com/#organization" },
-      "offers": {
-        "@type": "Offer",
-        "price": "3.99",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/PreOrder",
-        "description": "Students: $3.99/month while you're in school. Private Beta 01. Survey takers get priority access."
-      },
       "featureList": [
         "Predicts your spending drift before you slip",
         "Nudges at the right moment with the right message",
@@ -151,14 +144,6 @@
       "@type": "FAQPage",
       "@id": "https://thedryft.com/#faq",
       "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "How much is Dryft for students?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Students get the full Dryft, the complete prediction engine, just $3.99 a month while you're in school. Verify your student status to start. Everyone else runs the full product free for two weeks, then pays $8.99 a month."
-          }
-        },
         {
           "@type": "Question",
           "name": "How is Dryft different from Mint, YNAB, or Copilot?",
@@ -215,7 +200,7 @@
   </a>
   <div class="nav-right">
     <a href="/referral" class="nav-invite">Invite code</a>
-    <a href="#waitlist" class="nav-cta">Join free</a>
+    <a href="#waitlist" class="nav-cta" data-spots-cta aria-label="Join the waitlist">300 spots left</a>
   </div>
 </nav>
 
@@ -633,10 +618,6 @@
       <h2><em>Questions</em>.</h2>
       <div class="faq-list">
         <div class="faq-item">
-          <h3>How much is Dryft for students?</h3>
-          <p>Students get the <em>full</em> Dryft, the complete prediction engine, just <em>$3.99/month</em> while you're in school. Verify your student status to start. Everyone else runs the full product free for two weeks, then pays $8.99/month.</p>
-        </div>
-        <div class="faq-item">
           <h3>How is Dryft different from Mint, YNAB, or Copilot?</h3>
           <p>Those apps report what already happened. Dryft <em>predicts your drift and adapts</em>, intervening on day 9, when one change still saves the month.</p>
         </div>
@@ -893,6 +874,6 @@
   </div>
 </div>
 
-<script defer src="assets/js/main.js?v=20260604f"></script>
+<script defer src="assets/js/main.js?v=20260604g"></script>
 </body>
 </html>
