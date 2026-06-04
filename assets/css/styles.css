@@ -3158,6 +3158,7 @@ body.survey-open { overflow: hidden; }
   background: var(--bg-alt);
   overflow: hidden;
 }
+.team-photo picture { display: block; width: 100%; height: 100%; }
 .team-photo img {
   width: 100%;
   height: 100%;
@@ -3204,6 +3205,36 @@ body.survey-open { overflow: hidden; }
 .team-school {
   display: block;
   color: rgba(255,255,255,0.72);
+}
+
+/* social links under the team grid */
+.team-social {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2.2rem;
+}
+.team-social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.25s ease, border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+.team-social-link svg { color: var(--brand); flex-shrink: 0; }
+.team-social-link:hover {
+  color: var(--brand);
+  border-color: var(--border-hi);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-sm);
 }
 .team-info { padding: 1.1rem 1.2rem 1.3rem; }
 .team-name {
