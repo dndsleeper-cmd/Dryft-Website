@@ -367,8 +367,6 @@ body.menu-open { overflow: hidden; }
   color: rgba(255, 255, 255, 0.95);
   text-align: center;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 16px rgba(0, 0, 0, 0.55);
-  opacity: 0;
-  animation: heroPop 0.85s 0.9s ease-out forwards;
 }
 .statement-h1 .hl {
   /* Inter (wider, more open than Inter Tight) at a light weight with positive
@@ -402,10 +400,6 @@ body.menu-open { overflow: hidden; }
    font scales down on small screens (below) so they shrink instead of wrapping. */
 .statement-line1 { display: inline-block; }
 .statement-line1, .statement-line2 { white-space: nowrap; }
-/* on-load: the two lines pop in one after the other (part of the top→graph cascade) */
-.statement-line1, .statement-line2 { opacity: 0; animation: heroPop 0.85s ease-out forwards; }
-.statement-line1 { animation-delay: 0.2s; }
-.statement-line2 { animation-delay: 0.55s; }
 .rotator-sizer { visibility: hidden; }
 /* rotating phrase, bold white, no underline, centered over the sizer */
 .statement-h1 .accent-word {
@@ -451,8 +445,6 @@ body.menu-open { overflow: hidden; }
   text-transform: uppercase;
   font-weight: 500;
   text-shadow: 0 1px 8px rgba(0,0,0,0.45);
-  opacity: 0;
-  animation: heroPop 0.85s 1.25s ease-out forwards;
   transition: color 0.25s ease, transform 0.25s ease;
   cursor: pointer;
   flex-shrink: 0;
@@ -1836,16 +1828,6 @@ footer {
 /* =========================== KEYFRAMES =========================== */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-/* on-load entrance: each element pops toward you (scaling up past full size) while
-   rising with a springy bounce, then settles back to normal. One after another.
-   Unique name (not "popIn") to avoid colliding with the diff-chart's popIn below. */
-@keyframes heroPop {
-  0%   { opacity: 0; transform: scale(0.72) translateY(14px); }
-  45%  { opacity: 1; transform: scale(1.1)  translateY(-8px); }
-  66%  {              transform: scale(0.97) translateY(3px); }
-  83%  {              transform: scale(1.03) translateY(-1px); }
-  100% { opacity: 1; transform: scale(1)    translateY(0); }
-}
 @keyframes drawShort { to { stroke-dashoffset: 0; } }
 @keyframes drawLong { to { stroke-dashoffset: 0; } }
 @keyframes popIn { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
@@ -2199,9 +2181,6 @@ footer {
   background: var(--surface);
   box-shadow: var(--shadow-md);
   overflow: hidden;
-  /* last beat of the on-load cascade: the graph pops in after the hero copy */
-  opacity: 0;
-  animation: heroPop 0.9s 1.6s ease-out forwards;
 }
 .al-bar {
   display: flex; align-items: center; justify-content: center;
@@ -2256,6 +2235,8 @@ footer {
    instead of the subtle desktop nudge, so it reads like a real push notification. */
 @media (max-width: 560px) {
   .al-stage { overflow: hidden; }
+  /* taller graph on phones so the dropped-in nudge sits above the line, not over it */
+  .al-canvas { height: 244px; }
   .al-notif { width: calc(100% - 24px); transform: translateY(-72px); }
   .al-notif.show { transform: translateY(0); }
 }
