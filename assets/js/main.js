@@ -885,10 +885,17 @@ async function runNotificationLoop(stack) {
 /* =================================================================
    HERO PHONE, CHAT (looping conversation)
 ================================================================= */
+// Two versions of the SAME conversation; the chat loop alternates between them.
 const CHAT_SEQUENCE = [
   { typed: 'Can I order takeout tonight?', typeSpeed: 55, thinkLabel: 'Checking plan', thinkDuration: 1100, response: 'Yes, under $24 and skip Friday\'s.', streamSpeed: 18, afterPause: 1800 },
   { typed: 'Why is food up this week?', typeSpeed: 60, thinkLabel: 'Finding the pattern', thinkDuration: 1300, response: 'Delivery is +38% vs last week.', streamSpeed: 20, showImpact: true, followup: 'Cap delivery to 2 this week.', followupSpeed: 16, afterPause: 2400 },
 ];
+// Same convo, Toronto manz style.
+const CHAT_SEQUENCE_TO = [
+  { typed: 'Can man order takeout tonight?', typeSpeed: 55, thinkLabel: 'Checking plan', thinkDuration: 1100, response: 'Yeah styll, under $24 and skip Friday\'s.', streamSpeed: 18, afterPause: 1800 },
+  { typed: 'Why’s food bare up this week?', typeSpeed: 60, thinkLabel: 'Finding the pattern', thinkDuration: 1300, response: 'Delivery’s +38% vs last week, fam.', streamSpeed: 20, showImpact: true, followup: 'Cap delivery to 2 this week, trust.', followupSpeed: 16, afterPause: 2400 },
+];
+const CHAT_LOOPS = [CHAT_SEQUENCE, CHAT_SEQUENCE_TO];
 
 async function typeInto(node, text, speed) {
   node.textContent = '';
@@ -986,8 +993,10 @@ async function runChatLoop(phone) {
     return;
   }
   await wait(900);
+  let loopIdx = 0;
   while (true) {
-    for (const step of CHAT_SEQUENCE) {
+    const sequence = CHAT_LOOPS[loopIdx % CHAT_LOOPS.length];
+    for (const step of sequence) {
       cursor.classList.add('active');
       await typeInto(inputText, step.typed, step.typeSpeed);
       await wait(280);
@@ -1012,6 +1021,7 @@ async function runChatLoop(phone) {
     }
     await fadeOutFeed(feed);
     await wait(400);
+    loopIdx++;
   }
 }
 
