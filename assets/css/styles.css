@@ -3154,7 +3154,7 @@ body.survey-open { overflow: hidden; }
 }
 .team-photo {
   position: relative;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 1 / 1;
   background: var(--bg-alt);
   overflow: hidden;
 }
@@ -3199,6 +3199,11 @@ body.survey-open { overflow: hidden; }
   color: rgba(255,255,255,0.95);
   font-size: 0.86rem;
   line-height: 1.4;
+}
+/* university drops to its own line, dimmer than the program above it */
+.team-school {
+  display: block;
+  color: rgba(255,255,255,0.72);
 }
 .team-info { padding: 1.1rem 1.2rem 1.3rem; }
 .team-name {
