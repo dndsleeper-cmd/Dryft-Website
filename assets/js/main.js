@@ -816,11 +816,13 @@ if (surveyModal && surveyForm) {
 /* =================================================================
    HERO PHONE, NOTIFICATIONS (lock screen cascade)
 ================================================================= */
+// Goal: survive the next 4 months at university (make the money last the whole term).
+// Same predict → nudge → recover → adapt arc as the live graph, just on the phone.
 const NOTIFICATIONS = [
-  { app: 'Dryft', time: 'now', body: '<strong>Dryft caught.</strong> Delivery $112 over. One groceries run gets you back on plan.', tag: { label: 'Fixable', cls: 'warn' }, extra: '+$112 over pace' },
+  { app: 'Dryft', time: 'now', body: '<strong>Ayo, manz is drifting styll.</strong> Keep this pace and you’re broke 3 weeks before term done, deadass.', tag: { label: 'Fixable', cls: 'warn' }, extra: 'short by week 13' },
   { app: 'Dryft', time: '2d ago', body: '<strong>Subscriptions hit before payday.</strong> Move one or delay it.', tag: { label: 'Risk', cls: 'warn' }, extra: '2 renewals' },
-  { app: 'Dryft', time: '5d ago', body: '<strong>Back on track.</strong> Buffer for March is secured.', tag: { label: 'On plan', cls: 'ok' }, extra: 'Buffer +$86' },
-  { app: 'Dryft', time: '1w ago', body: '<strong>Plan adjusted. $64 moved to bills.</strong> All clear.', tag: { label: 'Adjusted', cls: 'ok' }, extra: '$64 moved' },
+  { app: 'Dryft', time: '5d ago', body: '<strong>Back on track.</strong> Your balance now stretches the full 4 months.', tag: { label: 'On plan', cls: 'ok' }, extra: 'covered to May' },
+  { app: 'Dryft', time: '1w ago', body: '<strong>Plan adjusted.</strong> $40 a week keeps you funded through finals.', tag: { label: 'Adjusted', cls: 'ok' }, extra: '16 weeks set' },
 ];
 
 function makeNotifNode({ app, time, body, tag, extra }) {
@@ -1117,7 +1119,7 @@ function bumpJoinCount() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  // One drift, learned over two passes. Goal: a fixed-date Montreal trip; the
+  // One drift, learned over two passes. Goal: saving $200 this month; the
   // habit is evening takeout. The spending line is a LIVE feed that scrolls
   // right→left; the cards (Predict · Nudge · Watch · Adapt) run TWICE: pass 1
   // the gentle nudge is ignored and spending keeps climbing over the food
@@ -1133,20 +1135,20 @@ function bumpJoinCount() {
       level: 6, fc: 46, plan: 0, notif: null },
     { read: 'Nudging you, before you buy again', card: 1, dur: 3.8,
       level: 18, fc: 40, plan: 0, harsh: false,
-      notif: { t: 'You’re drifting from plan', m: 'A lighter takeout week keeps Montreal on track.' } },
+      notif: { t: 'No takeout tonight!', m: 'your habits are slowly coming back, stop before it compounds.' } },
     { read: 'Watching… you bought anyway', card: 2, dur: 3.4,
       level: 36, fc: 44, plan: 0, notif: null },
     { read: 'That nudge missed, trying a sharper one', card: 3, dur: 2.8,
       level: 39, fc: 42, plan: 0, notif: null },
     // ── Pass 2 · a sharper nudge lands ──
-    { read: 'Nudging again, sharper and clearer', card: 1, dur: 3.8,
+    { read: 'Nudging again, with a slightly different tone', card: 1, dur: 3.8,
       level: 38, fc: 40, plan: 0, harsh: true,
-      notif: { t: 'Montreal is slipping away', m: 'Two more takeout nights and you can’t afford the trip.' } },
+      notif: { t: 'Lock In, Fam', m: 'You grab takeout tonight, that goal is finished.' } },
     { read: 'Watching… you stopped this time', card: 2, dur: 3.6,
       level: 4, fc: 3, plan: 0, notif: null },
-    { read: 'Adapting, it learned what works for you', card: 3, dur: 3.8,
+    { read: 'Adapting, dryft learned what works for you', card: 3, dur: 3.8,
       level: -14, fc: -16, plan: 1,
-      notif: { t: 'Plan updated for you', m: 'The direct nudge works best for you.' } },
+      notif: { t: 'Plan updated for you', m: 'The toronto manz nudge works best for you.' } },
   ];
   let beat = -1;
   let levelCur = 6, levelTgt = 6;       // the live "above-limit" value at "now" (neg = under)

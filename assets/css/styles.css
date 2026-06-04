@@ -355,20 +355,20 @@ body.menu-open { overflow: hidden; }
   max-width: 1200px;
   color: #ffffff;
   text-shadow: 0 1px 2px rgba(0,0,0,0.28), 0 2px 26px rgba(0,0,0,0.5);
-  opacity: 0;
-  animation: fadeUp 1s 0.2s ease forwards;
 }
 .statement-sub {
   margin-top: 0.95rem;
   font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
-  font-size: clamp(0.95rem, 1.7vw, 1.28rem);
+  /* stays on one line at every width, auto-shrinking on small screens */
+  white-space: nowrap;
+  font-size: clamp(0.62rem, 3.4vw, 1.28rem);
   font-weight: 400;
   letter-spacing: -0.01em;
   color: rgba(255, 255, 255, 0.95);
   text-align: center;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 16px rgba(0, 0, 0, 0.55);
   opacity: 0;
-  animation: fadeUp 0.9s 0.5s ease forwards;
+  animation: heroPop 0.85s 0.9s ease-out forwards;
 }
 .statement-h1 .hl {
   /* Inter (wider, more open than Inter Tight) at a light weight with positive
@@ -402,6 +402,10 @@ body.menu-open { overflow: hidden; }
    font scales down on small screens (below) so they shrink instead of wrapping. */
 .statement-line1 { display: inline-block; }
 .statement-line1, .statement-line2 { white-space: nowrap; }
+/* on-load: the two lines pop in one after the other (part of the top→graph cascade) */
+.statement-line1, .statement-line2 { opacity: 0; animation: heroPop 0.85s ease-out forwards; }
+.statement-line1 { animation-delay: 0.2s; }
+.statement-line2 { animation-delay: 0.55s; }
 .rotator-sizer { visibility: hidden; }
 /* rotating phrase, bold white, no underline, centered over the sizer */
 .statement-h1 .accent-word {
@@ -448,7 +452,7 @@ body.menu-open { overflow: hidden; }
   font-weight: 500;
   text-shadow: 0 1px 8px rgba(0,0,0,0.45);
   opacity: 0;
-  animation: fadeIn 0.9s 2.5s ease forwards;
+  animation: heroPop 0.85s 1.25s ease-out forwards;
   transition: color 0.25s ease, transform 0.25s ease;
   cursor: pointer;
   flex-shrink: 0;
@@ -836,6 +840,8 @@ body.menu-open { overflow: hidden; }
   width: 100%; height: 100%;
   border-radius: 43px; overflow: hidden;
   background: var(--phone-bg);
+  /* real iOS UI is left-aligned; don't inherit the CTA's centered text */
+  text-align: left;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
   color: var(--phone-ink);
 }
@@ -958,8 +964,12 @@ body.menu-open { overflow: hidden; }
 .chat-id { display: flex; align-items: center; gap: 8px; justify-content: center; }
 .chat-avatar {
   width: 26px; height: 26px;
+  border-radius: 7px;
   display: grid; place-items: center;
+  background: linear-gradient(160deg, var(--brand) 0%, #072e36 100%);
+  box-shadow: 0 1px 3px rgba(13,14,16,0.18), inset 0 0 0 1px rgba(255,255,255,0.06);
 }
+.chat-avatar svg { width: 16px; height: 16px; color: var(--bg); }
 .chat-id-text { line-height: 1; display: flex; align-items: center; }
 .chat-id-text strong { font-size: 0.85rem; color: var(--phone-ink); font-weight: 600; letter-spacing: -0.01em; }
 .chat-menu { color: var(--phone-muted); font-size: 1rem; text-align: right; }
@@ -1673,8 +1683,8 @@ nav#nav.nav-solid .nav-cta:hover { background: var(--brand); border-color: var(-
 
 /* =========================== FINAL CTA =========================== */
 .final-cta {
-  padding: 3.5rem 1.6rem 4rem;
-  background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(42,129,144,0.08), transparent 70%), var(--bg-alt);
+  padding: 3.5rem 1.6rem 6.5rem;
+  background: radial-gradient(ellipse 70% 75% at 50% 55%, rgba(42,129,144,0.08), transparent 72%), var(--bg-alt);
   border-top: 1px solid var(--border);
   text-align: center;
   position: relative;
@@ -1693,12 +1703,14 @@ nav#nav.nav-solid .nav-cta:hover { background: var(--brand); border-color: var(-
 }
 .final-cta h2 { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-weight: 500; font-size: clamp(2.4rem, 5.4vw, 4rem); letter-spacing: -0.03em; line-height: 1.04; margin-bottom: 1rem; color: var(--ink); }
 .final-cta h2 .hl { font-style: normal; font-weight: 600; color: var(--brand); }
-.final-cta > .final-cta-inner > p { color: var(--muted); margin-bottom: 1.8rem; font-size: 1rem; }
-.final-cta > .final-cta-inner > p strong { color: var(--ink); font-weight: 600; }
-.final-cta > .final-cta-inner > p em {
+/* lead sits above the form; smaller than the h2, sets up the CTA */
+.cta-lead { color: var(--muted); margin-bottom: 1.8rem; font-size: 1.05rem; }
+/* preference line sits below the form; emphasized but still well under the h2 */
+.cta-pref { color: var(--ink); margin-top: 1.4rem; font-size: 1.05rem; }
+.cta-pref strong {
   font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
   font-style: normal;
-  color: var(--brand);
+  color: var(--ink);
   font-weight: 600;
 }
 .cta-eyebrow strong { font-family: 'Inter Tight', 'Inter', sans-serif; font-style: normal; color: var(--brand); font-weight: 700; }
@@ -1728,6 +1740,37 @@ nav#nav.nav-solid .nav-cta:hover { background: var(--brand); border-color: var(-
   border-radius: 999px; font-weight: 500; font-size: 0.95rem;
 }
 .cta-fine { margin-top: 1.3rem !important; font-size: clamp(0.5rem, 2.5vw, 0.82rem) !important; white-space: nowrap; color: var(--subtle) !important; }
+
+/* ===== Final CTA two-column: centered copy on the left, tilted phone mockups on
+   the right. Copy stays centered (text + form) above and below the waitlist form.
+   Below 920px it collapses to the single centered column. ===== */
+@media (min-width: 921px) {
+  .final-cta-inner {
+    max-width: 1140px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr);
+    gap: 2.5rem;
+    align-items: center;
+  }
+  .cta-copy { max-width: 560px; justify-self: center; }
+  /* the phone stage fills the right column; height trimmed to the phones */
+  .cta-demo { width: 100%; min-height: 0; justify-self: center; }
+  .cta-demo .demo-stage { height: 540px; }
+}
+/* CTA copy is centered at every width (text above + below the waitlist form) */
+.cta-copy { text-align: center; }
+.final-cta .final-form, .final-cta .final-success { margin-left: auto; margin-right: auto; }
+/* a touch smaller on mid widths so the two tilted phones don't crowd */
+@media (min-width: 921px) and (max-width: 1100px) {
+  .cta-demo .dryft-phone { width: 232px; }
+  .cta-demo .demo-stage { height: 500px; }
+}
+/* Stacked layout (<=920px): the phones sit under the copy, so give them clear
+   separation from the Privacy & Terms line above instead of crowding it. */
+@media (max-width: 920px) {
+  .cta-copy { margin-bottom: 2.4rem; }
+  .cta-demo { margin-top: 0.5rem; }
+}
 
 /* =========================== FOOTER ===========================
    Two-row layout:
@@ -1793,6 +1836,16 @@ footer {
 /* =========================== KEYFRAMES =========================== */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+/* on-load entrance: each element pops toward you (scaling up past full size) while
+   rising with a springy bounce, then settles back to normal. One after another.
+   Unique name (not "popIn") to avoid colliding with the diff-chart's popIn below. */
+@keyframes heroPop {
+  0%   { opacity: 0; transform: scale(0.72) translateY(14px); }
+  45%  { opacity: 1; transform: scale(1.1)  translateY(-8px); }
+  66%  {              transform: scale(0.97) translateY(3px); }
+  83%  {              transform: scale(1.03) translateY(-1px); }
+  100% { opacity: 1; transform: scale(1)    translateY(0); }
+}
 @keyframes drawShort { to { stroke-dashoffset: 0; } }
 @keyframes drawLong { to { stroke-dashoffset: 0; } }
 @keyframes popIn { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
@@ -1862,7 +1915,7 @@ footer {
   .coach-quote { font-size: 0.9rem; padding: 0.8rem 0.95rem; }
   .trust { padding: 2rem 0; }
   .trust-strip { margin-bottom: 1.8rem; }
-  .final-cta { padding: 2.8rem 1.1rem 3rem; }
+  .final-cta { padding: 2.8rem 1.1rem 4.5rem; }
   .final-cta h2 { font-size: clamp(2rem, 7vw, 2.8rem); }
   footer { grid-template-columns: 1fr; text-align: center; gap: 0.8rem; padding: 2rem 1.1rem 1.8rem; }
   .footer-brand { justify-self: center; }
@@ -2146,6 +2199,9 @@ footer {
   background: var(--surface);
   box-shadow: var(--shadow-md);
   overflow: hidden;
+  /* last beat of the on-load cascade: the graph pops in after the hero copy */
+  opacity: 0;
+  animation: heroPop 0.9s 1.6s ease-out forwards;
 }
 .al-bar {
   display: flex; align-items: center; justify-content: center;
@@ -2196,7 +2252,13 @@ footer {
 .al-notif.harsh .notif-icon { background: linear-gradient(150deg, #d4623f, #b5392f); }
 .al-notif.harsh .notif-title { color: #b5392f; }
 
-@media (max-width: 560px) { .al-notif { width: calc(100% - 24px); } }
+/* Mobile: the nudge drops in from the top of the graph (clipped by the stage)
+   instead of the subtle desktop nudge, so it reads like a real push notification. */
+@media (max-width: 560px) {
+  .al-stage { overflow: hidden; }
+  .al-notif { width: calc(100% - 24px); transform: translateY(-72px); }
+  .al-notif.show { transform: translateY(0); }
+}
 /* status footer of the panel (cycling readout) */
 .algo-live .algo-readout {
   display: flex; align-items: center; justify-content: center; gap: 0.6rem;
@@ -2206,6 +2268,8 @@ footer {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.82rem; letter-spacing: 0.02em;
   color: var(--muted);
+  /* sizing context so the cycling readout auto-shrinks to one line on small screens */
+  container-type: inline-size;
 }
 .ar-dot {
   width: 7px; height: 7px; border-radius: 50%; flex: none;
@@ -2216,7 +2280,7 @@ footer {
   0%, 100% { opacity: 1; box-shadow: 0 0 7px rgba(42,129,144,0.55); }
   50%      { opacity: 0.45; box-shadow: 0 0 2px rgba(42,129,144,0.35); }
 }
-.ar-text { transition: opacity 0.18s ease; }
+.ar-text { transition: opacity 0.18s ease; white-space: nowrap; font-size: clamp(0.46rem, 2.9cqi, 0.82rem); }
 /* the four tiles light up as the algorithm works through them */
 .hiw-step { transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease; }
 .hiw-step.is-active {

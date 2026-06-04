@@ -69,7 +69,7 @@
 <!-- Preload the hero background, it's the above-the-fold LCP element, so we
      fetch it at high priority instead of waiting for the CSS to discover it. -->
 <link rel="preload" as="image" href="/assets/images/background.jpg?v=20260603mtn" fetchpriority="high">
-<link rel="stylesheet" href="assets/css/styles.css?v=20260604b">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260604j">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -331,25 +331,133 @@
 <!-- FINAL CTA -->
 <section class="final-cta" id="waitlist">
   <div class="final-cta-inner">
-    <p class="cta-eyebrow">Private Beta 01</p>
-    <h2>get in <span class="hl">first</span>.</h2>
-    <p>Private beta opens within weeks.<br><strong>Survey takers get preference</strong>.</p>
-    <form class="final-form" id="final-form" autocomplete="on" novalidate>
-      <label class="sr-only" for="final-region">Region</label>
-      <select class="phone-region" id="final-region" name="region" aria-label="Region (country code)">
-        <option value="CA" data-dial="1" selected>CA +1</option>
-        <option value="US" data-dial="1">US +1</option>
-      </select>
-      <label class="sr-only" for="final-phone">Your mobile number</label>
-      <input type="tel" id="final-phone" name="phone" placeholder="(416) 555-0123" autocomplete="tel-national" inputmode="tel" maxlength="20" required />
-      <label class="hp-field" aria-hidden="true">
-        Leave this empty <input type="text" name="company" tabindex="-1" autocomplete="off">
-      </label>
-      <button type="submit">Join the waitlist</button>
-    </form>
-    <div class="final-success" id="final-success">You're in. We'll text you when Private Beta 01 opens.</div>
-    <p class="cta-fine">Private Beta 01 · 300 spots<span class="join-frag" data-join-count hidden></span> · survey takers get priority access.</p>
-    <p class="form-consent">By joining, you agree to SMS texts &amp; our <a href="/privacy">Privacy</a> &amp; <a href="/terms">Terms</a>.</p>
+    <div class="cta-copy">
+      <p class="cta-eyebrow">Private Beta 01</p>
+      <h2>get in <span class="hl">first</span>.</h2>
+      <p class="cta-lead">Private beta opens within weeks.</p>
+      <form class="final-form" id="final-form" autocomplete="on" novalidate>
+        <label class="sr-only" for="final-region">Region</label>
+        <select class="phone-region" id="final-region" name="region" aria-label="Region (country code)">
+          <option value="CA" data-dial="1" selected>CA +1</option>
+          <option value="US" data-dial="1">US +1</option>
+        </select>
+        <label class="sr-only" for="final-phone">Your mobile number</label>
+        <input type="tel" id="final-phone" name="phone" placeholder="(416) 555-0123" autocomplete="tel-national" inputmode="tel" maxlength="20" required />
+        <label class="hp-field" aria-hidden="true">
+          Leave this empty <input type="text" name="company" tabindex="-1" autocomplete="off">
+        </label>
+        <button type="submit">Join the waitlist</button>
+      </form>
+      <div class="final-success" id="final-success">You're in. We'll text you when Private Beta 01 opens.</div>
+      <p class="cta-pref"><strong>Survey takers get preference</strong>.</p>
+      <p class="cta-fine">Private Beta 01 · 300 spots<span class="join-frag" data-join-count hidden></span> · survey takers get priority access.</p>
+      <p class="form-consent">By joining, you agree to SMS texts &amp; our <a href="/privacy">Privacy</a> &amp; <a href="/terms">Terms</a>.</p>
+    </div>
+
+    <!-- Tilted phone mockups (lock-screen nudge + chat), driven by main.js -->
+    <div class="hero-demo cta-demo" aria-hidden="true">
+      <div class="demo-stage">
+
+        <!-- NOTIFICATION PHONE (LOCK SCREEN) -->
+        <div class="dryft-phone phone-notif" data-phone="notif">
+          <div class="phone-rail rail-left">
+            <span class="rail-btn action-btn"></span>
+            <span class="rail-btn vol-up"></span>
+            <span class="rail-btn vol-down"></span>
+          </div>
+          <div class="phone-rail rail-right">
+            <span class="rail-btn power-btn"></span>
+          </div>
+          <div class="phone-shell">
+            <div class="phone-screen lock">
+              <div class="dynamic-island">
+                <span class="di-camera"></span>
+              </div>
+              <div class="status-bar">
+                <span class="sb-time">9:41</span>
+                <span class="sb-right">
+                  <svg class="sb-icon" viewBox="0 0 18 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="0.6"/><rect x="5" y="6" width="3" height="6" rx="0.6"/><rect x="10" y="3" width="3" height="9" rx="0.6"/><rect x="15" y="0" width="3" height="12" rx="0.6"/></svg>
+                  <svg class="sb-icon" viewBox="0 0 16 12" aria-hidden="true"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.4-2.6.85-.85a3.6 3.6 0 0 1 5.1 0l.85.85m-9.05-3a8 8 0 0 1 11.3 0M.7 3.7a12 12 0 0 1 14.6 0" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <span class="sb-batt"><span class="sb-batt-fill"></span></span>
+                </span>
+              </div>
+
+              <div class="lock-clock">
+                <div class="lock-date">Wednesday, May 20</div>
+                <div class="lock-time">9:41</div>
+              </div>
+
+              <div class="notif-stack" data-notif-stack>
+                <!-- notifications injected by JS -->
+              </div>
+
+              <div class="lock-bottom">
+                <div class="lock-action-btn"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M7 4h10v2H7zM6 8h12v12H6z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
+                <div class="home-indicator"></div>
+                <div class="lock-action-btn"><svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="13" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 8h3l2-2h4l2 2h3v11H5z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHAT PHONE -->
+        <div class="dryft-phone phone-chat" data-phone="chat">
+          <div class="phone-rail rail-left">
+            <span class="rail-btn action-btn"></span>
+            <span class="rail-btn vol-up"></span>
+            <span class="rail-btn vol-down"></span>
+          </div>
+          <div class="phone-rail rail-right">
+            <span class="rail-btn power-btn"></span>
+          </div>
+          <div class="phone-shell">
+            <div class="phone-screen chat">
+              <div class="dynamic-island">
+                <span class="di-camera"></span>
+              </div>
+              <div class="status-bar">
+                <span class="sb-time">9:41</span>
+                <span class="sb-right">
+                  <svg class="sb-icon" viewBox="0 0 18 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="0.6"/><rect x="5" y="6" width="3" height="6" rx="0.6"/><rect x="10" y="3" width="3" height="9" rx="0.6"/><rect x="15" y="0" width="3" height="12" rx="0.6"/></svg>
+                  <svg class="sb-icon" viewBox="0 0 16 12" aria-hidden="true"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.4-2.6.85-.85a3.6 3.6 0 0 1 5.1 0l.85.85m-9.05-3a8 8 0 0 1 11.3 0M.7 3.7a12 12 0 0 1 14.6 0" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <span class="sb-batt"><span class="sb-batt-fill"></span></span>
+                </span>
+              </div>
+
+              <div class="chat-nav">
+                <span class="chat-back">‹</span>
+                <div class="chat-id">
+                  <div class="chat-avatar">
+                    <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M 8 4 L 56 4 C 58 4, 60 6, 60 8 L 60 56 C 60 58, 58 60, 56 60 L 8 60 C 6 60, 4 58, 4 56 L 4 8 C 4 6, 6 4, 8 4 Z M 14 14 L 14 50 L 30 50 C 42 50, 50 42, 50 32 C 50 22, 42 14, 30 14 Z" fill="currentColor" fill-rule="evenodd"/></svg>
+                  </div>
+                  <div class="chat-id-text">
+                    <strong>Dryft</strong>
+                  </div>
+                </div>
+                <span class="chat-menu">⋯</span>
+              </div>
+
+              <div class="chat-feed" data-chat-feed>
+                <!-- bubbles injected by JS -->
+              </div>
+
+              <div class="chat-input-bar">
+                <span class="chat-plus">+</span>
+                <div class="chat-input">
+                  <span class="chat-input-text" data-chat-input></span>
+                  <span class="chat-cursor"></span>
+                </div>
+                <button class="chat-send" data-chat-send aria-label="Send">
+                  <svg viewBox="0 0 24 24" width="14" height="14"><path d="M4 12l16-8-6 16-2-7z" fill="currentColor"/></svg>
+                </button>
+              </div>
+              <div class="home-indicator chat-home"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 </section>
 
@@ -656,6 +764,6 @@
   </div>
 </div>
 
-<script defer src="assets/js/main.js?v=20260604a"></script>
+<script defer src="assets/js/main.js?v=20260604e"></script>
 </body>
 </html>
