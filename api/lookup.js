@@ -7,7 +7,7 @@
  *
  * Referral codes are not secret (they're meant to be shared) and position isn't
  * sensitive, so this is low-risk; it is rate-limited per IP to throttle the
- * (minor) number-enumeration surface. Read-only — no reCAPTCHA.
+ * (minor) number-enumeration surface. Read-only, no reCAPTCHA.
  *
  * Body (JSON or form-urlencoded):
  *   phone  required

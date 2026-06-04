@@ -1,6 +1,6 @@
 # Dryft
 
-Marketing site + waitlist/survey collection for **Dryft** — a budget that adapts to real life. Hosted on Vercel at <https://thedryft.com>.
+Marketing site + waitlist/survey collection for **Dryft**, a budget that adapts to real life. Hosted on Vercel at <https://thedryft.com>.
 
 This repository is the **public-facing site**, not the Dryft app itself. The product (iOS/Android client + ML coaching engine) lives in a separate, private repository.
 
@@ -68,15 +68,15 @@ api/                      Vercel serverless functions
   _lib/
     firestore.js          Firebase Admin singleton (cold-start safe)
     validate.js           Server-side sanitizers + verifyRecaptcha + rateLimit
-  waitlist.js             POST endpoint — writes one doc to `waitlist`
-  survey.js               POST endpoint — writes one doc to `survey`
+  waitlist.js             POST endpoint, writes one doc to `waitlist`
+  survey.js               POST endpoint, writes one doc to `survey`
 assets/                   Static assets served at /assets/*
   css/styles.css          Single stylesheet; ~2200 lines
   js/main.js              Single client script; nav + survey + animations
   favicon.svg
 docs/                     Internal design notes (gitignored from deploy via .vercelignore)
 test/                     Mocked end-to-end test of the API handlers
-firestore.rules           Deny-all client rules — paste into Firebase Console
+firestore.rules           Deny-all client rules, paste into Firebase Console
 index.html                Landing page
 privacy.html              Privacy policy
 terms.html                Terms of service
@@ -90,9 +90,9 @@ vercel.json               Hosting headers (CSP, HSTS, etc.) + redirects
 
 ## Security & compliance
 
-- [`SECURITY.md`](SECURITY.md) — vulnerability disclosure policy
-- [`firestore.rules`](firestore.rules) — deny-all; only the Admin SDK writes
-- HSTS preload, strict CSP, X-Frame-Options, Cross-Origin-\* — see [`vercel.json`](vercel.json)
+- [`SECURITY.md`](SECURITY.md), vulnerability disclosure policy
+- [`firestore.rules`](firestore.rules), deny-all; only the Admin SDK writes
+- HSTS preload, strict CSP, X-Frame-Options, Cross-Origin-\*, see [`vercel.json`](vercel.json)
 - IP addresses are hashed with a per-deploy salt before storage (`IP_HASH_SALT`)
 - Spreadsheet formula injection is defused on free-text inputs (apostrophe prefix on `=+-@\t`)
 - Service account credentials live as Vercel env vars; never touched by the browser

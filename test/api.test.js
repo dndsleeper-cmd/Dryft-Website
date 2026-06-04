@@ -10,7 +10,7 @@
  *     paths without actually calling Google.
  *   - Build fake req/res objects, invoke the handlers, assert on res + writes.
  *
- * Process exit code is non-zero if any assertion fails — so CI can use it
+ * Process exit code is non-zero if any assertion fails, so CI can use it
  * as a gate without parsing stdout.
  */
 'use strict';
@@ -75,7 +75,7 @@ function makeCollection(name) {
     doc(id) {
       return makeDocRef(name, id);
     },
-    // Bare collection count (totalCount) — counts every doc in the collection.
+    // Bare collection count (totalCount), counts every doc in the collection.
     count() {
       return {
         async get() {
@@ -85,7 +85,7 @@ function makeCollection(name) {
         },
       };
     },
-    // Minimal where().count().get() — only the '>' operator the API uses.
+    // Minimal where().count().get(), only the '>' operator the API uses.
     where(field, op, val) {
       return {
         count() {
@@ -227,7 +227,7 @@ function fakeReqRes(method, body, opts = {}) {
     headers['content-type'] = 'application/json';
   }
 
-  // Async iterator yielding the body buffer in one chunk — matches how
+  // Async iterator yielding the body buffer in one chunk, matches how
   // readBody() in validate.js consumes the request stream.
   const req = {
     method,
@@ -546,14 +546,14 @@ async function run() {
     const aId = phoneDocId(phoneFor('refA'));
     const codeA = (docStore.get('waitlist/' + aId) || {}).referralCode;
 
-    // First signup — plain join, no code.
+    // First signup, plain join, no code.
     const { req: r1, res: w1 } = fakeReqRes('POST', { phone: cPhone, source: 'final' });
     await waitlist(r1, w1);
     const cFirst = docStore.get('waitlist/' + cId) || {};
     const aCountBefore = (docStore.get('waitlist/' + aId) || {}).referralCount;
     ok(cFirst.usedReferral === false, 'plain first signup is not flagged usedReferral');
 
-    // Second submit — now tries to ride someone else's code.
+    // Second submit, now tries to ride someone else's code.
     const { req: r2, res: w2 } = fakeReqRes('POST', {
       phone: cPhone,
       source: 'referral',
@@ -747,7 +747,7 @@ async function run() {
     );
   }
 
-  // -- q8 Yes/No allowlist — invalid value is omitted
+  // -- q8 Yes/No allowlist, invalid value is omitted
   {
     writes.length = 0;
     const { req, res } = fakeReqRes('POST', {
@@ -802,7 +802,7 @@ async function run() {
   // -- Abandoner dedup: a second SESSION for the same number reuses the doc,
   //    and punctuation-insensitivity means a formatted number maps to the same
   //    key. (The client re-sends the full snapshot each save, so session 2
-  //    carries q1 forward and adds q2 — mirroring real behavior.)
+  //    carries q1 forward and adds q2, mirroring real behavior.)
   {
     writes.length = 0;
     const phone = phoneFor('dedup');
@@ -850,7 +850,7 @@ async function run() {
   }
 
   // -- NO-WIPE: a later write that OMITS a field must not erase it. This is the
-  //    returning-user bug — reopening on a blank form and answering one more
+  //    returning-user bug, reopening on a blank form and answering one more
   //    question must accumulate, not clobber the rest.
   {
     writes.length = 0;
@@ -858,7 +858,7 @@ async function run() {
     // First save: only q1.
     const { req: r1, res: w1 } = fakeReqRes('POST', { phone, partial: true, q1: '5' });
     await survey(r1, w1);
-    // Later save: only q2 (q1 absent entirely — simulates a fresh form).
+    // Later save: only q2 (q1 absent entirely, simulates a fresh form).
     const { req: r2, res: w2 } = fakeReqRes('POST', { phone, partial: true, q2: '2' });
     await survey(r2, w2);
     const d = docStore.get('survey/' + phoneDocId(phone)) || {};
@@ -959,7 +959,7 @@ async function run() {
     ok(!got.includes('\x00'), 'q9 null byte stripped');
   }
 
-  // -- IP hashing stability — explicit same IP across two requests
+  // -- IP hashing stability, explicit same IP across two requests
   {
     writes.length = 0;
     const { req: r1, res: w1 } = fakeReqRes(

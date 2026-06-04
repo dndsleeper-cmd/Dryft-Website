@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-This is the live production marketing site — only the currently-deployed `main` branch is supported. Vulnerabilities are addressed in `main` and rolled out via the next Vercel deploy.
+This is the live production marketing site, only the currently-deployed `main` branch is supported. Vulnerabilities are addressed in `main` and rolled out via the next Vercel deploy.
 
 ## Reporting a vulnerability
 
@@ -33,7 +33,7 @@ In scope:
 Out of scope:
 
 - The Dryft mobile app (separate repository; report through the app's own channel)
-- Third-party services we depend on (Vercel, Firebase, Google Fonts) — please report directly to them
+- Third-party services we depend on (Vercel, Firebase, Google Fonts), please report directly to them
 - Denial-of-service / volumetric attacks (covered by Vercel's edge protections)
 - Social-engineering attacks against Dryft staff
 

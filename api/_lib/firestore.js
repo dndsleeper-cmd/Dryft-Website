@@ -2,7 +2,7 @@
  * Firebase Admin singleton.
  *
  * Vercel reuses serverless function instances (warm starts) for several
- * minutes, so initializing the SDK on every cold start is fine — but we
+ * minutes, so initializing the SDK on every cold start is fine, but we
  * must guard against double-init on warm reuse, which throws.
  *
  * Credentials come from env vars set in the Vercel dashboard. Never commit
@@ -50,7 +50,7 @@ function serverTimestamp() {
 
 // Atomic numeric increment sentinel. Used so a referral (+10 to priorityScore,
 // +1 to referralCount) and a survey completion (+1e9 to priorityScore) apply
-// without a read-modify-write race — each delta is committed atomically.
+// without a read-modify-write race, each delta is committed atomically.
 function increment(n) {
   return admin.firestore.FieldValue.increment(n);
 }

@@ -6,7 +6,7 @@
  *   - test/**            → Node.js, CommonJS, may use `global.fetch` overrides
  *   - assets/js/**       → Browser, no Node globals
  *
- * Style is lenient — we lint for real bugs (unused vars, undefined refs,
+ * Style is lenient, we lint for real bugs (unused vars, undefined refs,
  * accidental globals), not formatting. Prettier handles formatting.
  */
 const js = require('@eslint/js');
@@ -27,7 +27,7 @@ module.exports = [
   },
   js.configs.recommended,
   {
-    // Server-side (Node) — Vercel serverless functions + shared lib + tests
+    // Server-side (Node), Vercel serverless functions + shared lib + tests
     // + one-off maintenance scripts + config files at the repo root.
     files: ['api/**/*.js', 'test/**/*.js', 'scripts/**/*.js', '*.config.js'],
     languageOptions: {
@@ -53,7 +53,7 @@ module.exports = [
     },
   },
   {
-    // Browser-side — runs in the user's browser, no Node globals.
+    // Browser-side, runs in the user's browser, no Node globals.
     files: ['assets/js/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,

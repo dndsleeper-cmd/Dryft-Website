@@ -3,7 +3,7 @@
  *
  * These mirror the client-side helpers in /assets/js/main.js. The client
  * sanitizes for UX (instant feedback) and to make the legitimate-user happy
- * path clean; the server sanitizes because the client is untrusted — anyone
+ * path clean; the server sanitizes because the client is untrusted, anyone
  * can POST directly to /api/* with whatever shape they want.
  *
  * Every public function returns either a clean value or '' (empty string).
@@ -13,14 +13,14 @@ const crypto = require('crypto');
 
 // --- Phone (SMS contact, E.164 / NANP) -------------------------------------
 // We collect a mobile number for SMS instead of an email. The site offers
-// Canada (+1) and the United States (+1) — both in the North American
-// Numbering Plan — so a valid number is +1 followed by a 10-digit NANP number
+// Canada (+1) and the United States (+1), both in the North American
+// Numbering Plan, so a valid number is +1 followed by a 10-digit NANP number
 // whose area code and exchange code each start 2–9. Stored canonically as
 // E.164 ("+14165550123"); the doc id is derived from this canonical form.
 const NANP_REGEX = /^\+1[2-9]\d{2}[2-9]\d{6}$/;
 
-// Normalize whatever the client sends — "+1 (416) 555-0123", "14165550123",
-// "4165550123" — to E.164. Strip everything except digits, assume +1 when the
+// Normalize whatever the client sends, "+1 (416) 555-0123", "14165550123",
+// "4165550123", to E.164. Strip everything except digits, assume +1 when the
 // country code is absent (10-digit NANP), then prefix a single '+'.
 function sanitizePhone(v) {
   let digits = String(v == null ? '' : v)
@@ -35,7 +35,7 @@ function isPlausiblePhone(phone) {
 }
 
 // --- Region (country chosen in the dial-code dropdown) ----------------------
-// Canada / United States — both +1, so this is stored for analytics, not for
+// Canada / United States, both +1, so this is stored for analytics, not for
 // dialing. Must match the <option value> attributes in the forms.
 const VALID_REGIONS = new Set(['CA', 'US']);
 function sanitizeRegion(v) {
@@ -47,8 +47,8 @@ function sanitizeRegion(v) {
 }
 
 // --- Source ----------------------------------------------------------------
-// 'hero' / 'final' — the two waitlist forms on the landing page.
-// 'referral' — the code+phone form on /referral.
+// 'hero' / 'final', the two waitlist forms on the landing page.
+// 'referral', the code+phone form on /referral.
 const VALID_SOURCES = new Set(['hero', 'final', 'referral']);
 function sanitizeSource(v) {
   const s = String(v == null ? '' : v)
@@ -59,7 +59,7 @@ function sanitizeSource(v) {
 }
 
 // --- Referral codes --------------------------------------------------------
-// Codes are Crockford base32 (no I/L/O/U — unambiguous when read aloud or
+// Codes are Crockford base32 (no I/L/O/U, unambiguous when read aloud or
 // hand-typed). Generated deterministically from the canonical contact (the
 // E.164 phone) so a given person always gets the same shareable code, and we
 // can recompute it.
@@ -94,7 +94,7 @@ function makeReferralCode(value, len = 7) {
 // Normalize a user-typed code: uppercase, fold the look-alikes people actually
 // confuse (O→0, I/L→1), strip anything outside the Crockford alphabet, and
 // require a plausible length. Returns '' for junk. A typo that drops/garbles a
-// char just won't resolve to a referrer (no credit) — never an error.
+// char just won't resolve to a referrer (no credit), never an error.
 function sanitizeReferralCode(v) {
   const s = String(v == null ? '' : v)
     .trim()
@@ -133,7 +133,7 @@ function priorityScore({
 
 // --- Career stage (chip) ---------------------------------------------------
 // Kept as a Set so allowlist membership is O(1). Must match the data-value
-// attributes in index.html exactly — including the en-dash in "0–2" etc.
+// attributes in index.html exactly, including the en-dash in "0–2" etc.
 const VALID_CAREER_STAGES = new Set([
   'Student',
   'Early-career (0-3yrs)',
@@ -217,7 +217,7 @@ function sanitizeInt(v, { min = 0, max = 86_400_000 } = {}) {
 // --- IP hashing ------------------------------------------------------------
 // Hash the client IP with a salt so we get abuse correlation (same IP, many
 // submits) without storing plaintext PII. The salt MUST be set in env or
-// every deploy produces uncorrelated hashes — which is annoying but safe.
+// every deploy produces uncorrelated hashes, which is annoying but safe.
 function hashIp(ip) {
   const salt = process.env.IP_HASH_SALT;
   if (!salt || !ip) return null;
@@ -230,18 +230,18 @@ function hashIp(ip) {
 
 // --- Phone-keyed doc id ----------------------------------------------------
 // Deterministic Firestore doc id derived from the canonical (E.164) phone, so
-// every write for one person upserts ONE doc — this dedupes both waitlist
+// every write for one person upserts ONE doc, this dedupes both waitlist
 // signups and survey responses (incl. abandoners who reopen/reload) instead of
 // creating a new doc each time. Used as the doc id in BOTH the `waitlist` and
 // `survey` collections (same id, different collections).
 //
 // We hash (rather than use the raw number as the id) to keep PII out of the
-// document PATH — ids surface in logs, exports, and backups. The number itself
+// document PATH, ids surface in logs, exports, and backups. The number itself
 // is still stored in the `phone` FIELD for joins/lookups. We canonicalize via
 // sanitizePhone first so "+1 (416) 555-0123" and "+14165550123" map to one id.
 //
 // Unsalted on purpose: it must be stable across deploys AND recomputable for a
-// known number (so you can look a record up). It is not a secret — client
+// known number (so you can look a record up). It is not a secret, client
 // access to Firestore is deny-all, the Admin SDK bypasses rules.
 function phoneDocId(phone) {
   const p = sanitizePhone(phone);
@@ -263,7 +263,7 @@ async function readBody(req) {
   for await (const chunk of req) chunks.push(chunk);
   const raw = Buffer.concat(chunks).toString('utf8');
 
-  // Reject anything over 16 KB — the largest legitimate survey is ~3 KB.
+  // Reject anything over 16 KB, the largest legitimate survey is ~3 KB.
   if (raw.length > 16 * 1024) throw new Error('payload too large');
 
   if (ct.includes('application/json')) {
@@ -292,7 +292,7 @@ function clientIp(req) {
 
 // --- reCAPTCHA v3 verification --------------------------------------------
 // We use plain reCAPTCHA v3 (not Firebase App Check) because the site has
-// no other Firebase Web SDK use — pulling in the Firebase JS bundle just to
+// no other Firebase Web SDK use, pulling in the Firebase JS bundle just to
 // wrap reCAPTCHA would cost ~30 KB for marginal benefit.
 //
 // Behavior:
@@ -322,7 +322,7 @@ async function verifyRecaptcha(token, ip) {
     });
     data = await resp.json();
   } catch (err) {
-    // If Google is unreachable, fail OPEN — better to accept a real signup
+    // If Google is unreachable, fail OPEN, better to accept a real signup
     // than to lose data because of a transient outage. The rate limiter
     // still applies as a backstop.
     console.warn('[recaptcha] siteverify unreachable:', err && err.message);
@@ -342,7 +342,7 @@ async function verifyRecaptcha(token, ip) {
 // --- Rate limiting --------------------------------------------------------
 // Tries Upstash Redis (durable, distributed across serverless instances)
 // first; falls back to an in-memory Map (works only on a warm instance, but
-// catches the most common abuse pattern — same attacker, rapid bursts).
+// catches the most common abuse pattern, same attacker, rapid bursts).
 //
 // Pattern: fixed-window counter. Each key gets INCR'd; on the first hit
 // inside a fresh window, we set a TTL. Above `max` in the window → blocked.
@@ -367,7 +367,7 @@ async function rateLimit(key, { max = 5, windowSec = 60 } = {}) {
   try {
     const incrRes = await upstashFetch(['incr', key]);
     if (incrRes && typeof incrRes.result === 'number') {
-      // First hit in a fresh window — apply TTL.
+      // First hit in a fresh window, apply TTL.
       if (incrRes.result === 1) {
         await upstashFetch(['expire', key, String(windowSec)]).catch(() => {});
       }

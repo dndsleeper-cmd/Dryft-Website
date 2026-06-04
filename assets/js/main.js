@@ -1,5 +1,5 @@
 /* =================================================================
-   Dryft — landing interactions
+   Dryft, landing interactions
    - nav scroll state
    - scroll reveals
    - waitlist submission (CSP-friendly, honeypot + timing bot checks)
@@ -56,18 +56,18 @@ const revealObserver = new IntersectionObserver((entries) => {
 reveals.forEach(r => revealObserver.observe(r));
 
 /* =================================================================
-   WAITLIST — anti-abuse posture (front-end only):
-     1. Honeypot field (in markup) — bots fill all visible inputs
-     2. Short dwell time — instant-submit bots get rejected
-     3. Per-form throttle — no spam-clicking submit
-     4. Per-page-load rate limit (in-memory) — protects the API endpoint
+   WAITLIST, anti-abuse posture (front-end only):
+     1. Honeypot field (in markup), bots fill all visible inputs
+     2. Short dwell time, instant-submit bots get rejected
+     3. Per-form throttle, no spam-clicking submit
+     4. Per-page-load rate limit (in-memory), protects the API endpoint
         from one tab hammering. Resets on reload, which is fine for the threat we
         actually care about (bots, not determined humans).
      5. Strict phone validation + sanitization
 
    The endpoints below are same-origin Vercel serverless functions that
    write to Firestore via the Firebase Admin SDK. Server-side validation
-   mirrors the client-side sanitizers as defense in depth — the client is
+   mirrors the client-side sanitizers as defense in depth, the client is
    not the source of truth for what's allowed.
 ================================================================= */
 const WAITLIST_ENDPOINT = '/api/waitlist';
@@ -82,7 +82,7 @@ const RECAPTCHA_SITE_KEY = (document.querySelector('meta[name="recaptcha-site-ke
 const RECAPTCHA_ENABLED  = RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY.indexOf('YOUR_') !== 0;
 
 // Resolves to a fresh v3 token, or '' if reCAPTCHA isn't enabled or the
-// script hasn't loaded yet. We never block the user on this — if it returns
+// script hasn't loaded yet. We never block the user on this, if it returns
 // '', the server side either accepts (reCAPTCHA disabled) or rejects with
 // recaptcha:missing-token (reCAPTCHA enforced), and either is acceptable
 // for a transient script-load failure.
@@ -102,7 +102,7 @@ const PAGE_LOAD_TS = Date.now();
 const MIN_HUMAN_DWELL_MS = 1200;
 const MIN_SUBMIT_INTERVAL_MS = 800;
 const MAX_SUBMITS_PER_SESSION = 5;
-// Phone: Canada / United States — both +1 (North American Numbering Plan). The
+// Phone: Canada / United States, both +1 (North American Numbering Plan). The
 // region <select> carries its dial code via data-dial; we combine it with the
 // typed national number into E.164 (+1 + 10 NANP digits, area/exchange 2-9).
 const NANP_REGEX = /^\+1[2-9]\d{2}[2-9]\d{6}$/;
@@ -167,7 +167,7 @@ function showSuccess(source) {
 
 // Fill the survey modal's referral banner from the /api/waitlist response.
 // Shows the user's shareable code + (if known) their live waitlist position.
-// Tolerant of a missing position — the count query is best-effort server-side.
+// Tolerant of a missing position, the count query is best-effort server-side.
 function populateReferralBanner(data) {
   if (!data || !data.referralCode) return;
   const banner = document.getElementById('survey-referral');
@@ -194,7 +194,7 @@ function populateReferralBanner(data) {
   if (!btn || !codeEl) return;
   btn.addEventListener('click', function () {
     const code = (codeEl.textContent || '').trim();
-    if (!code || code === '—') return;
+    if (!code || code === '…') return;
     const done = function () {
       const orig = btn.dataset.label || btn.textContent;
       btn.dataset.label = orig;
@@ -215,10 +215,10 @@ async function handleWaitlistSubmit(form, source) {
   const btn = form.querySelector('button[type="submit"]');
   if (!phoneInput || !btn) return;
 
-  // Honeypot — any value means bot. Silent reject.
+  // Honeypot, any value means bot. Silent reject.
   if (honeypot && honeypot.value !== '') { form.reset(); return; }
 
-  // Dwell — instant submits are bots
+  // Dwell, instant submits are bots
   const now = Date.now();
   if (now - PAGE_LOAD_TS < MIN_HUMAN_DWELL_MS) { shakeForm(form, phoneInput); return; }
 
@@ -227,17 +227,17 @@ async function handleWaitlistSubmit(form, source) {
 
   // Rate limit per page-load. Visible feedback when hit.
   if (submitCount >= MAX_SUBMITS_PER_SESSION) {
-    flashButton(btn, 'Too many tries — refresh', 2500);
+    flashButton(btn, 'Too many tries, refresh', 2500);
     return;
   }
 
   const { e164: phone, region } = readPhone(form);
   if (!isPlausiblePhone(phone)) { shakeForm(form, phoneInput); return; }
 
-  // Duplicate in this page-load — show success without re-posting (no enumeration leak).
+  // Duplicate in this page-load, show success without re-posting (no enumeration leak).
   if (submittedPhones.has(phone)) { showSuccess(source); return; }
 
-  // All checks passed — commit
+  // All checks passed, commit
   lastSubmitAt = now;
   submitCount++;
   submittedPhones.add(phone);
@@ -247,17 +247,17 @@ async function handleWaitlistSubmit(form, source) {
   phoneInput.disabled = true;
 
   // Show success + open the survey IMMEDIATELY. The POST is fired below as
-  // fire-and-forget — we don't make the user wait on network latency.
+  // fire-and-forget, we don't make the user wait on network latency.
   showSuccess(source);
   openSurvey(phone, source);
-  bumpJoinCount(); // optimistic +1 — the signup is committed; no extra /api pull
+  bumpJoinCount(); // optimistic +1, the signup is committed; no extra /api pull
 
   // Optional referral code (only the /referral form carries one). Server
   // sanitizes + validates; we just pass through a trimmed value.
   const codeInput = form.querySelector('input[name="referredByCode"]');
   const referredByCode = codeInput ? String(codeInput.value || '').trim().slice(0, 32) : '';
 
-  // Same-origin POST to our Vercel function — we CAN read the response, so we
+  // Same-origin POST to our Vercel function, we CAN read the response, so we
   // parse it to surface the user's referral code + position in the survey
   // banner. We still don't block the UI on it (the survey is already open);
   // errors surface in the console and the server write is idempotent.
@@ -287,7 +287,7 @@ Object.keys(FORM_SOURCES).forEach((id) => {
 });
 
 /* =================================================================
-   SURVEY MODAL — fired after a successful waitlist submission.
+   SURVEY MODAL, fired after a successful waitlist submission.
    Phone is already captured; this is purely optional signal collection.
    Single-select chips (stage) + 6 Likert scales (0-5).
 ================================================================= */
@@ -337,7 +337,7 @@ function openSurvey(phone, source) {
   void surveyModal.offsetWidth;
   surveyModal.classList.add('open');
   document.body.classList.add('survey-open');
-  // Always open at the top question — both the form (internal scroll on mobile)
+  // Always open at the top question, both the form (internal scroll on mobile)
   // and the card (internal scroll on desktop) are rewound to 0.
   if (surveyForm) surveyForm.scrollTop = 0;
   const card = surveyModal.querySelector('.survey-card');
@@ -349,7 +349,7 @@ function openSurvey(phone, source) {
 function closeSurvey() {
   if (!surveyModal) return;
   // Capture the latest answers if the user bails out without submitting.
-  // (No-op if they already completed — guarded inside the autosave helper.)
+  // (No-op if they already completed, guarded inside the autosave helper.)
   flushSurveyAutosave();
   surveyModal.classList.remove('open');
   document.body.classList.remove('survey-open');
@@ -436,7 +436,7 @@ if (surveyModal && surveyForm) {
   // Even though the values are set by us via button clicks on data-value attributes,
   // a curious user could modify the hidden inputs via devtools. These allowlists
   // make sure nothing other than the expected values reaches the server.
-  // (The server re-validates against the same allowlists — this is defense in depth.)
+  // (The server re-validates against the same allowlists, this is defense in depth.)
   const VALID_CAREER_STAGES = new Set([
     'Student',
     'Early-career (0-3yrs)',
@@ -475,7 +475,7 @@ if (surveyModal && surveyForm) {
     // Modern browsers ignore custom strings for security; just trigger the prompt.
     // Setting returnValue (legacy) + preventDefault covers all browser variants.
     e.preventDefault();
-    e.returnValue = 'Your survey answers are still saving — please wait a moment before closing.';
+    e.returnValue = 'Your survey answers are still saving, please wait a moment before closing.';
     return e.returnValue;
   });
 
@@ -499,9 +499,9 @@ if (surveyModal && surveyForm) {
   // Open-ended free-text answer (q9). Strips control chars (keeps \n, \t),
   // collapses long runs of whitespace, defuses spreadsheet formula injection
   // (=, +, -, @, tab at start), and caps length so a single user can't bloat
-  // the sheet row. Empty strings are fine — q9 is optional.
+  // the sheet row. Empty strings are fine, q9 is optional.
   // The Apps Script writeRow ALSO applies a formula-injection guard, so this
-  // is defense in depth — even if that guard is ever removed, the textarea
+  // is defense in depth, even if that guard is ever removed, the textarea
   // value still arrives at the sheet as plain text.
   function sanitizeText(v) {
     if (v == null) return '';
@@ -521,7 +521,7 @@ if (surveyModal && surveyForm) {
   // ----- Progressive autosave -----
   // Snapshot the survey's CURRENT state (answered + blank fields). We send the
   // full snapshot every time and the server merges it, so the stored doc always
-  // mirrors what's on screen — changing any answer overwrites it.
+  // mirrors what's on screen, changing any answer overwrites it.
   function currentSurveyPayload(complete) {
     const data = new FormData(surveyForm);
     const payload = {
@@ -583,7 +583,7 @@ if (surveyModal && surveyForm) {
   // to anyone who types that number). Instead we keep a per-phone draft in this
   // browser's localStorage purely to PRE-FILL the form when the same number
   // returns here. Accumulating answers into the one server record still works
-  // cross-device — this is only the "show what you picked before" convenience.
+  // cross-device, this is only the "show what you picked before" convenience.
   const SURVEY_DRAFT_PREFIX = 'dryft.survey.';
   const SURVEY_DRAFT_FIELDS = [
     'careerStage', 'lifeStage',
@@ -602,7 +602,7 @@ if (surveyModal && surveyForm) {
         if (v != null && String(v) !== '') answers[k] = String(v);
       });
       localStorage.setItem(draftKey(surveyPhone), JSON.stringify(answers));
-    } catch (_) { /* storage unavailable/full — non-fatal */ }
+    } catch (_) { /* storage unavailable/full, non-fatal */ }
   }
   restoreSurveyAnswers = function (phone) {
     let answers;
@@ -651,7 +651,7 @@ if (surveyModal && surveyForm) {
     if (document.visibilityState === 'hidden') beaconIfOpen();
   });
 
-  // Derive the question list from the form itself — one hidden input per question.
+  // Derive the question list from the form itself, one hidden input per question.
   // This auto-adapts if questions are added or removed from the HTML.
   function getQuestionInputs() {
     return [...surveyForm.querySelectorAll('input[type="hidden"]')];
@@ -679,13 +679,13 @@ if (surveyModal && surveyForm) {
     n.textContent = 'Please answer all questions.';
   }
 
-  // Submit — posts survey data to the same Apps Script endpoint with kind=survey
+  // Submit, posts survey data to the same Apps Script endpoint with kind=survey
   surveyForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitBtn = surveyForm.querySelector('.survey-submit');
     if (!submitBtn) return;
 
-    // Completeness gate — every question must have an answer before we POST.
+    // Completeness gate, every question must have an answer before we POST.
     // We mark each unanswered question, scroll to the first one, and show a notice.
     const missing = getMissingQuestions();
     if (missing.length > 0) {
@@ -709,7 +709,7 @@ if (surveyModal && surveyForm) {
     surveyLastSubmitAt = nowTs;
     surveySubmitCount++;
 
-    // Cancel any pending debounced autosave — this complete submit supersedes it.
+    // Cancel any pending debounced autosave, this complete submit supersedes it.
     clearTimeout(surveyAutosaveTimer);
 
     submitBtn.disabled = true;
@@ -730,11 +730,11 @@ if (surveyModal && surveyForm) {
 
     try {
       // Attach a fresh reCAPTCHA token (or '' if disabled). Token must be
-      // generated AT submit time — v3 tokens expire after ~2 minutes.
+      // generated AT submit time, v3 tokens expire after ~2 minutes.
       payload.recaptchaToken = await getRecaptchaToken('survey');
 
       // Same-origin POST → we can await the real response (no opaque no-cors).
-      // If the server returns non-2xx we still show success — UX-wise, the
+      // If the server returns non-2xx we still show success, UX-wise, the
       // user shouldn't be punished for a server hiccup, and we'll see the
       // failure in Vercel logs to investigate.
       const resp = await fetch(SURVEY_ENDPOINT, {
@@ -753,12 +753,12 @@ if (surveyModal && surveyForm) {
           if (data && typeof data.position === 'number' && data.position > 0) {
             surveyPosition = data.position;
           }
-        } catch (_) { /* body unreadable — position stays null */ }
+        } catch (_) { /* body unreadable, position stays null */ }
       }
     } catch (err) {
       console.error('[dryft survey] save failed:', err);
     } finally {
-      // Clear the guard whether the POST succeeded or failed — request has at
+      // Clear the guard whether the POST succeeded or failed, request has at
       // least left the browser by this point.
       isSurveySubmitting = false;
       showSurveySendingNotice(false);
@@ -769,7 +769,7 @@ if (surveyModal && surveyForm) {
     saveSurveyDraft();
     surveyCompleted = true;
 
-    // Always show success — fire-and-forget per the no-cors fetch above
+    // Always show success, fire-and-forget per the no-cors fetch above
     surveyForm.style.display = 'none';
     // Completing the survey changes the responder's rank, so refresh the
     // position line already shown in the referral banner above (rather than
@@ -798,7 +798,7 @@ if (surveyModal && surveyForm) {
       notice.className = 'survey-sending-notice';
       notice.setAttribute('role', 'status');
       notice.setAttribute('aria-live', 'polite');
-      notice.innerHTML = '<span class="survey-sending-dot" aria-hidden="true"></span><span>Saving your answers — please don’t close this tab.</span>';
+      notice.innerHTML = '<span class="survey-sending-dot" aria-hidden="true"></span><span>Saving your answers, please don’t close this tab.</span>';
       if (actions) {
         actions.classList.add('has-notice');
         actions.insertBefore(notice, actions.firstChild);
@@ -814,7 +814,7 @@ if (surveyModal && surveyForm) {
 }
 
 /* =================================================================
-   HERO PHONE — NOTIFICATIONS (lock screen cascade)
+   HERO PHONE, NOTIFICATIONS (lock screen cascade)
 ================================================================= */
 const NOTIFICATIONS = [
   { app: 'Dryft', time: 'now', body: '<strong>Dryft caught.</strong> Delivery $112 over. One groceries run gets you back on plan.', tag: { label: 'Fixable', cls: 'warn' }, extra: '+$112 over pace' },
@@ -881,7 +881,7 @@ async function runNotificationLoop(stack) {
 }
 
 /* =================================================================
-   HERO PHONE — CHAT (looping conversation)
+   HERO PHONE, CHAT (looping conversation)
 ================================================================= */
 const CHAT_SEQUENCE = [
   { typed: 'Can I order takeout tonight?', typeSpeed: 55, thinkLabel: 'Checking plan', thinkDuration: 1100, response: 'Yes, under $24 and skip Friday\'s.', streamSpeed: 18, afterPause: 1800 },
@@ -1014,7 +1014,7 @@ async function runChatLoop(phone) {
 }
 
 /* =================================================================
-   PERSONA SCENARIOS — hover/click swap between Maya & Devon visuals
+   PERSONA SCENARIOS, hover/click swap between Maya & Devon visuals
 ================================================================= */
 const personaCards = document.querySelectorAll('.persona-card');
 const personaVisuals = document.querySelectorAll('.persona-visual');
@@ -1052,27 +1052,30 @@ if (personaCards.length) {
 }
 
 /* =================================================================
-   SOCIAL PROOF — live signup count, injected INTO the cap/survey fine line.
+   SOCIAL PROOF, spots-left count, injected INTO the cap/survey fine line.
    Fills every [data-join-count] fragment from /api/stats on load, e.g.
-   "Private Beta 01 · 300 spots · 247 joined · survey takers skip the line".
-   Purely cosmetic: the fragment stays hidden if the count is unavailable / < 1.
+   "Private Beta 01 · 300 spots · 53 left · survey takers skip the line".
+   Spots left = BETA_CAP minus the live signup count. A successful signup ticks
+   it down by one. Purely cosmetic: stays hidden if the count is unavailable.
 ================================================================= */
 // Fill every [data-join-count] fragment with the live total. Called on load
 // (from /api/stats) AND after a successful signup (from the /api/waitlist
 // response's `count`), so the number visibly ticks up to include the new
-// signup — regardless of whether the survey is completed, X'd out, or
+// signup, regardless of whether the survey is completed, X'd out, or
 // dismissed. Function declaration → hoisted, so handleWaitlistSubmit can call it.
-let joinCount = null; // current displayed total (from /api/stats on load)
+const BETA_CAP = 300;  // Private Beta 01 hard cap; counter shows spots remaining
+let joinCount = null;  // current signup total (from /api/stats on load)
 function renderJoinCount(n) {
   if (typeof n !== 'number' || n < 1) return;
   joinCount = n;
-  const frag = ' · ' + n.toLocaleString() + ' joined';
+  const left = Math.max(0, BETA_CAP - n);
+  const frag = left > 0 ? ' · ' + left.toLocaleString() + ' left' : ' · spots full';
   document.querySelectorAll('[data-join-count]').forEach(function (el) {
     el.textContent = frag;
     el.hidden = false;
   });
 }
-// Optimistic +1 after a successful join — no extra /api call. No-op until the
+// Optimistic +1 after a successful join, no extra /api call. No-op until the
 // base count has loaded, so we never render a misleading "1 joined".
 function bumpJoinCount() {
   if (typeof joinCount === 'number' && joinCount >= 1) renderJoinCount(joinCount + 1);
@@ -1083,11 +1086,197 @@ function bumpJoinCount() {
   fetch(STATS_ENDPOINT, { headers: { Accept: 'application/json' } })
     .then(function (r) { return r && r.ok ? r.json() : null; })
     .then(function (data) { if (data && data.ok) renderJoinCount(data.count); })
-    .catch(function () { /* social proof is optional — silently skip on failure */ });
+    .catch(function () { /* social proof is optional, silently skip on failure */ });
 })();
 
 /* =================================================================
-   REFERRAL CODE LOOKUP (/referral) — enter phone, popup shows your code.
+   DRYFT ALGORITHM, live canvas. A scrolling spending line the
+   algorithm watches; it forecasts the next slip (line projects over
+   plan, in red), fires a nudge, then corrects back to plan, looping
+   through its four phases with the cards + status bar in sync.
+================================================================= */
+(function algoLive() {
+  const section = document.getElementById('how-it-works');
+  if (!section) return;
+  const canvas = section.querySelector('[data-algo-canvas]');
+  const chip = section.querySelector('[data-algo-chip]');
+  const chipTitle = section.querySelector('[data-chip-title]');
+  const chipMsg = section.querySelector('[data-chip-msg]');
+  const readout = section.querySelector('[data-readout]');
+  const steps = [].slice.call(section.querySelectorAll('.hiw-step'));
+  if (!canvas || !canvas.getContext) return;
+  const ctx = canvas.getContext('2d');
+  let cssW = 0, cssH = 0;
+
+  function resize() {
+    cssW = canvas.parentNode.clientWidth || 760;
+    cssH = canvas.clientHeight || 208;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  // One drift, learned over two passes. Goal: a fixed-date Montreal trip; the
+  // habit is evening takeout. The spending line is a LIVE feed that scrolls
+  // right→left; the cards (Predict · Nudge · Watch · Adapt) run TWICE: pass 1
+  // the gentle nudge is ignored and spending keeps climbing over the food
+  // limit; pass 2 a sharper nudge lands, the line turns back under the limit,
+  // and the algorithm learns which tone works for this habit.
+  //  level = the live "above the limit" value streaming in at "now" (neg = under)
+  //  fc    = where the forecast is headed at the right edge (> 8 reads red / drift)
+  //  plan  = 0 normally; ramps to 1 only on the final adapt (limit flattens)
+  //  harsh = nudge tone (tints the notification); dur = beat length in seconds
+  const BEATS = [
+    // ── Pass 1 · the gentle nudge is ignored ──
+    { read: 'Predicting the drift, before you feel it', card: 0, dur: 3.2,
+      level: 6, fc: 46, plan: 0, notif: null },
+    { read: 'Nudging you, before you buy again', card: 1, dur: 3.8,
+      level: 18, fc: 40, plan: 0, harsh: false,
+      notif: { t: 'You’re drifting from plan', m: 'A lighter takeout week keeps Montreal on track.' } },
+    { read: 'Watching… you bought anyway', card: 2, dur: 3.4,
+      level: 36, fc: 44, plan: 0, notif: null },
+    { read: 'That nudge missed, trying a sharper one', card: 3, dur: 2.8,
+      level: 39, fc: 42, plan: 0, notif: null },
+    // ── Pass 2 · a sharper nudge lands ──
+    { read: 'Nudging again, sharper and clearer', card: 1, dur: 3.8,
+      level: 38, fc: 40, plan: 0, harsh: true,
+      notif: { t: 'Montreal is slipping away', m: 'Two more takeout nights and you can’t afford the trip.' } },
+    { read: 'Watching… you stopped this time', card: 2, dur: 3.6,
+      level: 4, fc: 3, plan: 0, notif: null },
+    { read: 'Adapting, it learned what works for you', card: 3, dur: 3.8,
+      level: -14, fc: -16, plan: 1,
+      notif: { t: 'Plan updated for you', m: 'The direct nudge works best for you.' } },
+  ];
+  let beat = -1;
+  let levelCur = 6, levelTgt = 6;       // the live "above-limit" value at "now" (neg = under)
+  let fcCur = 46,   fcTgt = 46;         // forecast offset at the right edge
+  let planCur = 0,  planTgt = 0;        // 0 = base limit; 1 = adapted (flattened) limit
+  // the scrolling live feed (right→left): recent above-limit samples, newest last
+  let waveHist = [], wavePrevT = null, waveAcc = 0, waveClock = 0;
+  const WAVE_HZ = 60, WAVE_WIN = 5.5;   // samples/sec, seconds of history across the wave
+  function setBeat(i) {
+    if (i === beat) return;
+    beat = i;
+    const b = BEATS[i];
+    levelTgt = b.level; fcTgt = b.fc; planTgt = b.plan;
+    if (readout) {
+      readout.style.opacity = '0';
+      setTimeout(function () { readout.textContent = b.read; readout.style.opacity = '1'; }, 150);
+    }
+    steps.forEach(function (s, n) { s.classList.toggle('is-active', n === b.card); });
+    if (b.notif) {
+      if (chipTitle) chipTitle.textContent = b.notif.t;
+      if (chipMsg) chipMsg.textContent = b.notif.m;
+      if (chip) { chip.classList.toggle('harsh', !!b.harsh); chip.classList.add('show'); }
+    } else if (chip) { chip.classList.remove('show'); }
+  }
+
+  function draw(tSec) {
+    const k = 0.045;
+    levelCur += (levelTgt - levelCur) * k;
+    fcCur    += (fcTgt    - fcCur   ) * k;
+    planCur  += (planTgt  - planCur ) * k;
+    const w = cssW, h = cssH;
+    ctx.clearRect(0, 0, w, h);
+    const x0 = 8, x1 = w - 8, top = 20, bot = h - 16;
+    const nowX = x0 + (x1 - x0) * 0.64;
+    // the food limit: rises across the month; while adapting (planCur > 0) the
+    // slope flattens (right edge eases down) so less is spent over time
+    const py = function (x) {
+      const u = (x - x0) / (x1 - x0);
+      return bot - (bot - top) * (0.34 + (0.18 - 0.13 * planCur) * u);
+    };
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(13,14,16,0.05)';
+    for (let g = 0; g <= 4; g++) { const gy = top + (bot - top) * g / 4; ctx.beginPath(); ctx.moveTo(x0, gy); ctx.lineTo(x1, gy); ctx.stroke(); }
+    ctx.setLineDash([5, 6]); ctx.strokeStyle = 'rgba(13,14,16,0.26)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x0, py(x0)); ctx.lineTo(x1, py(x1)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.font = '600 10px JetBrains Mono, monospace'; ctx.fillStyle = 'rgba(13,14,16,0.38)';
+    ctx.fillText('FOOD LIMIT', x0 + 2, py(x0) - 6);
+    const amp = 6;
+    function noise(u) { return Math.sin(u) * 0.6 + Math.sin(u * 2.3 + 1.1) * 0.28 + Math.sin(u * 0.7 + 0.4) * 0.45; }
+    // LIVE FEED: push the current above-limit level (+ organic jitter) in at
+    // "now" at a fixed rate and let it scroll left into history, so the wave is
+    // always moving, the drift builds and the turn travels, never a static pose.
+    const maxLen = Math.round(WAVE_HZ * WAVE_WIN);
+    const dt = (wavePrevT === null) ? 0 : (tSec - wavePrevT);
+    wavePrevT = tSec;
+    if (waveHist.length === 0 || dt < 0 || dt > WAVE_WIN) {        // first frame / restart / big jump
+      waveHist.length = 0;
+      for (let i = 0; i < maxLen; i++) { waveClock++; waveHist.push(levelCur + amp * noise(waveClock * 0.05)); }
+      waveAcc = 0;
+    } else {
+      waveAcc += dt;
+      let guard = 0;
+      while (waveAcc >= 1 / WAVE_HZ && guard++ < maxLen) {
+        waveAcc -= 1 / WAVE_HZ; waveClock++;
+        waveHist.push(levelCur + amp * noise(waveClock * 0.05));
+      }
+      while (waveHist.length > maxLen) waveHist.shift();
+    }
+    const wn = waveHist.length;
+    const stepX = (nowX - x0) / Math.max(1, wn - 1);
+    const wy = (j) => py(x0 + j * stepX) - waveHist[j];           // oldest at x0, newest at nowX
+    const grad = ctx.createLinearGradient(0, top, 0, bot);
+    grad.addColorStop(0, 'rgba(28,114,147,0.16)'); grad.addColorStop(1, 'rgba(28,114,147,0)');
+    ctx.beginPath(); ctx.moveTo(x0, bot);
+    for (let j = 0; j < wn; j++) ctx.lineTo(x0 + j * stepX, wy(j));
+    ctx.lineTo(nowX, bot); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+    ctx.shadowColor = 'rgba(28,114,147,0.3)'; ctx.shadowBlur = 7;
+    ctx.strokeStyle = '#1c7293'; ctx.lineWidth = 2.6; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let j = 0; j < wn; j++) { const y = wy(j); if (j === 0) ctx.moveTo(x0, y); else ctx.lineTo(x0 + j * stepX, y); }
+    ctx.stroke(); ctx.shadowBlur = 0;
+    const cy = wy(wn - 1), planEnd = py(x1);
+    const fEndY = planEnd - fcCur;            // forecast end; above the limit when fcCur > 0
+    const drift = fcCur > 8;
+    const fcol = drift ? 'rgba(196,77,60,0.82)' : 'rgba(28,114,147,0.72)';
+    const mcol = drift ? 'rgba(196,77,60,' : 'rgba(28,114,147,';
+    ctx.setLineDash([4, 5]); ctx.lineWidth = 1.8; ctx.strokeStyle = fcol;
+    ctx.beginPath(); ctx.moveTo(nowX, cy);
+    ctx.quadraticCurveTo((nowX + x1) / 2, (cy + fEndY) / 2 + (drift ? -20 : 10), x1, fEndY);
+    ctx.stroke(); ctx.setLineDash([]);
+    const pulse = 0.5 + 0.5 * Math.sin(tSec * 2.4);
+    ctx.fillStyle = mcol + (0.55 + 0.45 * pulse) + ')';
+    ctx.beginPath(); ctx.arc(x1 - 2, fEndY, 4.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#0e4754'; ctx.beginPath(); ctx.arc(nowX, cy, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.beginPath(); ctx.arc(nowX, cy, 5, 0, Math.PI * 2); ctx.stroke();
+    const rr = 5 + ((tSec * 16) % 20);
+    ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(28,114,147,' + Math.max(0, 1 - (rr - 5) / 20) + ')';
+    ctx.beginPath(); ctx.arc(nowX, cy, rr, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  // beats have their own lengths; walk a looping timeline to find the current one
+  const TOTAL = BEATS.reduce(function (s, b) { return s + b.dur; }, 0);
+  function beatAt(tSec) {
+    let t = tSec % TOTAL;
+    for (let i = 0; i < BEATS.length; i++) { if (t < BEATS[i].dur) return i; t -= BEATS[i].dur; }
+    return BEATS.length - 1;
+  }
+  let raf = null, t0 = null, running = false;
+  function frame(now) {
+    if (t0 == null) t0 = now;
+    const tSec = (now - t0) / 1000;
+    setBeat(beatAt(tSec));
+    draw(tSec);
+    raf = requestAnimationFrame(frame);
+  }
+  function start() { if (running) return; running = true; resize(); t0 = null; wavePrevT = null; raf = requestAnimationFrame(frame); }
+  function stop() { running = false; if (raf) cancelAnimationFrame(raf); raf = null; }
+
+  resize();
+  window.addEventListener('resize', function () { resize(); if (!running) draw(2.0); });
+  // initial static frame: the nudge beat (drift + notification), never blank
+  setBeat(1); levelCur = levelTgt; fcCur = fcTgt; planCur = planTgt; draw(2.0);
+  if (reduceMotion) return;
+  const io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting) start(); else stop(); });
+  }, { threshold: 0.2 });
+  io.observe(section);
+})();
+
+/* =================================================================
+   REFERRAL CODE LOOKUP (/referral), enter phone, popup shows your code.
 ================================================================= */
 (function wireCodeLookup() {
   const form = document.getElementById('lookup-form');
@@ -1128,7 +1317,7 @@ function bumpJoinCount() {
   if (copyBtn && codeVal) {
     copyBtn.addEventListener('click', function () {
       const code = (codeVal.textContent || '').trim();
-      if (!code || code === '—') return;
+      if (!code || code === '…') return;
       const done = function () {
         const orig = copyBtn.dataset.label || copyBtn.textContent;
         copyBtn.dataset.label = orig;
@@ -1159,7 +1348,7 @@ function bumpJoinCount() {
       .then(function (data) {
         const found = !!(data && data.ok && data.found);
         if (found) {
-          if (codeVal) codeVal.textContent = data.referralCode || '—';
+          if (codeVal) codeVal.textContent = data.referralCode || '…';
           if (codePos) {
             if (typeof data.position === 'number' && data.position > 0) {
               codePos.textContent = "You're #" + data.position.toLocaleString() + ' on the waitlist';
@@ -1198,8 +1387,7 @@ if (chatPhone) runChatLoop(chatPhone);
 
 /* ---------------- rotating statement phrase ----------------
    "save without ___" cycles. The first phrase the user sees is always
-   "tracking every dollar"; cycling only begins once the intro loader has
-   revealed the page (so the first visible phrase isn't skipped behind it). */
+   "tracking every dollar"; cycling begins on load. */
 (function () {
   const el = document.getElementById('statement-rotator');
   if (!el) return;
@@ -1214,8 +1402,8 @@ if (chatPhone) runChatLoop(chatPhone);
 
   if (reduceMotion) return;      // no cycling
 
-  const FADE = 267;   // matches the CSS transition (0.27s) — 1.5x faster switch
-  const HOLD = 1867;  // visible time per phrase — 1.5x faster than before (was 2800)
+  const FADE = 350;   // matches the CSS transition (0.35s)
+  const HOLD = 2400;  // visible time per phrase, readable, but still moves on briskly
   let i = 0, started = false;
 
   function next() {
@@ -1233,148 +1421,6 @@ if (chatPhone) runChatLoop(chatPhone);
     setTimeout(next, HOLD);
   }
 
-  if (document.getElementById('intro')) {
-    window.addEventListener('dryft:introdone', start, { once: true });
-    setTimeout(start, 13000);   // fallback if the intro never signals
-  } else {
-    start();
-  }
+  start();   // no loader screen, begin the hero phrase rotator on load
 })();
 
-/* ---------------- intro loader ----------------
-   Animated graph: "your goal" (straight dashed, trending up) vs. "your daily
-   life" (a wave that swings above and below the goal but averages upward and
-   meets it at the end). The wave grows in, then keeps undulating/intertwining
-   for ~3s. Then a welcome, then the overlay fades to reveal the page. */
-(function () {
-  const overlay = document.getElementById('intro');
-  if (!overlay) return;
-
-  const goalPath = overlay.querySelector('[data-goal]');
-  const lifePath = overlay.querySelector('[data-life]');
-  const goalDot  = overlay.querySelector('[data-goal-dot]');
-  const lifeDot  = overlay.querySelector('[data-life-dot]');
-  const graph    = overlay.querySelector('[data-intro-graph]');
-  const welcome  = overlay.querySelector('[data-intro-welcome]');
-
-  // graph geometry (matches the SVG viewBox / axes)
-  const x0 = 64, y0 = 312, x1 = 502, y1 = 64;     // start (bottom-left) -> end (top-right)
-  const goalY = (x) => y0 + (y1 - y0) * ((x - x0) / (x1 - x0));
-
-  // smoothstep helper
-  const ss = (a, b, t) => { const u = Math.max(0, Math.min(1, (t - a) / (b - a))); return u * u * (3 - 2 * u); };
-
-  // Deterministic value noise → the "daily life" line is genuinely erratic
-  // (random-looking up/down spikes around the plan line) instead of a smooth
-  // rolling wave, while staying continuous frame-to-frame so it never flickers.
-  const hash = (n) => {                              // pseudo-random in [-1, 1]
-    const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
-    return 2 * (s - Math.floor(s)) - 1;
-  };
-  const vnoise = (u) => {                            // LINEAR interp → pointy, angular reversals (not rounded)
-    const i = Math.floor(u), f = u - i;
-    return hash(i) + (hash(i + 1) - hash(i)) * f;
-  };
-  // Fractal sum: the base octave already reverses often (high base frequency in
-  // wavePoint), and the two finer octaves vary each bump's size and slope so the
-  // line zig-zags irregularly — erratic, not a tidy repeating ripple.
-  const fbm = (u) => vnoise(u)        * 0.46
-                   + vnoise(u * 2.2)  * 0.32
-                   + vnoise(u * 4.5)  * 0.22;
-
-  // A point on the "daily life" line at parameter t (0..1) and phase. The line
-  // jitters erratically above and below the dashed plan line; the noise field
-  // scrolls with phase so the spikes travel and the leading dot bobs up and
-  // down. Amplitude ramps in from the origin and eases (not to zero) near the
-  // top so it stays on-graph while the end dot still moves.
-  function wavePoint(t, phase) {
-    const x = x0 + (x1 - x0) * t;
-    const env = ss(0, 0.07, t) * (1 - 0.5 * ss(0.86, 1, t));   // ramp in; ease near top
-    const amp = 70 * env;                                       // big, pronounced spikes
-    const wig = fbm(t * 16 + phase * 0.6);                      // many irregular reversals
-    return { x: x, y: goalY(x) - amp * wig };                  // minus -> up
-  }
-
-  // Build the wave path up to `reveal` (0..1) of its width (grow-in).
-  function buildWave(phase, reveal) {
-    const N = 240;
-    const maxI = Math.max(2, Math.round(N * reveal));
-    let d = '';
-    for (let i = 0; i <= maxI; i++) {
-      const p = wavePoint(i / N, phase);
-      d += (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1);
-    }
-    return d;
-  }
-
-  function placeDot(dot, x, y) {
-    if (!dot) return;
-    dot.setAttribute('cx', x.toFixed(1));
-    dot.setAttribute('cy', y.toFixed(1));
-  }
-
-  // straight goal point at parameter t (0..1) along the line
-  const goalPoint = (t) => ({ x: x0 + (x1 - x0) * t, y: y0 + (y1 - y0) * t });
-
-  document.body.classList.add('intro-active');
-
-  const reveal = () => {
-    overlay.classList.add('intro--out');
-    window.dispatchEvent(new Event('dryft:introdone'));   // start the hero rotator
-    setTimeout(() => {
-      document.body.classList.remove('intro-active');
-      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-    }, 750);
-  };
-
-  const toWelcome = () => {
-    graph.classList.add('intro-graph--out');
-    welcome.classList.add('intro-welcome--show');
-    setTimeout(reveal, 2000);   // welcome stays ~2s, then reveal the page
-  };
-
-  // Track when the page has fully loaded (images, fonts, etc.).
-  let pageLoaded = document.readyState === 'complete';
-  if (!pageLoaded) {
-    window.addEventListener('load', () => { pageLoaded = true; }, { once: true });
-  }
-
-  // Reduced motion: skip the animation — settled full graph with dots at the tip.
-  if (reduceMotion) {
-    lifePath.setAttribute('d', buildWave(0, 1));
-    goalPath.setAttribute('d', `M${x0},${y0} L${x1},${y1}`);
-    placeDot(lifeDot, x1, y1);
-    placeDot(goalDot, x1, y1);
-    const go = () => setTimeout(toWelcome, 600);
-    if (pageLoaded) go();
-    else window.addEventListener('load', go, { once: true });
-    return;
-  }
-
-  const MIN_MS = 5500;   // graph screen shows for ~5.5s
-  const start = performance.now();
-
-  // No draw-from-origin — the full chart is shown and simply animates: the
-  // "daily life" wave rises and falls (3x slower) with its leading dot, and the
-  // dashed plan line's dashes march backward.
-  goalPath.setAttribute('d', `M${x0},${y0} L${x1},${y1}`);
-  placeDot(goalDot, x1, y1);
-
-  function frame(now) {
-    const e = now - start;
-    const phase = e / 720;   // 3x slower wave motion
-
-    lifePath.setAttribute('d', buildWave(phase, 1));
-    const lifeLead = wavePoint(1, phase);
-    placeDot(lifeDot, lifeLead.x, lifeLead.y);   // leading dot rides the ups/downs
-
-    goalPath.style.strokeDashoffset = String(e * 0.025);
-
-    if (e < MIN_MS || !pageLoaded) {
-      requestAnimationFrame(frame);
-    } else {
-      toWelcome();
-    }
-  }
-  requestAnimationFrame(frame);
-})();

@@ -57,14 +57,14 @@ If iterating on the frame:
   2. Food spike question → streamed answer + generated bar graph + streamed follow-up.
 - Typing in the input bar uses humanized character jitter (`0.7-1.3x` base speed, longer on spaces).
 - Response streaming creates one `<span>` per character so each character can fade in independently via CSS keyframe.
-- Send button is a real DOM element that toggles a `.active` class — glow is CSS.
+- Send button is a real DOM element that toggles a `.active` class, glow is CSS.
 - Bars in the impact card animate via `height` transition on staggered timeouts (110ms each).
 
 ## Sync Strategy
 
 - Notification phone starts immediately, leads by ~0.9s.
 - Chat phone starts ~0.9s in so the user's eye reaches the second phone after the first alert has landed.
-- Both phones run on independent JS loops — no shared timeline. Slight desync is fine and feels alive.
+- Both phones run on independent JS loops, no shared timeline. Slight desync is fine and feels alive.
 - Total visible "story" is roughly 22-26s before a soft fade-reset.
 
 ## Review Checklist

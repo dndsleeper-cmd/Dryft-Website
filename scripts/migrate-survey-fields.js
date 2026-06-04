@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * ONE-TIME MIGRATION — survey field renumbering (old schema → display-order schema)
+ * ONE-TIME MIGRATION, survey field renumbering (old schema → display-order schema)
  * =================================================================================
  *
  * Renames the survey question fields so the stored field names match the
  * on-screen display order. The five affected fields form a PERMUTATION over the
- * same key set {q7, q8, q9, q10, q11} — no keys are added or removed, only their
+ * same key set {q7, q8, q9, q10, q11}, no keys are added or removed, only their
  * values are shuffled:
  *
  *     new.q7  = old.q8     (Likert 1–5  | null)
@@ -27,13 +27,13 @@
  * USAGE
  * -----
  *   1. Put your Firebase service-account creds in a local, gitignored .env.local
- *      (same var names the app uses — see .env.example):
+ *      (same var names the app uses, see .env.example):
  *
  *        FIREBASE_PROJECT_ID=...
  *        FIREBASE_CLIENT_EMAIL=...
  *        FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
  *
- *   2. DRY RUN first (default — reads only, writes nothing):
+ *   2. DRY RUN first (default, reads only, writes nothing):
  *
  *        node --env-file=.env.local scripts/migrate-survey-fields.js
  *
@@ -136,7 +136,7 @@ function buildNewValues(d) {
 // ---- main -----------------------------------------------------------------
 (async function main() {
   const mode = COMMIT ? 'COMMIT (writing changes)' : 'DRY RUN (no writes)';
-  console.log(`\n  Survey field migration — ${mode}`);
+  console.log(`\n  Survey field migration, ${mode}`);
   console.log(`  Collection: "${COLLECTION}"${LIMIT ? `  (limit ${LIMIT})` : ''}\n`);
 
   const snap = await db.collection(COLLECTION).get();
@@ -198,10 +198,10 @@ function buildNewValues(d) {
   console.log(`  ${COMMIT ? 'migrated:      ' : 'would migrate: '} ${toMigrate}`);
   if (COMMIT) console.log(`  batches written: ${committedBatches}`);
   if (!COMMIT && toMigrate > 0) {
-    console.log('\n  Dry run only — re-run with --commit to apply.');
+    console.log('\n  Dry run only, re-run with --commit to apply.');
   }
   if (toMigrate === 0) {
-    console.log('\n  Nothing to do — all docs are already on the new schema. ✓');
+    console.log('\n  Nothing to do, all docs are already on the new schema. ✓');
   }
   console.log('');
 

@@ -6,7 +6,7 @@
    =========================================================== */
 
 :root {
-  /* palette — cool off-white base + deep teal accents */
+  /* palette, cool off-white base + deep teal accents */
   --bg:        #f4f6f7;
   --bg-alt:    #e8ebec;
   --surface:   #ffffff;
@@ -65,7 +65,7 @@ body {
 img, svg { display: block; max-width: 100%; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
-/* Skip-to-content link — invisible until a keyboard user focuses it (Tab key).
+/* Skip-to-content link, invisible until a keyboard user focuses it (Tab key).
    Keyboard accessibility + a small SEO bonus (semantic landmark navigation). */
 .skip-link {
   position: absolute;
@@ -101,11 +101,12 @@ h3 { font-weight: 600; }
 h1, h2, h3, h4 { text-wrap: balance; }
 p, li, .price-per, .hero-sub, .section-head p { text-wrap: pretty; }
 
-/* Italic emphasis across all headings uses Instrument Serif — matches the landing's hollow word */
+/* Emphasis across all headings: modern fintech, clean Inter Tight in brand green
+   (no serif italics, no high-fashion styling) */
 h1 em, h2 em, h3 em, .hl {
-  font-family: 'DM Serif Display', 'Inter Tight', serif;
-  font-style: italic;
-  font-weight: 500;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-style: normal;
+  font-weight: 600;
   color: var(--brand);
 }
 
@@ -115,16 +116,16 @@ h1 em, h2 em, h3 em, .hl {
 .section-head p { color: var(--muted); font-size: 1.04rem; line-height: 1.55; max-width: 540px; }
 .section-head.center p { margin-left: auto; margin-right: auto; }
 
-/* Section labels — Fraunces italic in brand green, lowercase, editorial */
+/* Section labels, modern fintech eyebrow in brand green */
 .section-label {
   display: inline-block;
-  font-family: 'DM Serif Display', 'Inter Tight', serif;
-  font-style: italic;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-style: normal;
   font-size: 1.05rem;
   letter-spacing: -0.005em;
   color: var(--brand);
   margin-bottom: 0.6rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 .section-label.center { display: block; }
 
@@ -142,7 +143,7 @@ nav#nav {
   /* over the dark statement bg by default: light text */
   color: rgba(255,255,255,0.92);
 }
-/* Scrolled state — also scoped to #nav so its specificity matches the base
+/* Scrolled state, also scoped to #nav so its specificity matches the base
    `nav#nav` rule above (otherwise the base color wins and the brand stays
    white on the scrolled light background). */
 nav#nav.scrolled {
@@ -152,7 +153,7 @@ nav#nav.scrolled {
   -webkit-backdrop-filter: blur(16px) saturate(1.05);
   color: var(--ink);
 }
-/* Legal pages — no scroll handler runs, the page bg is always light, so force
+/* Legal pages, no scroll handler runs, the page bg is always light, so force
    the dark-on-light nav style as the default. */
 body.legal-page nav#nav {
   background: rgba(245,244,240,0.88);
@@ -185,7 +186,7 @@ body.legal-page nav#nav {
 nav.scrolled .nav-cta { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 nav.scrolled .nav-cta:hover { background: var(--brand); border-color: var(--brand); }
 
-/* Back-to-site link on legal pages — quieter than the primary CTA, with a
+/* Back-to-site link on legal pages, quieter than the primary CTA, with a
    chevron icon and tight padding so it reads as secondary nav. */
 .nav-back {
   display: inline-flex; align-items: center; gap: 0.35rem;
@@ -264,162 +265,9 @@ nav.scrolled .nav-cta:hover { background: var(--brand); border-color: var(--bran
 }
 body.menu-open { overflow: hidden; }
 
-/* =========================== INTRO LOADER ===========================
-   Full-screen graph animation shown on load, then a welcome, then it
-   fades to reveal the page. Sequencing in main.js; failsafe hides it
-   after 8s if JS never runs so the page is never permanently covered. */
-.intro {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  overflow: hidden;
-  background: #04080c;  /* fallback under the blurred image */
-  animation: introFailsafe 0s 16s forwards;
-}
-/* same ocean image as the hero, blurred */
-.intro::before {
-  content: "";
-  position: absolute;
-  inset: -60px;
-  background: url('../images/background.jpg?v=20260529') center/cover no-repeat;
-  filter: blur(22px) brightness(0.55) saturate(0.9);
-  transform: scale(1.1);
-  z-index: 0;
-}
-/* black overlay on top of the image */
-.intro::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(3,8,14,0.62);
-  z-index: 0;
-}
-@keyframes introFailsafe { to { opacity: 0; visibility: hidden; pointer-events: none; } }
-.intro.intro--out {
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.7s ease, visibility 0s 0.7s;
-}
-body.intro-active { overflow: hidden; }
 
-/* graph + welcome are stacked, each centered in the overlay (above the bg) */
-.intro-graph,
-.intro-welcome {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
-}
-.intro-graph {
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.intro-graph.intro-graph--out {
-  opacity: 0;
-  transform: scale(0.97);
-}
-.intro-svg {
-  width: min(88vw, 560px);
-  height: auto;
-  opacity: 0;
-  animation: fadeIn 0.7s 0.1s ease forwards;
-}
-.intro-axes line,
-.intro-axes polyline {
-  stroke: rgba(255,255,255,0.28);
-  stroke-width: 1.5;
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.intro-goal {
-  stroke: rgba(255,255,255,0.6);
-  stroke-width: 2;
-  stroke-dasharray: 7 7;
-  stroke-linecap: round;
-}
-.intro-life {
-  stroke: #5ab4c6;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  filter: drop-shadow(0 0 7px rgba(90,180,198,0.45));
-}
-.intro-svg text {
-  font-family: 'Inter Tight', 'Inter', sans-serif;
-}
-.intro-axis-name {
-  fill: rgba(255,255,255,0.5);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-}
-.intro-lbl { font-size: 15px; font-weight: 600; letter-spacing: 0.01em; }
-.intro-lbl-goal { fill: rgba(255,255,255,0.85); }
-.intro-lbl-life { fill: #7fd0de; }
-/* leading dots at the front of each line */
-.intro-dot-goal { fill: #ffffff; filter: drop-shadow(0 0 6px rgba(255,255,255,0.6)); }
-.intro-dot-life { fill: #7fd0de; filter: drop-shadow(0 0 8px rgba(90,180,198,0.85)); }
 
-/* welcome message — same Inter Tight type system as the landing hero, clean and
-   modern. "Dryft" is the focal at landing-headline scale; quiet eyebrow + sub. */
-.intro-welcome {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 0.55rem;
-  pointer-events: none;
-}
-/* "welcome to" — quiet uppercase eyebrow */
-.iw-pre {
-  color: rgba(255,255,255,0.5);
-  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
-  font-size: clamp(0.8rem, 1.7vw, 0.95rem);
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-}
-/* brand lockup — sized like the landing headline; logo tracks the wordmark */
-.iw-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.42rem;
-  color: #ffffff;
-  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
-  font-size: clamp(2.6rem, 7vw, 4.4rem);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-.iw-brand .brand-mark { color: #ffffff; width: 0.86em; height: 0.86em; }
-.iw-brand .brand-mark svg { display: block; width: 100%; height: 100%; }
-/* helper line — quiet supporting copy */
-.iw-sub {
-  color: rgba(255,255,255,0.62);
-  font-family: 'Inter Tight', 'Inter', sans-serif;
-  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  line-height: 1.35;
-  margin-top: 0.35rem;
-}
-
-/* staggered fade-up on reveal — runs after the graph has faded out, so the
-   handoff reads as a clean crossfade rather than an overlap */
-.iw-pre, .iw-brand, .iw-sub { opacity: 0; }
-.intro-welcome--show .iw-pre   { animation: introUp 0.55s 0.30s ease forwards; }
-.intro-welcome--show .iw-brand { animation: introUp 0.55s 0.42s ease forwards; }
-.intro-welcome--show .iw-sub   { animation: introUp 0.55s 0.54s ease forwards; }
-@keyframes introUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-
-@media (max-width: 480px) {
-  .intro-lbl { font-size: 13px; }
-}
-
-/* =========================== STATEMENT — ocean bg, white text =========================== */
+/* =========================== STATEMENT, ocean bg, white text =========================== */
 .statement {
   position: relative;
   min-height: 100vh;
@@ -442,18 +290,32 @@ body.intro-active { overflow: hidden; }
   z-index: -2;
   filter: brightness(0.6) contrast(1.08) saturate(0.9);
 }
-/* Black overlay on top of the image — vignette + bottom fade into the next section */
+/* Black overlay on top of the image, vignette + bottom fade into the next section */
 .statement-overlay {
   position: absolute; inset: 0;
   background:
-    /* vignette — pulls focus to the headline, fintech-dark edges */
+    /* vignette, pulls focus to the headline, fintech-dark edges */
     radial-gradient(ellipse 80% 60% at 50% 48%, rgba(3,7,12,0.12) 0%, rgba(3,7,12,0.48) 72%, rgba(2,5,9,0.66) 100%),
     /* cool teal-black base tint */
     linear-gradient(180deg, rgba(4,11,18,0.38) 0%, rgba(3,8,14,0.46) 100%);
   z-index: -1;
 }
+/* gradient transition: the dark ocean melts into the light section below, so the
+   landing → next-section seam is a soft fade rather than a hard color edge */
+.statement::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 42%;
+  background: linear-gradient(180deg,
+    rgba(232, 235, 236, 0) 0%,
+    rgba(232, 235, 236, 0.45) 68%,
+    rgba(232, 235, 236, 1) 100%);
+  z-index: -1;
+  pointer-events: none;
+}
 
-/* Soft, static blue ambient light behind the headline — just enough to lift the
+/* Soft, static blue ambient light behind the headline, just enough to lift the
    type off the dark ocean with a little depth. No motion, no neon. */
 .statement-glow {
   position: absolute;
@@ -497,7 +359,7 @@ body.intro-active { overflow: hidden; }
 }
 .statement-h1 .hl {
   /* Inter (wider, more open than Inter Tight) at a light weight with positive
-     tracking — the open counters stay clean when rendered hollow/outlined. */
+     tracking, the open counters stay clean when rendered hollow/outlined. */
   font-family: 'Inter', 'Inter Tight', system-ui, sans-serif;
   font-style: normal;
   font-weight: 400;
@@ -512,9 +374,9 @@ body.intro-active { overflow: hidden; }
   background-clip: border-box;
   filter: drop-shadow(0 1px 14px rgba(255,255,255,0.22));
 }
-/* second line is bigger + bolder than "save without" — the emphasis line */
+/* second line is bigger + bolder than "save without", the emphasis line */
 /* Second line reserves the width of the widest phrase via an invisible sizer,
-   and the rotating text is overlaid centered on top — so swapping phrases never
+   and the rotating text is overlaid centered on top, so swapping phrases never
    changes layout width/height (no scroll jump). */
 .statement-line2 {
   position: relative;
@@ -524,7 +386,7 @@ body.intro-active { overflow: hidden; }
   letter-spacing: -0.045em;
 }
 .rotator-sizer { visibility: hidden; }
-/* rotating phrase — bold white, no underline, centered over the sizer */
+/* rotating phrase, bold white, no underline, centered over the sizer */
 .statement-h1 .accent-word {
   color: #ffffff;
   -webkit-text-fill-color: #ffffff;
@@ -534,7 +396,7 @@ body.intro-active { overflow: hidden; }
   left: 0; right: 0; top: 0;
   text-align: center;
   white-space: nowrap;
-  transition: opacity 0.27s ease, transform 0.27s ease;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 .statement-h1 .rotator.is-out {
   opacity: 0;
@@ -548,7 +410,7 @@ body.intro-active { overflow: hidden; }
   text-decoration-skip-ink: none;
 }
 
-/* Statement content wrapper — puts the headline + side cue on one row */
+/* Statement content wrapper, puts the headline + side cue on one row */
 .statement-content {
   display: inline-flex;
   align-items: center;
@@ -556,7 +418,7 @@ body.intro-active { overflow: hidden; }
   max-width: 100%;
 }
 
-/* RIGHT-SIDE SCROLL CUE — sits immediately next to the headline */
+/* RIGHT-SIDE SCROLL CUE, sits immediately next to the headline */
 .hero-side-scroll {
   display: inline-flex; flex-direction: column; align-items: center;
   gap: 0.85rem;
@@ -671,7 +533,7 @@ body.intro-active { overflow: hidden; }
   margin-bottom: 1.4rem; font-weight: 500;
   opacity: 0; animation: fadeUp 0.7s 0.1s ease forwards;
 }
-/* Free-for-students variant — adds a check icon and a touch more weight so the
+/* Free-for-students variant, adds a check icon and a touch more weight so the
    single most important conversion fact (it's free) reads at a glance. */
 .eyebrow-free {
   display: inline-flex; align-items: center; gap: 0.45rem;
@@ -692,11 +554,11 @@ body.intro-active { overflow: hidden; }
   font-size: clamp(1.75rem, 3.4vw, 2.7rem);
   letter-spacing: -0.025em;
 }
-.hero h1 .hl, .hero .demo-h2 .hl { font-style: italic; color: var(--brand); font-weight: 500; }
+.hero h1 .hl, .hero .demo-h2 .hl { font-style: normal; color: var(--brand); font-weight: 600; }
 
 .hero-sub {
   /* Fluid size so the two lines (split by <br>) scale uniformly across devices
-     instead of re-wrapping — same 2-line shape, just smaller/bigger. The vw
+     instead of re-wrapping, same 2-line shape, just smaller/bigger. The vw
      term is tuned so each half fits one line down to ~320px. */
   font-size: clamp(0.72rem, 3.9vw, 1.06rem); color: var(--muted);
   margin-bottom: 1.6rem; max-width: 480px; line-height: 1.5;
@@ -767,12 +629,12 @@ body.intro-active { overflow: hidden; }
   max-width: 480px;
 }
 
-/* Hero fine-print — centered under the waitlist form, no leading dot */
+/* Hero fine-print, centered under the waitlist form, no leading dot */
 .hero-fine {
   margin-top: 1rem;
   /* Auto-shrink to stay on ONE line: a viewport-scaled size keeps the same
      chars-per-line at any width, capped at 0.84rem on desktop. nowrap forbids
-     wrapping; the vw term guarantees it still fits on narrow phones — sized for
+     wrapping; the vw term guarantees it still fits on narrow phones, sized for
      the longest (with live join-count) version of the line. */
   font-size: clamp(0.5rem, 2.5vw, 0.84rem);
   white-space: nowrap;
@@ -783,7 +645,7 @@ body.intro-active { overflow: hidden; }
   opacity: 0;
   animation: fadeUp 0.85s 0.85s ease forwards;
 }
-/* Minimal under-form consent line — kept tiny + translucent so it doesn't
+/* Minimal under-form consent line, kept tiny + translucent so it doesn't
    compete with the headline or CTA, but still ties form submission to the
    Privacy / Terms acceptance at the point of submission (best practice). The
    verbose CASL disclosure (receive emails / unsubscribe) lives in the footer.
@@ -811,13 +673,13 @@ body.intro-active { overflow: hidden; }
 .form-consent a:hover { color: var(--brand); }
 /* Final-CTA context centers via auto margins (parent's text-align: center only
    centers inline content; this block needs margin:auto to actually center).
-   The hero version aligns with .hero-fine — left-anchored on desktop, centered
+   The hero version aligns with .hero-fine, left-anchored on desktop, centered
    on mobile via the existing 980px override below. */
 .final-cta .form-consent {
   margin-left: auto;
   margin-right: auto;
 }
-/* Survey-modal variant — centered + a bit more breathing room under the button */
+/* Survey-modal variant, centered + a bit more breathing room under the button */
 .survey-consent {
   margin: 0.5rem auto 0 !important;
   text-align: center;
@@ -857,7 +719,7 @@ body.intro-active { overflow: hidden; }
   place-items: center;
   overflow: hidden;
 }
-/* full-viewport landing overlay (ocean + headline) — squeezes into the phone */
+/* full-viewport landing overlay (ocean + headline), squeezes into the phone */
 .dh-landing {
   position: absolute; inset: 0;
   z-index: 6;
@@ -876,7 +738,7 @@ body.intro-active { overflow: hidden; }
   filter: brightness(0.62) saturate(0.92);
 }
 /* headline at normal full-viewport hero sizing. Sits inside .hero now, so the
-   .hero h1 rule would darken it — force white + cancel the hero fade. */
+   .hero h1 rule would darken it, force white + cancel the hero fade. */
 .statement-h1.dh-h1,
 .dh-landing .dh-h1 {
   position: relative;
@@ -887,7 +749,7 @@ body.intro-active { overflow: hidden; }
   opacity: 1;
   animation: none;
 }
-/* "Scroll" cue at the bottom of the landing — decorative only */
+/* "Scroll" cue at the bottom of the landing, decorative only */
 .dh-scroll {
   position: absolute;
   bottom: 6vh; left: 50%;
@@ -1186,11 +1048,11 @@ body.intro-active { overflow: hidden; }
 .chat-send.active { background: var(--brand); color: var(--bg); transform: scale(1.05); }
 .chat-home { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); max-width: 110px; width: 110px; }
 
-/* =========================== DIFFERENCE — proof chart + compare blocks =========================== */
+/* =========================== DIFFERENCE, proof chart + compare blocks =========================== */
 .difference { padding: 2rem 0 2.5rem; position: relative; }
 .diff-head { margin-bottom: 2.5rem; max-width: 720px; }
 .diff-head h2 { font-size: clamp(2rem, 4.6vw, 3.2rem); line-height: 1.04; margin-bottom: 0.8rem; }
-.diff-head h2 em { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-style: italic; font-weight: 500; color: var(--brand); }
+.diff-head h2 em { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-style: normal; font-weight: 600; color: var(--brand); }
 
 .diff-grid {
   display: grid;
@@ -1199,7 +1061,7 @@ body.intro-active { overflow: hidden; }
   align-items: stretch;
 }
 
-/* LEFT — chart card */
+/* LEFT, chart card */
 .diff-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1217,7 +1079,7 @@ body.intro-active { overflow: hidden; }
   display: block;
   margin-bottom: 0.6rem;
 }
-/* Initial (hidden) state — animations only fire once the chart's container
+/* Initial (hidden) state, animations only fire once the chart's container
    gets the .visible class from the IntersectionObserver in main.js */
 .diff-chart .pre-line  { stroke-dasharray: 200; stroke-dashoffset: 200; }
 .diff-chart .other-line,
@@ -1244,7 +1106,7 @@ body.intro-active { overflow: hidden; }
 .diff-pin.good strong { color: var(--good); }
 .diff-pin.bad strong { color: var(--damage); }
 
-/* RIGHT — compare blocks (two stacked cards) */
+/* RIGHT, compare blocks (two stacked cards) */
 .diff-compare { display: grid; gap: 1rem; align-content: stretch; }
 .compare-block {
   background: var(--surface);
@@ -1328,7 +1190,7 @@ body.intro-active { overflow: hidden; }
   border-left: 3px solid var(--ink);
   border-radius: 0 var(--radius) var(--radius) 0;
   padding: 0.9rem 1.1rem;
-  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-style: italic; font-weight: 400;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-style: normal; font-weight: 400;
   font-size: 0.96rem; line-height: 1.5; color: var(--ink);
 }
 .coach-quote.drill   { border-left-color: var(--drill); }
@@ -1395,7 +1257,7 @@ body.intro-active { overflow: hidden; }
 .price-note strong { color: var(--ink); font-weight: 600; }
 .price-feat { list-style: none; display: grid; gap: 0.7rem; margin: 0; }
 /* Relative + absolute marker (not CSS grid) so a <strong> followed by plain text
-   stays a single inline run on one line — a two-column grid would auto-place the
+   stays a single inline run on one line, a two-column grid would auto-place the
    trailing text node into the marker column and wrap it word-by-word. */
 .price-feat li {
   position: relative;
@@ -1496,7 +1358,7 @@ body.intro-active { overflow: hidden; }
   margin: 0.4rem 0 1rem;
   color: var(--ink);
 }
-.ref-h1 em { font-family: 'DM Serif Display', serif; font-style: italic; color: var(--brand); font-weight: 500; }
+.ref-h1 em { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-style: normal; color: var(--brand); font-weight: 600; }
 .ref-sub { color: var(--muted); font-size: 1.04rem; line-height: 1.55; margin: 0 auto 1.8rem; max-width: 460px; }
 .ref-sub strong { color: var(--ink); font-weight: 600; }
 .ref-form {
@@ -1521,7 +1383,7 @@ body.intro-active { overflow: hidden; }
 }
 .ref-form input::placeholder { color: var(--subtle); }
 
-/* Region + number side by side in the boxed (column) forms — referral + lookup. */
+/* Region + number side by side in the boxed (column) forms, referral + lookup. */
 .phone-row { display: flex; gap: 0.5rem; }
 .phone-row input[type='tel'] { flex: 1; min-width: 0; }
 .phone-row .phone-region {
@@ -1568,7 +1430,7 @@ body.intro-active { overflow: hidden; }
 .ref-fine { margin: 1.3rem auto 0.4rem; font-size: 0.84rem; color: var(--muted); }
 .ref-fine a { color: var(--brand); font-weight: 500; }
 
-/* Solid nav for the referral page — no dark hero sits behind it, so it reads
+/* Solid nav for the referral page, no dark hero sits behind it, so it reads
    dark-on-light from the top (same treatment as the scrolled/legal nav). */
 nav#nav.nav-solid {
   background: rgba(245, 244, 240, 0.88);
@@ -1734,7 +1596,7 @@ nav#nav.nav-solid .nav-cta:hover { background: var(--brand); border-color: var(-
 /* =========================== TRUST + FAQ =========================== */
 .trust { padding: 2.5rem 0; }
 
-/* Editorial spec-strip — deliberately different from .coach-grid card pattern.
+/* Editorial spec-strip, deliberately different from .coach-grid card pattern.
    Horizontal rows separated by hairlines, with numbered indicators.
    Reads like a commitments / fine-print list rather than feature cards. */
 .trust-strip {
@@ -1789,7 +1651,7 @@ nav#nav.nav-solid .nav-cta:hover { background: var(--brand); border-color: var(-
 .faq-item:last-child { border-bottom: none; }
 .faq-item h3 { font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.01em; }
 .faq-item p { color: var(--muted); font-size: 0.94rem; line-height: 1.6; }
-.faq-item em { color: var(--brand); font-style: italic; }
+.faq-item em { color: var(--brand); font-style: normal; font-weight: 600; }
 
 /* =========================== FINAL CTA =========================== */
 .final-cta {
@@ -1803,23 +1665,23 @@ nav#nav.nav-solid .nav-cta:hover { background: var(--brand); border-color: var(-
 .final-cta-inner { position: relative; z-index: 2; max-width: 600px; margin: 0 auto; }
 .cta-eyebrow {
   display: inline-block;
-  font-family: 'DM Serif Display', 'Inter Tight', serif;
-  font-style: italic;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-style: normal;
   font-size: 1.05rem;
   color: var(--brand);
   margin-bottom: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: -0.005em;
 }
 .final-cta h2 { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-weight: 500; font-size: clamp(2.4rem, 5.4vw, 4rem); letter-spacing: -0.03em; line-height: 1.04; margin-bottom: 1rem; color: var(--ink); }
-.final-cta h2 .hl { font-style: italic; font-weight: 500; color: var(--brand); }
+.final-cta h2 .hl { font-style: normal; font-weight: 600; color: var(--brand); }
 .final-cta > .final-cta-inner > p { color: var(--muted); margin-bottom: 1.8rem; font-size: 1rem; }
 .final-cta > .final-cta-inner > p strong { color: var(--ink); font-weight: 600; }
 .final-cta > .final-cta-inner > p em {
-  font-family: 'DM Serif Display', serif;
-  font-style: italic;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-style: normal;
   color: var(--brand);
-  font-weight: 500;
+  font-weight: 600;
 }
 .cta-eyebrow strong { font-family: 'Inter Tight', 'Inter', sans-serif; font-style: normal; color: var(--brand); font-weight: 700; }
 
@@ -1924,14 +1786,14 @@ footer {
 @keyframes cursorBlink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
 
 /* =========================== RESPONSIVE =========================== */
-/* Tablet+ — hide desktop nav links, show hamburger.
+/* Tablet+, hide desktop nav links, show hamburger.
    Bumped from 1080 to 1180 because we now have 5 nav links incl. longer labels. */
 @media (max-width: 1180px) {
   .nav-links { display: none; }
   .nav-toggle { display: inline-flex; }
 }
 
-/* Tablet — collapse multi-column grids to single column */
+/* Tablet, collapse multi-column grids to single column */
 @media (max-width: 980px) {
   .hero-inner { grid-template-columns: 1fr; gap: 2.2rem; }
   .hero-copy { max-width: 680px; margin: 0 auto; text-align: center; order: 2; }
@@ -1954,7 +1816,7 @@ footer {
   .brand-word { font-size: 1.2rem; }
   .brand-mark { width: 22px; height: 22px; }
   /* Note: .statement padding is already overridden in the scroll-cue block above
-     (4rem 1.2rem 2.5rem) — do not re-set it here. */
+     (4rem 1.2rem 2.5rem), do not re-set it here. */
   .statement-h1 { font-size: clamp(1.68rem, 5.04vw, 3.22rem); }
   .hero { padding: 4.5rem 1.1rem 2.5rem; }
   .hero-copy { max-width: 100%; }
@@ -2012,12 +1874,12 @@ footer {
     animation: none !important;
     transform-origin: center;
   }
-  /* notif phone — left, behind chat, very slight tilt for readability */
+  /* notif phone, left, behind chat, very slight tilt for readability */
   .dryft-phone.phone-notif {
     z-index: 2;
     transform: translate(-22%, 0) rotate(-2deg) translateZ(0) !important;
   }
-  /* chat phone — right, in front (on top of notif), very slight tilt */
+  /* chat phone, right, in front (on top of notif), very slight tilt */
   .dryft-phone.phone-chat {
     z-index: 3;
     transform: translate(30%, 6%) rotate(3deg) translateZ(0) !important;
@@ -2025,7 +1887,7 @@ footer {
   .hero-inner { gap: 1.1rem; }
 }
 
-/* Very small phones (<= 380px) — narrower phones, same composition. */
+/* Very small phones (<= 380px), narrower phones, same composition. */
 @media (max-width: 380px) {
   .brand-word { font-size: 1.1rem; }
   .nav-cta { font-size: 0.75rem; padding: 0.45rem 0.75rem; }
@@ -2038,11 +1900,11 @@ footer {
 }
 
 /* ============================================================
-   PHONE INTERNAL SCALING — mobile only
+   PHONE INTERNAL SCALING, mobile only
    The phone mockup is ~232px wide on mobile vs ~260px on desktop. The internal
    text/UI was calibrated for desktop, which makes it feel oversized inside the
    smaller mockup on mobile. These overrides scale the internals down (~75–80%
-   of desktop sizes) so the mockup reads like a real iOS device at small scale —
+   of desktop sizes) so the mockup reads like a real iOS device at small scale:
    notification bodies fit in 2 lines, lock-screen clock has breathing room,
    chat bubbles look correctly weighted vs the device chrome.
    ============================================================ */
@@ -2077,7 +1939,7 @@ footer {
   .lock-action-btn { width: 26px; height: 26px; }
   .home-indicator { height: 3px; max-width: 80px; }
 
-  /* Chat phone — header */
+  /* Chat phone, header */
   .chat-nav { top: 28px; height: 42px; padding: 0 12px; grid-template-columns: 20px 1fr 20px; }
   .chat-back { font-size: 1.05rem; }
   .chat-id { gap: 6px; }
@@ -2115,136 +1977,109 @@ footer {
   .chat-home { max-width: 78px; width: 78px; bottom: 4px; height: 3px; }
 }
 
-/* =========================== HOW IT WORKS — engine flow ===========================
+/* =========================== HOW IT WORKS, engine flow ===========================
    Deliberately visually distinct: dark teal block, numbered flow nodes connected by
    chevron arrows. Sits between the .difference compare grid and the .overplan section.
-   No other section uses this dark treatment — that's the point.
+   No other section uses this dark treatment, that's the point.
    =========================== */
 .howitworks {
   position: relative;
-  margin: 2.4rem 0 2.8rem;
-  padding: 2.2rem 2.2rem 2.4rem;
-  border-radius: var(--radius-lg);
-  color: var(--bg);
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  isolation: isolate;
-  background: linear-gradient(155deg, #0e4754 0%, #0a3744 55%, #062430 100%);
+  margin: 0;
+  padding: 0;
+  color: var(--ink);
 }
-.hiw-bg {
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse 55% 70% at 85% 15%, rgba(42,129,144,0.30), transparent 60%),
-    radial-gradient(ellipse 55% 70% at 12% 90%, rgba(26,130,148,0.22), transparent 60%),
-    radial-gradient(ellipse 30% 40% at 50% 50%, rgba(181,228,208,0.05), transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-}
+.hiw-bg { display: none; }
 .hiw-inner { position: relative; z-index: 1; }
 
-.hiw-head { max-width: 620px; margin-bottom: 1.7rem; }
-.hiw-eyebrow {
-  font-family: 'DM Serif Display', 'Inter Tight', serif;
-  font-style: italic;
-  font-size: 1.05rem;
-  color: #b5e4d0;
-  margin-bottom: 0.45rem;
-  font-weight: 500;
-  letter-spacing: -0.005em;
-}
+/* Just the heading, centered above the live algorithm panel */
+.hiw-head { max-width: 720px; margin: 0 auto; text-align: center; }
 .hiw-head h3 {
   font-family: 'Inter Tight', 'Inter', sans-serif;
-  font-size: clamp(1.6rem, 3.4vw, 2.25rem);
+  font-size: clamp(1.9rem, 4.4vw, 2.9rem);
   font-weight: 500;
   letter-spacing: -0.028em;
-  line-height: 1.05;
-  color: var(--bg);
-  margin-bottom: 0.7rem;
+  line-height: 1.04;
+  color: var(--ink);
+  margin-bottom: 0;
 }
 .hiw-head h3 em {
-  font-family: 'DM Serif Display', serif;
-  font-style: italic;
-  color: #c8efdc;
-  font-weight: 500;
-}
-.hiw-sub {
-  font-size: 0.98rem;
-  color: rgba(244,246,247,0.72);
-  line-height: 1.5;
-  max-width: 580px;
-}
-.hiw-sub em {
-  font-family: 'DM Serif Display', serif;
-  font-style: italic;
-  color: #c8efdc;
-  font-weight: 500;
-}
-.hiw-sub strong {
-  display: block;
-  margin-top: 0.4rem;
-  color: var(--bg);
+  font-family: 'Inter Tight', 'Inter', sans-serif;
+  font-style: normal;
+  color: var(--brand);
   font-weight: 600;
-  font-size: 1.04rem;
-  letter-spacing: -0.005em;
 }
 
 .hiw-flow {
   display: grid;
-  grid-template-columns: 1fr auto 1fr auto 1fr;
-  gap: 1.1rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
   align-items: stretch;
+  /* a bit wider than the 780px chart so the columns are roomy enough for the
+     captions to render at a comfortable size while still staying on one line */
+  max-width: 920px;
+  margin: 0 auto;
 }
+/* each step is a tile (matches the white chart panel above) */
 .hiw-step {
-  padding: 0.6rem 0.4rem 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card-sm);
+  padding: 1.3rem 1rem 1.15rem;
   display: flex; flex-direction: column;
-  gap: 0.55rem;
+  align-items: center; text-align: center;
+  gap: 0.5rem;
   position: relative;
+  /* container so the heading + caption auto-size to the tile width */
+  container-type: inline-size;
 }
 .hiw-icon {
-  width: 52px; height: 52px;
+  width: 44px; height: 44px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.06);
-  border: 1.5px solid rgba(200,239,220,0.45);
+  background: rgba(42,129,144,0.07);
+  border: 1.5px solid rgba(42,129,144,0.35);
   display: grid; place-items: center;
-  color: #c8efdc;
-  margin-bottom: 0.55rem;
-  transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+  transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
 }
-.hiw-icon svg { width: 26px; height: 26px; display: block; }
+.hiw-icon svg { width: 23px; height: 23px; display: block; }
 .hiw-step:hover .hiw-icon {
   transform: scale(1.06);
-  border-color: rgba(200,239,220,0.85);
-  background: rgba(255,255,255,0.08);
+  border-color: rgba(42,129,144,0.6);
+  background: rgba(42,129,144,0.1);
 }
 .hiw-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.66rem;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #c8efdc;
+  color: var(--accent);
   font-weight: 600;
 }
 .hiw-step h4 {
   font-family: 'Inter Tight', 'Inter', sans-serif;
-  font-size: 1.2rem;
+  font-size: clamp(0.92rem, 9.2cqi, 1.05rem);
   font-weight: 500;
   letter-spacing: -0.02em;
-  color: var(--bg);
-  line-height: 1.25;
+  color: var(--ink);
+  line-height: 1.2;
   margin: 0;
 }
 .hiw-step p {
-  font-size: 0.92rem;
-  color: rgba(244,246,247,0.78);
-  line-height: 1.55;
+  /* one line, shrink-to-fit the tile width at any breakpoint instead of wrapping */
+  white-space: nowrap;
+  font-size: 0.72rem;                        /* fallback if container-query units unsupported */
+  font-size: clamp(0.5rem, 6.6cqi, 0.9rem);
+  color: var(--muted);
+  line-height: 1.4;
   margin: 0;
-  min-height: 3em; /* keeps the 3 cards consistent vertically — accounts for 2-line sub on steps 02/03 */
 }
 .hiw-step p em {
-  font-family: 'DM Serif Display', serif;
-  font-style: italic;
-  color: #c8efdc;
-  font-weight: 500;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-style: normal;
+  color: var(--brand);
+  font-weight: 600;
 }
 .hiw-connect {
   display: flex; align-items: center; justify-content: center;
@@ -2254,33 +2089,135 @@ footer {
 .hiw-connect svg { width: 56px; height: 14px; display: block; }
 
 /* Subtle stagger-in on the steps when the section becomes visible */
-.howitworks.reveal .hiw-step,
-.howitworks.reveal .hiw-connect {
+.howitworks.reveal .hiw-step {
   opacity: 0; transform: translateY(8px);
   transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.2,.8,.2,1);
 }
-.howitworks.reveal.visible .hiw-step:nth-child(1) { transition-delay: 0.2s; opacity: 1; transform: none; }
-.howitworks.reveal.visible .hiw-connect:nth-child(2) { transition-delay: 0.35s; opacity: 1; transform: none; }
-.howitworks.reveal.visible .hiw-step:nth-child(3) { transition-delay: 0.5s; opacity: 1; transform: none; }
-.howitworks.reveal.visible .hiw-connect:nth-child(4) { transition-delay: 0.65s; opacity: 1; transform: none; }
-.howitworks.reveal.visible .hiw-step:nth-child(5) { transition-delay: 0.8s; opacity: 1; transform: none; }
+.howitworks.reveal.visible .hiw-step:nth-child(1) { transition-delay: 0.15s; opacity: 1; transform: none; }
+.howitworks.reveal.visible .hiw-step:nth-child(2) { transition-delay: 0.3s; opacity: 1; transform: none; }
+.howitworks.reveal.visible .hiw-step:nth-child(3) { transition-delay: 0.45s; opacity: 1; transform: none; }
+.howitworks.reveal.visible .hiw-step:nth-child(4) { transition-delay: 0.6s; opacity: 1; transform: none; }
 
-@media (max-width: 820px) {
-  .howitworks { padding: 1.7rem 1.4rem 1.8rem; }
-  .hiw-flow { grid-template-columns: 1fr; gap: 0; }
-  .hiw-connect { display: none; }
-  .hiw-step {
-    border-top: 1px solid rgba(255,255,255,0.10);
-    padding: 1.2rem 0 0.4rem;
-    margin-top: 0.4rem;
-  }
-  .hiw-step:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
-  .hiw-icon { width: 46px; height: 46px; }
-  .hiw-icon svg { width: 24px; height: 24px; }
-  .hiw-step p { min-height: 0; }
+/* "on repeat" loop caption under the four steps */
+.hiw-loop {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1.4rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.hiw-loop svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
+
+/* ===== live algorithm panel (light card, matches the section) ===== */
+.algo-live {
+  max-width: 780px;
+  margin: 1.6rem auto 1.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+.al-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.7rem 1.05rem;
+  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 0.05em;
+}
+.al-live { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--ink); font-weight: 600; }
+.al-dot { width: 7px; height: 7px; border-radius: 50%; background: #1bbf7a; box-shadow: 0 0 8px rgba(27,191,122,0.7); animation: dotBlink 1.8s ease-in-out infinite; }
+.al-acct { color: var(--muted); }
+.al-stage { position: relative; background: var(--surface-2); }
+/* graph height auto-sizes with the viewport (smaller on phones, full on desktop) */
+.al-canvas { display: block; width: 100%; height: clamp(168px, 9.9vw + 131px, 208px); }
+@keyframes dotBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* iOS-style notification (the nudge); the Dryft logo is the app icon */
+.al-notif {
+  position: absolute; top: 14px; left: 14px; transform: translateY(-16px);
+  width: min(330px, calc(100% - 28px));
+  display: flex; gap: 0.65rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  backdrop-filter: saturate(180%) blur(14px);
+  border: 1px solid rgba(13, 14, 16, 0.06);
+  box-shadow: 0 18px 40px -14px rgba(13, 14, 16, 0.3);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.2,.8,.2,1);
+}
+.al-notif.show { opacity: 1; transform: translateY(0); }
+.notif-icon {
+  flex: none; width: 38px; height: 38px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: linear-gradient(150deg, #1c7293, #0e4754);
+  box-shadow: 0 2px 6px rgba(13, 14, 16, 0.2);
+}
+.notif-icon svg { width: 22px; height: 22px; }
+.notif-icon svg path { fill: #ffffff; }
+.notif-content { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.notif-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.notif-app { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.12em; color: var(--muted); }
+.notif-time { font-size: 0.62rem; color: var(--muted); flex: none; }
+.notif-title { font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; line-height: 1.2; }
+.notif-msg { font-size: 0.82rem; color: var(--ink-2); line-height: 1.32; }
+/* the escalated nudge reads sharper, warmer/redder icon + title */
+.al-notif.harsh .notif-icon { background: linear-gradient(150deg, #d4623f, #b5392f); }
+.al-notif.harsh .notif-title { color: #b5392f; }
+
+@media (max-width: 560px) { .al-notif { width: calc(100% - 24px); } }
+/* status footer of the panel (cycling readout) */
+.algo-live .algo-readout {
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  width: 100%; margin: 0; padding: 0.72rem 1rem;
+  border: 0; border-top: 1px solid var(--border); border-radius: 0;
+  background: var(--surface-2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem; letter-spacing: 0.02em;
+  color: var(--muted);
+}
+.ar-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: var(--accent);
+  animation: arPulse 2s ease-in-out infinite;
+}
+@keyframes arPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 7px rgba(42,129,144,0.55); }
+  50%      { opacity: 0.45; box-shadow: 0 0 2px rgba(42,129,144,0.35); }
+}
+.ar-text { transition: opacity 0.18s ease; }
+/* the four tiles light up as the algorithm works through them */
+.hiw-step { transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease; }
+.hiw-step.is-active {
+  transform: translateY(-4px);
+  border-color: rgba(42,129,144,0.55);
+  box-shadow: 0 0 0 3px rgba(42,129,144,0.10), var(--shadow-md);
+}
+.hiw-step .hiw-icon { transition: transform 0.35s ease, border-color 0.35s ease, background 0.35s ease, box-shadow 0.35s ease; }
+.hiw-step.is-active .hiw-icon {
+  border-color: var(--accent);
+  background: rgba(42,129,144,0.14);
+  box-shadow: 0 0 0 4px rgba(42,129,144,0.1);
+  transform: scale(1.1);
+}
+.hiw-step.is-active .hiw-label { color: var(--brand); }
+
+/* tablets & phones: 2×2 grid of tiles (kept narrow so tiles stay tidy) */
+@media (max-width: 880px) {
+  .hiw-flow { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; max-width: 560px; }
+}
+/* phones: tighter tiles */
+@media (max-width: 480px) {
+  .hiw-flow { gap: 0.6rem; }
+  .hiw-step { padding: 1rem 0.7rem; gap: 0.4rem; }
+  .hiw-icon { width: 40px; height: 40px; margin-bottom: 0.3rem; }
+  .hiw-icon svg { width: 21px; height: 21px; }
 }
 
-/* =========================== OVERPLAN — persona recovery scenarios =========================== */
+/* =========================== OVERPLAN, persona recovery scenarios =========================== */
 .overplan { margin-top: 2.8rem; padding-top: 2rem; border-top: 1px dashed var(--border); }
 .overplan-head { max-width: 920px; margin-bottom: 1.2rem; position: relative; }
 .overplan-head .section-label { display: block; margin-bottom: 0.35rem; }
@@ -2290,8 +2227,8 @@ footer {
   line-height: 1.1; margin-bottom: 0.5rem;
 }
 .overplan-head h2 em {
-  font-family: 'DM Serif Display', 'Inter Tight', serif;
-  font-style: italic; font-weight: 500; color: var(--brand);
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-style: normal; font-weight: 600; color: var(--brand);
 }
 .overplan-sub {
   color: var(--muted); font-size: 0.96rem; line-height: 1.5; max-width: 640px;
@@ -2310,7 +2247,7 @@ footer {
   border-radius: 999px;
   white-space: nowrap;
 }
-/* Touch devices can't hover — swap the hint copy to "Tap" via pseudo-element
+/* Touch devices can't hover, swap the hint copy to "Tap" via pseudo-element
    so the original "Hover" text stays in the source for desktop pointer users. */
 @media (hover: none) {
   .overplan-hint { font-size: 0; }
@@ -2322,7 +2259,7 @@ footer {
   }
 }
 
-/* side-by-side layout — persona cards stacked on left, chart on right */
+/* side-by-side layout, persona cards stacked on left, chart on right */
 .overplan-layout {
   display: grid;
   grid-template-columns: minmax(280px, 1.05fr) minmax(0, 1.4fr);
@@ -2330,7 +2267,7 @@ footer {
   align-items: stretch;
 }
 
-/* persona cards — clickable tabs (now vertical stack inside layout) */
+/* persona cards, clickable tabs (now vertical stack inside layout) */
 .persona-tabs {
   display: grid; grid-template-columns: 1fr;
   gap: 0.7rem;
@@ -2405,7 +2342,7 @@ footer {
   line-height: 1.35;
 }
 
-/* visual stage — chart card */
+/* visual stage, chart card */
 .persona-stage {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -2490,7 +2427,7 @@ footer {
   .overplan { margin-top: 2rem; padding-top: 1.6rem; }
   .overplan-head h2 { display: block; }
   .overplan-hint { margin-left: 0; margin-top: 0.6rem; }
-  /* Persona cards — side-by-side on mobile, compact. Frees up vertical space
+  /* Persona cards, side-by-side on mobile, compact. Frees up vertical space
      for the chart below so the recovery scenarios stay glanceable. */
   .persona-tabs { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
   .persona-card { padding: 0.7rem 0.75rem; gap: 0.3rem; border-radius: 14px; }
@@ -2504,7 +2441,7 @@ footer {
   .persona-meta dt { font-size: 0.48rem; letter-spacing: 0.08em; }
   .persona-meta dd { font-size: 0.7rem; line-height: 1.25; }
   /* Bigger, more readable chart on mobile. Only bump the monospace
-     axis/legend labels — Inter-font pill labels have fixed-width rect
+     axis/legend labels, Inter-font pill labels have fixed-width rect
      backgrounds and would overflow the SVG bounds if scaled up. */
   .persona-stage { padding: 0.9rem 0.7rem 0.85rem; border-radius: 16px; }
   .visual-chart { aspect-ratio: 600 / 420; }
@@ -2601,10 +2538,10 @@ footer {
 }
 .survey-sub strong { color: var(--ink); font-weight: 600; }
 .survey-sub em {
-  font-family: 'DM Serif Display', serif;
-  font-style: italic;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-style: normal;
   color: var(--brand);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .survey-form { display: flex; flex-direction: column; gap: 1.3rem; }
@@ -2646,7 +2583,7 @@ footer {
   max-width: 100%;
 }
 
-/* Stage chips — single-select, laid out as a tidy 2-column grid that mirrors
+/* Stage chips, single-select, laid out as a tidy 2-column grid that mirrors
    the Likert buttons below (equal-width cells, aligned rows). */
 .survey-chips {
   display: grid;
@@ -2681,23 +2618,23 @@ footer {
 }
 .survey-chip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
-/* Likert scale — 1-5 buttons */
+/* Likert scale, 1-5 buttons */
 .survey-scale {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 0.45rem;
   margin-top: 0.3rem;
 }
-/* Two-button variant (e.g. Yes/No) — spans the full row width */
+/* Two-button variant (e.g. Yes/No), spans the full row width */
 .survey-scale.survey-scale-two { grid-template-columns: repeat(2, 1fr); }
 
-/* Section grouping — visual rule between question clusters */
+/* Section grouping, visual rule between question clusters */
 .survey-section {
   margin-top: 0.5rem;
   padding-top: 1.1rem;
   border-top: 1px solid var(--border);
 }
-/* The first section sits right under the modal head — no extra rule needed */
+/* The first section sits right under the modal head, no extra rule needed */
 .survey-section:first-of-type { border-top: none; padding-top: 0.2rem; }
 .survey-section-title {
   font-family: 'JetBrains Mono', monospace;
@@ -2771,7 +2708,7 @@ footer {
 /* Per-question mini-captions under buttons 1 and 5. The grid mirrors the
    button row's 5-column layout so each label sits centered under its own
    button rather than at the row edges. Buttons 2-4 are intentionally
-   uncovered — no caption there. */
+   uncovered, no caption there. */
 .survey-scale-endlabels {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -2815,7 +2752,7 @@ footer {
 .survey-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 .survey-submit:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
-/* Missing-answer notice — appears INSIDE the sticky .survey-actions bar (above
+/* Missing-answer notice, appears INSIDE the sticky .survey-actions bar (above
    the submit button) if the user tries to send before answering every question. */
 .survey-missing-notice {
   display: flex; align-items: center; gap: 0.6rem;
@@ -2830,14 +2767,14 @@ footer {
   line-height: 1.4;
   animation: noticeIn 0.3s ease;
 }
-/* Unanswered question — only the number digit flips red. The badge background
+/* Unanswered question, only the number digit flips red. The badge background
    and border stay the brand teal so the rest of the question card is undisturbed. */
 .survey-q.unanswered .survey-q-num {
   color: var(--damage);
   transition: color 0.2s ease;
 }
 
-/* In-flight notice — appears INSIDE the sticky .survey-actions bar (above the
+/* In-flight notice, appears INSIDE the sticky .survey-actions bar (above the
    submit button) while the POST is in flight. Pairs with a beforeunload prompt
    to discourage closing the tab before the request finishes leaving the browser. */
 .survey-sending-notice {
@@ -2972,6 +2909,146 @@ body.survey-open { overflow: hidden; }
     z-index: 2;
   }
 }
+
+/* WHO IT'S FOR, ICP self-qualify (light theme) */
+.who {
+  padding: 5.5rem 1.6rem;
+  background: var(--bg);
+}
+.who-head {
+  max-width: 720px;
+  margin: 0 auto 2.6rem;
+  text-align: center;
+}
+.who-head h2 {
+  font-size: clamp(1.9rem, 4.4vw, 3rem);
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+  margin: 0.5rem 0 0;
+}
+.who-sub {
+  color: #5b5d65;
+  font-size: 1.08rem;
+  line-height: 1.5;
+  margin-top: 1rem;
+}
+.who-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 940px;
+  margin: 0 auto;
+  align-items: center;
+}
+.who-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.who-list li {
+  position: relative;
+  padding-left: 2.1rem;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  color: #26282e;
+}
+.who-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: rgba(26, 130, 148, 0.12);
+  color: #1a8294;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.who-quote {
+  margin: 0;
+  padding: 1.7rem 1.9rem;
+  border-left: 3px solid #1a8294;
+  background: var(--bg-alt);
+  border-radius: 0 14px 14px 0;
+}
+.who-quote p {
+  font-size: clamp(1.15rem, 2.2vw, 1.4rem);
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--ink);
+}
+.who-quote cite {
+  display: block;
+  margin-top: 0.9rem;
+  font-style: normal;
+  font-size: 0.85rem;
+  color: #9aa0a8;
+  letter-spacing: 0.03em;
+}
+.who-foot {
+  text-align: center;
+  max-width: 680px;
+  margin: 2.8rem auto 0;
+  font-size: 1.12rem;
+  line-height: 1.5;
+  color: #3a3c42;
+}
+.who-foot strong { color: var(--ink); }
+
+/* WHY SOLUTIONS FAIL */
+.whyfail { padding: 3.5rem 0 1.5rem; }
+.whyfail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1fr);
+  gap: 2.8rem;
+  align-items: center;
+}
+.whyfail-head h2 {
+  font-size: clamp(2rem, 4.6vw, 3.2rem);
+  line-height: 1.04;
+  margin: 0.5rem 0 0;
+}
+.whyfail-sub {
+  color: var(--muted);
+  font-size: 1.08rem;
+  line-height: 1.55;
+  margin-top: 1rem;
+  max-width: 40ch;
+}
+.whyfail-chart { width: 100%; height: auto; display: block; }
+@media (max-width: 880px) {
+  .whyfail-grid { grid-template-columns: 1fr; gap: 1.4rem; }
+}
+
+/* PHILOSOPHY + OUTCOME, type-led, centered, lots of space (KISS) */
+.philosophy { padding: 5.5rem 0; text-align: center; }
+.phil-inner { max-width: 760px; margin: 0 auto; }
+.philosophy h2 { font-size: clamp(2.2rem, 5vw, 3.6rem); line-height: 1.05; margin: 0.6rem 0 0; }
+.phil-sub { color: var(--muted); font-size: 1.12rem; line-height: 1.55; margin: 1.3rem auto 0; max-width: 46ch; }
+.phil-tag {
+  margin-top: 1.7rem;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  font-size: clamp(1.4rem, 3.2vw, 2rem);
+  color: var(--brand);
+}
+.outcome { padding: 5rem 0 5.5rem; background: var(--bg-alt); text-align: center; }
+.outcome-inner { max-width: 720px; margin: 0 auto; }
+.outcome h2 { font-size: clamp(2.4rem, 5.5vw, 3.9rem); line-height: 1.02; margin: 0.6rem 0 0; }
+.outcome-sub { color: var(--muted); font-size: 1.12rem; line-height: 1.55; margin: 1.3rem auto 0; max-width: 42ch; }
+
+/* How-it-works: a normal light section, matches Trust & clarity */
+.how-section { padding: 2.5rem 0; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

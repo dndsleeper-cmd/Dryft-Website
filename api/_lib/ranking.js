@@ -1,7 +1,7 @@
 /**
  * Shared waitlist-ranking queries used by /api/{waitlist,survey,lookup,stats}.
  *
- * Both are best-effort aggregation reads — a failure must never break the write
+ * Both are best-effort aggregation reads, a failure must never break the write
  * the user just made, so callers treat a null return as "unknown".
  */
 
@@ -23,7 +23,7 @@ async function computePosition(database, score) {
   }
 }
 
-// Total signups — the "Join N others on the waitlist" social-proof number.
+// Total signups, the "Join N others on the waitlist" social-proof number.
 async function totalCount(database) {
   try {
     const agg = await database.collection('waitlist').count().get();

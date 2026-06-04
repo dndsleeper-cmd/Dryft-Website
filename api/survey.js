@@ -9,17 +9,17 @@
  *     (abandoners are deduped, not duplicated).
  *
  * Two modes:
- *   1. PARTIAL autosave — `partial: true`. Fired on every selection change.
+ *   1. PARTIAL autosave, `partial: true`. Fired on every selection change.
  *      Relaxed validation (the user may have answered almost nothing yet),
  *      reCAPTCHA skipped, looser rate-limit bucket. Stored complete:false.
- *   2. COMPLETE submit — the final "Send answers" (`complete: true`, no
+ *   2. COMPLETE submit, the final "Send answers" (`complete: true`, no
  *      `partial`). Strict required-field contract + reCAPTCHA. Stored
  *      complete:true on the SAME (phone-keyed) doc.
  *
  * Body (JSON or form-urlencoded):
- *   phone        required — the doc key (and joins a response to its signup)
- *   partial      optional boolean — true marks an in-progress autosave
- *   complete     optional boolean — true marks the response finished
+ *   phone        required, the doc key (and joins a response to its signup)
+ *   partial      optional boolean, true marks an in-progress autosave
+ *   complete     optional boolean, true marks the response finished
  *   source       "hero" | "final" (required for non-partial writes)
  *   careerStage  one of VALID_CAREER_STAGES (required for non-partial)
  *   lifeStage    one of VALID_LIFE_STAGES (required for non-partial)
@@ -53,7 +53,7 @@ const {
 } = require('./_lib/validate');
 const { computePosition } = require('./_lib/ranking');
 
-// Likert question field names — keep this in sync with the form. Field names
+// Likert question field names, keep this in sync with the form. Field names
 // match the on-screen display order (q1..q7 = the seven 1–5 questions, in the
 // order shown; q8 = Yes/No, q9 = open text). The order here defines storage
 // shape; rearranging is a NO-OP for stored data because each field is keyed by name.
@@ -62,7 +62,7 @@ const LIKERT_KEYS = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7'];
 // When a survey is marked complete, lift the matching waitlist doc into the
 // "survey-completed" tier so it ranks above non-completers. Same phone-derived
 // doc id joins the two collections. Recomputes priorityScore from the doc's
-// current seq/referralCount (idempotent — re-running yields the same score).
+// current seq/referralCount (idempotent, re-running yields the same score).
 // Defensive: if the waitlist doc is somehow missing (signup POST failed but the
 // survey landed), create a minimal one. Returns the resulting position, or null.
 async function syncWaitlistOnComplete(database, docId, phone) {
@@ -74,7 +74,7 @@ async function syncWaitlistOnComplete(database, docId, phone) {
       const prev = snap.data() || {};
       const referralCount = Number(prev.referralCount) || 0;
       const usedReferral = !!prev.usedReferral;
-      // Already in the completed tier with a real score — nothing to change.
+      // Already in the completed tier with a real score, nothing to change.
       if (prev.surveyComplete === true && typeof prev.priorityScore === 'number') {
         return prev.priorityScore;
       }
@@ -98,7 +98,7 @@ async function syncWaitlistOnComplete(database, docId, phone) {
       );
       return sc;
     }
-    // No waitlist doc — create a minimal completed one so the response still ranks.
+    // No waitlist doc, create a minimal completed one so the response still ranks.
     const cs = await tx.get(counterRef);
     const seq = (Number(cs.exists && cs.data().waitlistSeq) || 0) + 1;
     const code = makeReferralCode(phone);
@@ -158,7 +158,7 @@ module.exports = async function handler(req, res) {
   const isPartial = body.partial === true || body.partial === 'true';
   const isComplete = body.complete === true || body.complete === 'true';
 
-  // Phone is ALWAYS required — it's both the doc key and the join to a signup.
+  // Phone is ALWAYS required, it's both the doc key and the join to a signup.
   if (!isPlausiblePhone(phone)) return res.status(400).json({ ok: false, reason: 'phone' });
 
   // Non-partial (complete / legacy) submissions keep the strict contract.
@@ -174,7 +174,7 @@ module.exports = async function handler(req, res) {
 
   // reCAPTCHA: enforce on complete/legacy submits only. Partial autosaves fire
   // many times per session and v3 tokens expire (~2 min), so minting one per
-  // keystroke is impractical — we lean on the dedicated rate-limit bucket below.
+  // keystroke is impractical, we lean on the dedicated rate-limit bucket below.
   if (!isPartial) {
     const verif = await verifyRecaptcha(body.recaptchaToken, ip);
     if (!verif.ok) {
@@ -226,7 +226,7 @@ module.exports = async function handler(req, res) {
     // NO read on the hot path: the frequent per-answer autosave is now a PURE
     // write (no get()), which halves Firestore ops on the survey path.
     //   - Stickiness: `complete` is written ONLY on the final submit and OMITTED
-    //     on partials, so a merge can never downgrade a finished response —
+    //     on partials, so a merge can never downgrade a finished response,
     //     no read needed to "remember" it.
     //   - We don't stamp a survey-doc createdAt; the waitlist doc (written at
     //     signup, before the survey) already holds the authoritative per-user
@@ -238,7 +238,7 @@ module.exports = async function handler(req, res) {
     await ref.set(payload, { merge: true });
 
     // Only the explicit final submit promotes the waitlist doc into the
-    // survey-completed tier ("skip the line") and reports a position — partial
+    // survey-completed tier ("skip the line") and reports a position, partial
     // autosaves never reach here. syncWaitlistOnComplete is idempotent, so a
     // repeated submit is a safe no-op. Best-effort: a failure must not fail the
     // survey write the user just made.

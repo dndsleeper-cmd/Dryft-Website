@@ -6,10 +6,10 @@
  * number updates the existing record instead of creating a duplicate.
  *
  * Body (JSON or form-urlencoded):
- *   phone     required — mobile number for SMS; sanitized + validated server-side
- *   region    optional — "CA" | "US" (dial-code dropdown selection)
- *   source    required — "hero" or "final"
- *   dwell_ms  optional — ms the user spent on the page before submit
+ *   phone     required, mobile number for SMS; sanitized + validated server-side
+ *   region    optional, "CA" | "US" (dial-code dropdown selection)
+ *   source    required, "hero" or "final"
+ *   dwell_ms  optional, ms the user spent on the page before submit
  *
  * Response:
  *   200 { ok: true, id }
@@ -155,7 +155,7 @@ module.exports = async function handler(req, res) {
           { merge: true },
         );
         if (referrerRef) {
-          // +1 referral, +10 spots — applied atomically so no read-modify-write race.
+          // +1 referral, +10 spots, applied atomically so no read-modify-write race.
           tx.set(
             referrerRef,
             {
@@ -181,7 +181,7 @@ module.exports = async function handler(req, res) {
         );
       }
       if (needsSeq) {
-        // Legacy doc with no seq/score — assign one now so it can be ranked.
+        // Legacy doc with no seq/score, assign one now so it can be ranked.
         const seq = (Number(counterSnap.exists && counterSnap.data().waitlistSeq) || 0) + 1;
         const referralCount = Number(prev.referralCount) || 0;
         const surveyComplete = !!prev.surveyComplete;
@@ -197,7 +197,7 @@ module.exports = async function handler(req, res) {
       return { referralCode: prev.referralCode || myCode, score };
     });
 
-    // Note: we intentionally do NOT compute the total signup count here — that
+    // Note: we intentionally do NOT compute the total signup count here, that
     // would be a second aggregation read per signup. The client increments its
     // displayed "N joined" by +1 optimistically; /api/stats is the source of truth.
     const position = await computePosition(database, result.score);

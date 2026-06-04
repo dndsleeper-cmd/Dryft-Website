@@ -1,5 +1,5 @@
 /**
- * Lazy-load Google reCAPTCHA v3 — only if a real site key is configured.
+ * Lazy-load Google reCAPTCHA v3, only if a real site key is configured.
  *
  * The site key lives in <meta name="recaptcha-site-key" content="..."> in
  * index.html. Until that placeholder is replaced with a real key, this

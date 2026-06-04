@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#f4f6f7">
 <meta name="color-scheme" content="light">
 
-<!-- SECURITY — duplicated in vercel.json as real HTTP headers (authoritative); meta is a fallback. -->
+<!-- SECURITY, duplicated in vercel.json as real HTTP headers (authoritative); meta is a fallback. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.vercel-insights.com https://va.vercel-scripts.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://vitals.vercel-insights.com https://va.vercel-scripts.com; frame-src https://www.google.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -30,7 +30,7 @@
 <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/dm-serif-400-italic-latin.woff2" crossorigin>
 <link rel="stylesheet" href="/assets/fonts/fonts.css">
 <script defer src="https://cdn.vercel-insights.com/v1/script.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<link rel="stylesheet" href="assets/css/styles.css?v=20260603y">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260603zz24">
 </head>
 <body>
 
@@ -47,9 +47,8 @@
     <span class="brand-word">Dryft</span>
   </a>
   <div class="nav-links" id="nav-links">
-    <a href="/#difference">What's Different?</a>
     <a href="/#how-it-works">How it works</a>
-    <!-- Pricing — saving for later (pricing section is commented out in index.html): <a href="/#pricing">Pricing</a> -->
+    <!-- Pricing, saving for later (pricing section is commented out in index.html): <a href="/#pricing">Pricing</a> -->
     <a href="/#faq">FAQ</a>
   </div>
   <div class="nav-right">
@@ -62,9 +61,8 @@
   </div>
 </nav>
 <div class="mobile-menu" id="mobile-menu" hidden>
-  <a href="/#difference">What's Different?</a>
   <a href="/#how-it-works">How it works</a>
-  <!-- Pricing — saving for later (pricing section is commented out in index.html): <a href="/#pricing">Pricing</a> -->
+  <!-- Pricing, saving for later (pricing section is commented out in index.html): <a href="/#pricing">Pricing</a> -->
   <a href="/#faq">FAQ</a>
   <a href="/#waitlist" class="mobile-menu-cta">Join free</a>
 </div>
@@ -99,8 +97,8 @@
     </form>
     <div class="ref-success" id="referral-success" hidden>You're on the list. We'll text you when Private Beta 01 opens. Check your invite code below to climb the list.</div>
 
-    <p class="ref-fine">4 months free for students · no credit card. No code? <a href="/#waitlist">Join the waitlist here</a>.</p>
-    <p class="form-consent">By joining, you agree to texts &amp; our <a href="/privacy">Privacy</a> &amp; <a href="/terms">Terms</a>.</p>
+    <p class="ref-fine">No credit card, no commitment. No code? <a href="/#waitlist">Join the waitlist here</a>.</p>
+    <p class="form-consent">By joining, you agree to SMS texts &amp; our <a href="/privacy">Privacy</a> &amp; <a href="/terms">Terms</a>.</p>
 
     <!-- Look up your own code (already on the waitlist) -->
     <div class="ref-lookup">
@@ -136,10 +134,10 @@
     <a href="mailto:muqeeth082005@gmail.com">Contact</a>
   </nav>
   <p class="footer-meta">&trade; 2026 Dryft &middot; Made in Waterloo, Ontario &middot; Not financial advice &middot; Read-only bank access</p>
-  <p class="footer-fine">By joining the waitlist, you consent to receive product emails from Dryft. You can unsubscribe at any time from any email. 2590 Quails Run, Mississauga, Ontario, Canada.</p>
+  <p class="footer-fine">By joining the waitlist, you consent to receive recurring SMS text messages from Dryft at the number you provide. Message and data rates may apply. Reply STOP to opt out at any time. 2590 Quails Run, Mississauga, Ontario, Canada.</p>
 </footer>
 
-<!-- SURVEY MODAL — same form as the home page; opens after a successful referral signup. Optional, dismissible. -->
+<!-- SURVEY MODAL, same form as the home page; opens after a successful referral signup. Optional, dismissible. -->
 <div class="survey-modal" id="survey-modal" hidden role="dialog" aria-labelledby="survey-title" aria-modal="true">
   <div class="survey-backdrop" data-survey-close aria-hidden="true"></div>
   <div class="survey-card" role="document">
@@ -149,15 +147,15 @@
     <div class="survey-head">
       <p class="survey-eyebrow">Optional · 60 seconds</p>
       <h3 id="survey-title">Help shape the product.</h3>
-      <p class="survey-sub"><strong>Preference for Private Beta 01, only 300 spots</strong>.</p>
+      <p class="survey-sub"><strong>Preference for Private Beta 01</strong>.</p>
     </div>
 
-    <!-- Referral banner — populated by main.js from the /api/waitlist response. -->
+    <!-- Referral banner, populated by main.js from the /api/waitlist response. -->
     <div class="survey-referral" id="survey-referral" hidden>
       <p class="sr-position" id="survey-position" hidden></p>
       <p class="sr-label">Your invite code</p>
       <div class="sr-code-row">
-        <code class="sr-code" id="survey-code">—</code>
+        <code class="sr-code" id="survey-code">…</code>
         <button type="button" class="sr-copy" id="survey-copy" aria-label="Copy invite code">Copy</button>
       </div>
       <p class="sr-hint">Share it. Every friend who joins with your invite bumps you up <strong>10 spots</strong>.</p>
@@ -356,7 +354,7 @@
   </div>
 </div>
 
-<!-- CODE LOOKUP POPUP — shows a returning user their referral code + position. -->
+<!-- CODE LOOKUP POPUP, shows a returning user their referral code + position. -->
 <div class="code-modal" id="code-modal" hidden role="dialog" aria-modal="true" aria-labelledby="code-modal-title">
   <div class="code-backdrop" data-code-close aria-hidden="true"></div>
   <div class="code-card" role="document">
@@ -366,7 +364,7 @@
     <div class="code-result" id="code-result">
       <p class="code-eyebrow">Your invite code</p>
       <div class="code-row">
-        <code class="code-value" id="code-value">—</code>
+        <code class="code-value" id="code-value">…</code>
         <button type="button" class="code-copy" id="code-copy" aria-label="Copy invite code">Copy</button>
       </div>
       <p class="code-pos" id="code-pos" hidden></p>
@@ -379,6 +377,6 @@
   </div>
 </div>
 
-<script defer src="assets/js/main.js?v=20260603y"></script>
+<script defer src="assets/js/main.js?v=20260603zz24"></script>
 </body>
 </html>

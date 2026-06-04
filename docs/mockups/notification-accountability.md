@@ -75,14 +75,14 @@ Each notification carries a small colored `tag` chip (warn/coach/ok) plus a one-
 ## Visual Style
 
 - Background: rich warm gradient (gold + red + green radial glows over near-black).
-- Cards: `backdrop-filter: blur(24px) saturate(1.4)` — true iOS-style frosted glass.
+- Cards: `backdrop-filter: blur(24px) saturate(1.4)`, true iOS-style frosted glass.
 - App icon: Playfair `D` in gold inside a 5px-radius dark tile with gold inset ring + glow.
 - Body text: 0.62rem, 1.32 line-height, near-white.
 - Tag chips reuse the accent palette (gold for default, red for drift, green for on-plan).
 
 ## Why This Works
 
-Students do not want to inspect budgets. They want to know whether they are still okay. This mockup turns Dryft into an ambient accountability layer — it notices the dangerous moment, explains why it matters, and ends with a green "Plan back on track" beat so the emotional arc completes.
+Students do not want to inspect budgets. They want to know whether they are still okay. This mockup turns Dryft into an ambient accountability layer, it notices the dangerous moment, explains why it matters, and ends with a green "Plan back on track" beat so the emotional arc completes.
 
 ```text
 I thought I was fine -> Dryft caught the drift -> I see the move -> rent week is protected
@@ -96,5 +96,5 @@ I thought I was fine -> Dryft caught the drift -> I see the move -> rent week is
 
 - Notification engine lives in `assets/js/main.js` (`runNotificationLoop`).
 - DOM nodes are recycled (max 4 in flight) to keep memory flat.
-- Animation is fully driven by CSS transitions toggled via class state — no JS frame loop.
+- Animation is fully driven by CSS transitions toggled via class state, no JS frame loop.
 - Phone floats with a tiny `notifPhoneFloat` keyframe (6px vertical breathe over 9s) for life.

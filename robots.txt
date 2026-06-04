@@ -5,7 +5,7 @@ Disallow: /.well-known/
 Disallow: /docs/
 
 # ----------------------------------------------------------------------------
-# AI ANSWER / SEARCH crawlers — explicitly ALLOWED so Dryft can be surfaced and
+# AI ANSWER / SEARCH crawlers, explicitly ALLOWED so Dryft can be surfaced and
 # cited in AI search results and live browsing (ChatGPT, Perplexity, etc.).
 # These read pages to answer user queries; they do not train foundation models.
 # ----------------------------------------------------------------------------
@@ -22,7 +22,7 @@ User-agent: Perplexity-User
 Allow: /
 
 # ----------------------------------------------------------------------------
-# AI TRAINING crawlers — DISALLOWED. We control our content; ask before training
+# AI TRAINING crawlers, DISALLOWED. We control our content; ask before training
 # foundation models on it. (Blocking these does NOT affect Google Search,
 # Google AI Overviews, Bing, or ChatGPT/Perplexity citation, which use the
 # crawlers above.)

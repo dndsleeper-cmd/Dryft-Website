@@ -31,7 +31,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const count = await totalCount(db());
-    // Brief CDN/browser cache — this number changes slowly and is purely cosmetic.
+    // Brief CDN/browser cache, this number changes slowly and is purely cosmetic.
     res.setHeader('Cache-Control', 'public, max-age=60');
     return res.status(200).json({ ok: true, count });
   } catch (err) {
