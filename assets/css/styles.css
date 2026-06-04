@@ -2079,7 +2079,7 @@ footer {
   font-family: 'Inter Tight', 'Inter', sans-serif;
   /* one line, auto-shrink to the tile width at any breakpoint instead of wrapping */
   white-space: nowrap;
-  font-size: clamp(0.6rem, 8.4cqi, 1.05rem);
+  font-size: clamp(0.66rem, 9cqi, 1.05rem);
   font-weight: 500;
   letter-spacing: -0.02em;
   color: var(--ink);
