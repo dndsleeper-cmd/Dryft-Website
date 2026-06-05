@@ -101,6 +101,11 @@ h3 { font-weight: 600; }
 h1, h2, h3, h4 { text-wrap: balance; }
 p, li, .price-per, .hero-sub, .section-head p { text-wrap: pretty; }
 
+/* Optical tracking: Inter at body sizes reads tighter and more "designed" with a
+   hair of negative letter-spacing (the same trick Stripe/Linear use). Elements
+   that set their own letter-spacing (labels, mono, display) override this. */
+p, li { letter-spacing: -0.01em; }
+
 /* Emphasis across all headings: modern fintech, clean Inter Tight in brand green
    (no serif italics, no high-fashion styling) */
 h1 em, h2 em, h3 em, .hl {
@@ -1661,7 +1666,10 @@ nav#nav.nav-solid .nav-cta:hover { background: var(--brand); border-color: var(-
 }
 .trust-row p {
   font-size: 0.92rem; color: var(--muted);
-  line-height: 1.55; margin: 0;
+  line-height: 1.6; margin: 0;
+  /* cap the measure so long descriptions stay in the ~45-75 char readable range
+     instead of spanning the full 2fr column (which ran ~90+ chars per line) */
+  max-width: 48ch;
 }
 
 .faq { display: grid; grid-template-columns: 0.7fr 1fr; gap: 4rem; align-items: start; }
@@ -1669,8 +1677,8 @@ nav#nav.nav-solid .nav-cta:hover { background: var(--brand); border-color: var(-
 .faq-list { display: grid; gap: 1.1rem; }
 .faq-item { border-bottom: 1px solid var(--border); padding-bottom: 1.1rem; }
 .faq-item:last-child { border-bottom: none; }
-.faq-item h3 { font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.01em; }
-.faq-item p { color: var(--muted); font-size: 0.94rem; line-height: 1.6; }
+.faq-item h3 { font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 1.08rem; font-weight: 600; margin-bottom: 0.45rem; color: var(--ink); letter-spacing: -0.015em; line-height: 1.3; }
+.faq-item p { color: var(--muted); font-size: 0.94rem; line-height: 1.6; max-width: 62ch; }
 .faq-item em { color: var(--brand); font-style: normal; font-weight: 600; }
 
 /* =========================== FINAL CTA =========================== */
@@ -3157,6 +3165,9 @@ body.survey-open { overflow: hidden; }
   aspect-ratio: 1 / 1;
   background: var(--bg-alt);
   overflow: hidden;
+  /* sizing context so the experience overlay can scale its type to the card
+     width (cards are square, so width tracks height) and never crop its text */
+  container-type: inline-size;
 }
 .team-photo picture { display: block; width: 100%; height: 100%; }
 .team-photo img {
@@ -3178,8 +3189,12 @@ body.survey-open { overflow: hidden; }
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 1.05rem;
-  padding: 1.4rem 1.35rem;
+  /* one fluid knob: the whole overlay (gaps, padding, labels, meta) is sized in
+     em off this, and this scales with card width, so the block stays a fixed
+     fraction of the square card and never overflows/crops on smaller cards */
+  font-size: clamp(0.58rem, 4.9cqi, 0.86rem);
+  gap: 1.1em;
+  padding: 1.6em 1.55em;
   color: #fff;
   background: linear-gradient(180deg, rgba(8,22,29,0.30) 0%, rgba(8,22,29,0.55) 100%);
   opacity: 0;
@@ -3190,16 +3205,16 @@ body.survey-open { overflow: hidden; }
 .team-exp-label {
   display: block;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 0.62rem;
+  font-size: 0.72em;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--accent-soft);
-  margin-bottom: 0.32rem;
+  margin-bottom: 0.36em;
 }
 .team-exp .team-meta {
   color: rgba(255,255,255,0.95);
-  font-size: 0.86rem;
-  line-height: 1.4;
+  font-size: 1em;
+  line-height: 1.35;
 }
 /* university drops to its own line, dimmer than the program above it */
 .team-school {
@@ -3256,14 +3271,16 @@ body.survey-open { overflow: hidden; }
   color: var(--muted);
 }
 
-/* touch devices have no hover, so keep the experience visible at the foot of each photo */
+/* touch devices have no hover, so the experience overlay stays hidden until the
+   card is tapped (JS toggles .is-revealed). The bottom-anchored gradient keeps
+   the face visible with the text reading from the foot of the photo. */
 @media (hover: none) {
   .team-exp {
-    opacity: 1;
+    opacity: 0;
     justify-content: flex-end;
-    gap: 0.8rem;
     background: linear-gradient(180deg, rgba(8,22,29,0) 28%, rgba(8,22,29,0.82) 100%);
   }
+  .team-card.is-revealed .team-exp { opacity: 1; }
 }
 
 @media (max-width: 880px) {

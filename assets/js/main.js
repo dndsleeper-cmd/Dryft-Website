@@ -55,6 +55,21 @@ const revealObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
 reveals.forEach(r => revealObserver.observe(r));
 
+/* ---------------- team cards: tap-to-reveal on touch ----------------
+   On hover-capable devices the experience overlay shows on hover (CSS only).
+   On touch devices there's no hover, so tapping a card toggles its overlay;
+   opening one closes the others so only a single overlay shows at a time. */
+const touchOnly = window.matchMedia('(hover: none)');
+const teamCards = document.querySelectorAll('.team-card');
+teamCards.forEach((card) => {
+  card.addEventListener('click', () => {
+    if (!touchOnly.matches) return;
+    const willOpen = !card.classList.contains('is-revealed');
+    teamCards.forEach((c) => c.classList.remove('is-revealed'));
+    if (willOpen) card.classList.add('is-revealed');
+  });
+});
+
 /* =================================================================
    WAITLIST, anti-abuse posture (front-end only):
      1. Honeypot field (in markup), bots fill all visible inputs
