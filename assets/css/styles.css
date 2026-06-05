@@ -2117,7 +2117,14 @@ footer {
   text-transform: uppercase;
   color: var(--accent);
   font-weight: 600;
+  /* number + word as one centered group; number sits just left of the word */
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.5em;
 }
+.hiw-num { color: var(--accent); }
+.hiw-word { display: inline-block; }
 .hiw-step h4 {
   font-family: 'Inter Tight', 'Inter', sans-serif;
   /* one line, auto-shrink to the tile width at any breakpoint instead of wrapping */
@@ -2194,9 +2201,11 @@ footer {
   display: flex; align-items: center; justify-content: center;
   padding: 1rem 1.05rem;
   border-bottom: 1px solid var(--border);
-  font-family: 'JetBrains Mono', monospace; font-size: 0.98rem; letter-spacing: 0.05em;
+  /* match the site's mono-label convention: uppercase + wide tracking */
+  font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+  letter-spacing: 0.16em; text-transform: uppercase;
 }
-.al-live { display: inline-flex; align-items: center; gap: 0.55rem; color: var(--ink); font-weight: 600; }
+.al-live { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--ink); font-weight: 600; }
 .al-arrow { color: var(--brand); font-weight: 700; }
 .al-dot { width: 7px; height: 7px; border-radius: 50%; background: #1bbf7a; box-shadow: 0 0 8px rgba(27,191,122,0.7); animation: dotBlink 1.8s ease-in-out infinite; }
 .al-acct { color: var(--muted); }

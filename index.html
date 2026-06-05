@@ -68,7 +68,7 @@
 <!-- Preload the hero background, it's the above-the-fold LCP element, so we
      fetch it at high priority instead of waiting for the CSS to discover it. -->
 <link rel="preload" as="image" href="/assets/images/background.jpg?v=20260603mtn" fetchpriority="high">
-<link rel="stylesheet" href="assets/css/styles.css?v=20260605b">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260605c">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -237,7 +237,7 @@
         <!-- live algorithm panel: a scrolling spending line the AI watches, forecasts, and corrects -->
         <div class="algo-live">
           <div class="al-bar" aria-hidden="true">
-            <span class="al-live"><span class="al-dot"></span> Dryft Algo <span class="al-arrow">&rarr;</span></span>
+            <span class="al-live"><span class="al-dot"></span> Dryft Algo</span>
           </div>
           <div class="al-stage">
             <canvas class="al-canvas" data-algo-canvas></canvas>
@@ -268,7 +268,7 @@
                 <circle cx="20" cy="7" r="0.9" fill="currentColor" stroke="none"/>
               </svg>
             </div>
-            <div class="hiw-label">01 · Predicts</div>
+            <div class="hiw-label"><span class="hiw-num">01</span><span class="hiw-word">Predicts</span></div>
             <h4>Predicts the drift.</h4>
             <p>Before you feel it.</p>
           </div>
@@ -279,7 +279,7 @@
                 <path d="M 10 22 a 2.4 2.4 0 0 0 4 0"/>
               </svg>
             </div>
-            <div class="hiw-label">02 · Nudges</div>
+            <div class="hiw-label"><span class="hiw-num">02</span><span class="hiw-word">Nudges</span></div>
             <h4>Nudges you.</h4>
             <p>Right moment. Right message.</p>
           </div>
@@ -290,8 +290,8 @@
                 <circle cx="12" cy="12" r="2.8"/>
               </svg>
             </div>
-            <div class="hiw-label">03 · Watches</div>
-            <h4>Watches what you do.</h4>
+            <div class="hiw-label"><span class="hiw-num">03</span><span class="hiw-word">Reacts</span></div>
+            <h4>Reacts to what you do.</h4>
             <p>Learns from your choice.</p>
           </div>
           <div class="hiw-step" data-step="4">
@@ -303,7 +303,7 @@
                 <path d="M 4 21 L 4 16 L 9 16"/>
               </svg>
             </div>
-            <div class="hiw-label">04 · Adapts</div>
+            <div class="hiw-label"><span class="hiw-num">04</span><span class="hiw-word">Adapts</span></div>
             <h4>Adapts the plan.</h4>
             <p>Life changes. So does it.</p>
           </div>
