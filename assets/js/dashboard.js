@@ -139,35 +139,30 @@ function renderChart(series) {
   });
 }
 
-function renderVariants(byVariant, variantSurvey) {
+// A/B arms shown as visit→signup conversion % when GA4 has per-variant data
+// (needs the `variant` custom dimension registered); otherwise falls back to
+// raw signup counts so the panel still works before that's set up.
+function renderVariants(site, byVariant, variantSurvey) {
   const wrap = $('variants');
   wrap.textContent = '';
+  const pv = site && site.perVariant && (site.perVariant.A.views + site.perVariant.B.views) > 0
+    ? site.perVariant : null;
   // Only the live A/B arms; pre-test signups (no variant) are already excluded.
-  const keys = ['A', 'B'].filter((k) => k in byVariant);
+  const keys = ['A', 'B'].filter((k) => (k in byVariant) || (pv && pv[k]));
   if (!keys.length) {
     wrap.appendChild(el('p', 'empty', 'No signups yet.'));
     return;
   }
-  const max = Math.max.apply(null, keys.map((k) => byVariant[k])) || 1;
+  const metric = (k) => (pv ? pv[k].rate : (byVariant[k] || 0));
+  const max = Math.max.apply(null, keys.map(metric)) || (pv ? 0.0001 : 1);
   keys.forEach((k) => {
-    const signups = byVariant[k] || 0;
-    const surveys = variantSurvey[k] || 0;
-    const row = el('div', 'row');
-    row.appendChild(el('div', 'k', 'Variant ' + k));
-    const track = el('div', 'track');
-    const fill = el('div', 'fill');
-    fill.style.width = Math.round((signups / max) * 100) + '%';
-    track.appendChild(fill);
-    row.appendChild(track);
-    row.appendChild(el('div', 'v', String(signups)));
-    wrap.appendChild(row);
-    const head = el('div', 'hint');
-    head.style.margin = '-.2rem 0 0';
-    head.textContent = '“' + (VARIANT_COPY[k] || '') + '”';
+    const value = pv ? pct1(pv[k].rate) : String(byVariant[k] || 0);
+    bar(wrap, 'Variant ' + k, (metric(k) / max) * 100, value);
+    const head = el('div', 'hint', '“' + (VARIANT_COPY[k] || '') + '”');
+    head.style.margin = '-.15rem 0 0';
     wrap.appendChild(head);
-    const note = el('div', 'hint');
+    const note = el('div', 'hint', (variantSurvey[k] || 0) + ' completed the survey');
     note.style.margin = '.05rem 0 .6rem';
-    note.textContent = surveys + ' completed the survey';
     wrap.appendChild(note);
   });
 }
@@ -193,12 +188,37 @@ function renderReferrers(list) {
   });
 }
 
-// Declare the A/B winner from owned signups. Valid because the hero split is
-// ~50/50, so with roughly equal views, more signups = higher conversion.
-function renderVerdict(byVariant) {
+// Declare the A/B winner. Prefers GA4 visit→signup conversion (fairest, since it
+// accounts for any view imbalance); falls back to raw signup counts when GA4
+// per-variant data isn't available yet.
+function renderVerdict(site, byVariant) {
   const wrap = $('ab-verdict');
   wrap.textContent = '';
   wrap.classList.remove('muted-verdict');
+
+  const pv = site && site.perVariant && (site.perVariant.A.views + site.perVariant.B.views) > 0
+    ? site.perVariant : null;
+  if (pv) {
+    const a = pv.A;
+    const b = pv.B;
+    if (a.views + b.views < 40) {
+      wrap.classList.add('muted-verdict');
+      wrap.textContent = 'Not enough traffic yet to call a winner.';
+      return;
+    }
+    if (a.rate === b.rate) {
+      wrap.textContent = 'Dead even so far (' + pct1(a.rate) + ' each).';
+      return;
+    }
+    const lead = a.rate > b.rate ? 'A' : 'B';
+    const hi = Math.max(a.rate, b.rate);
+    const lo = Math.min(a.rate, b.rate);
+    const rel = lo ? Math.round(((hi - lo) / lo) * 100) : 100;
+    wrap.textContent = 'Variant ' + lead + ' is winning: ' + pct1(hi) + ' vs ' + pct1(lo) + ' (' + rel + '% better).';
+    return;
+  }
+
+  // Fallback: raw signup counts (no GA4 per-variant data yet).
   const a = byVariant.A || 0;
   const b = byVariant.B || 0;
   if (a + b < 10) {
@@ -246,38 +266,6 @@ function renderFunnel(site) {
     row.appendChild(track);
     row.appendChild(el('div', 'v', String(v)));
     wrap.appendChild(row);
-  });
-}
-
-// View->signup conversion rate per A/B variant (from GA4).
-function renderVariantConv(site) {
-  const wrap = $('variant-conv');
-  wrap.textContent = '';
-  if (!site || !site.perVariant) return;
-  const head = el('div', 'hint', 'Conversion rate per variant (signup ÷ hero view)');
-  head.style.marginBottom = '.5rem';
-  wrap.appendChild(head);
-  const a = site.perVariant.A || { views: 0, signups: 0, rate: 0 };
-  const b = site.perVariant.B || { views: 0, signups: 0, rate: 0 };
-  const max = Math.max(a.rate, b.rate, 0.0001);
-  [['A', a], ['B', b]].forEach(function (pair) {
-    const label = pair[0];
-    const dd = pair[1];
-    const row = el('div', 'row wide');
-    row.appendChild(el('div', 'k', 'Variant ' + label));
-    const track = el('div', 'track');
-    const fill = el('div', 'fill');
-    fill.style.width = Math.round((dd.rate / max) * 100) + '%';
-    track.appendChild(fill);
-    row.appendChild(track);
-    row.appendChild(el('div', 'v', (dd.rate * 100).toFixed(1) + '%'));
-    wrap.appendChild(row);
-    const head = el('div', 'hint', '“' + (VARIANT_COPY[label] || '') + '”');
-    head.style.margin = '-.15rem 0 0';
-    wrap.appendChild(head);
-    const note = el('div', 'hint', dd.signups + ' signups / ' + dd.views + ' views');
-    note.style.margin = '.05rem 0 .6rem';
-    wrap.appendChild(note);
   });
 }
 
@@ -346,38 +334,38 @@ function renderSections(site) {
 function render(d) {
   const cards = $('cards');
   cards.textContent = '';
-  cards.appendChild(card('Total signups', String(d.total)));
-  cards.appendChild(
-    card('Survey completed', String(d.surveyComplete), Math.round((d.surveyRate || 0) * 100) + '% of signups'),
-  );
-  cards.appendChild(card('Referral signups', String(d.usedReferral), 'joined via a code'));
-  cards.appendChild(card('Referrals given', String(d.referralsGiven), 'total invites credited'));
 
-  // GA4-derived headline rates (only when GA4 is connected).
-  if (d.site) {
-    cards.appendChild(card(
-      'Visit → waitlist rate',
-      pct1(d.site.visitToWaitlistRate),
-      d.site.submitSuccess + ' signups / ' + d.site.heroView + ' hero views',
-    ));
-    if (d.site.cta) {
-      cards.appendChild(card(
-        'Hero CTA click rate',
-        pct1(d.site.cta.heroRate),
-        d.site.cta.hero + ' hero CTA clicks / ' + d.site.heroView + ' hero views',
-      ));
-    }
+  // Top KPIs: visits, signups, conversion. (GA4 cards show placeholders until connected.)
+  const site = d.site || null;
+  cards.appendChild(card(
+    'Total website visits',
+    site ? String(site.heroView) : '—',
+    site ? 'last 28 days' : 'connect GA4 to populate',
+  ));
+  cards.appendChild(card('Total SMS signups', String(d.total)));
+  cards.appendChild(card(
+    'Visit → signup rate',
+    site ? pct1(site.visitToWaitlistRate) : '—',
+    site ? null : 'connect GA4 to populate',
+  ));
+
+  // Secondary metrics under the signups chart.
+  const refCards = $('referral-cards');
+  refCards.textContent = '';
+  if (site && site.cta) {
+    refCards.appendChild(card('Hero CTA click rate', pct1(site.cta.heroRate)));
   }
+  refCards.appendChild(card('Referral signups', String(d.usedReferral), 'joined via a code'));
+  refCards.appendChild(card('Referrals given', String(d.referralsGiven), 'total invites credited'));
 
   renderChart(d.series || []);
   renderFunnel(d.site || null);
-  renderVariantConv(d.site || null);
   renderBySource(d.site || null);
   renderByDevice(d.site || null);
   renderScrollDepth(d.site || null);
   renderSections(d.site || null);
-  renderVerdict(d.byVariant || {});
-  renderVariants(d.byVariant || {}, d.variantSurvey || {});
+  renderVerdict(d.site || null, d.byVariant || {});
+  renderVariants(d.site || null, d.byVariant || {}, d.variantSurvey || {});
   barRows($('sources'), d.bySource || {}, ['hero', 'final', 'referral']);
   barRows($('regions'), d.byRegion || {});
   renderReferrers(d.topReferrers || []);

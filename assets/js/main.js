@@ -28,11 +28,27 @@ const EVENT_KEYS = {
   'Scroll Depth': 'scrollDepth',
   'Section View': 'sectionView',
 };
+// Local/dev hosts must never pollute GA4 with our own views and funnel events.
+// ga-bootstrap.js already skips loading gtag on these hosts; this is the explicit
+// belt-and-suspenders guard so track() is a hard no-op locally even if a gtag
+// stub or a real Measurement ID is present while testing. Keep in sync with the
+// host list in ga-bootstrap.js.
+const IS_LOCAL_HOST = (function () {
+  const host = location.hostname;
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '0.0.0.0' ||
+    host === '' ||
+    host.endsWith('.local')
+  );
+})();
 // Funnel + view events go ONLY to GA4 (free, scalable, batched by Google). We
 // deliberately do NOT write a row to our own DB per pageview/interaction, that
 // would be a constant stream of Firestore writes (and a single-doc hotspot).
 // The internal dashboard reads owned signup outcomes from Firestore on demand.
 function track(name, data) {
+  if (IS_LOCAL_HOST) return; // never count local/dev/preview traffic
   const variant = window.__dryftVariant || 'A';
   const key = EVENT_KEYS[name] || name.toLowerCase().replace(/\s+/g, '_');
   try {

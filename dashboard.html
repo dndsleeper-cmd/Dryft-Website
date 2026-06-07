@@ -100,11 +100,11 @@
     <section class="panel">
       <h2>Signups · last 14 days</h2>
       <div class="chart" id="chart"></div>
+      <div class="cards" id="referral-cards" style="margin-top:1.2rem"></div>
     </section>
     <section class="panel">
       <h2>Visitor funnel · GA4 (last 28 days)</h2>
       <div id="funnel"></div>
-      <div id="variant-conv" style="margin-top:1.2rem"></div>
       <p class="hint">Live from Google Analytics, pulled when you refresh. The biggest
       drop between steps is your #1 thing to fix. (GA4 data lags ~a day.)</p>
     </section>
@@ -139,9 +139,6 @@
         <h2>A/B test · which message wins</h2>
         <div id="ab-verdict" class="verdict"></div>
         <div id="variants"></div>
-        <p class="hint">Each visitor is randomly assigned A or B at a fixed 50/50 split,
-        sticky per visitor for a year, so with roughly equal views more signups = the
-        better-converting message. Exact view→signup rate per variant is in the GA4 funnel above.</p>
       </section>
       <section class="panel">
         <h2>Signups by form (button)</h2>
@@ -173,6 +170,6 @@
 
   <p class="msg" id="msg"></p>
 </div>
-<script defer src="/assets/js/dashboard.js?v=20260607g"></script>
+<script defer src="/assets/js/dashboard.js?v=20260607j"></script>
 </body>
 </html>
