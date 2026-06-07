@@ -167,9 +167,11 @@ body.legal-page nav#nav {
   -webkit-backdrop-filter: blur(16px) saturate(1.05);
   color: var(--ink);
 }
-.brand { display: inline-flex; align-items: center; gap: 0.55rem; text-decoration: none; color: inherit; }
-.brand-mark { display: inline-flex; width: 26px; height: 26px; color: inherit; }
-.brand-word { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 1.35rem; letter-spacing: -0.03em; color: inherit; }
+.brand { display: inline-flex; align-items: center; gap: 0.46rem; text-decoration: none; color: inherit; }
+/* mark sits ~1.15x the cap height of the wordmark and is nudged a hair down so the
+   top-heavy sail optically centres against the text (clean fintech lockup) */
+.brand-mark { display: inline-flex; width: 28px; height: 28px; color: inherit; transform: translateY(1px); }
+.brand-word { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 1.5rem; letter-spacing: -0.04em; color: inherit; text-transform: lowercase; }
 .nav-links { display: flex; justify-content: center; gap: 1.55rem; flex-wrap: nowrap; }
 .nav-links a { font-size: 0.84rem; color: inherit; opacity: 0.78; text-decoration: none; transition: opacity 0.18s ease; font-weight: 500; white-space: nowrap; }
 .nav-links a:hover { opacity: 1; }
@@ -284,42 +286,49 @@ body.menu-open { overflow: hidden; }
   background: #04080c;  /* deep fallback if image fails */
   text-transform: lowercase;   /* landing copy stays lowercase (scroll cue is exempted) */
 }
-/* Misty mountains image (flipped 180); stored rotated so the CSS -90deg below
-   lands it at a net 180deg flip, sized large enough to cover after rotation */
+/* Pre-paint / no-JS fallback for the hero. This mirrors the canvas scene's own
+   vertical gradient (night-sky → teal horizon → ocean teal → page white) so when
+   ocean.js initialises it simply *appears* over an identical base, no colour jump. */
 .statement-bg {
   position: absolute;
-  top: 50%; left: 50%;
-  width: max(140vh, 100vw);
-  height: max(140vw, 100vh);
-  background: url('../images/background.jpg?v=20260603mtn') center/cover no-repeat;
-  transform: translate(-50%, -50%) rotate(-90deg);
-  transform-origin: center;
-  z-index: -2;
-  filter: saturate(1.08);
+  inset: 0;
+  z-index: -3;
+  background: linear-gradient(180deg,
+    #03070b 0%,
+    #071c28 30%,
+    #0e3a45 50%,
+    #0c3742 58%,
+    #3e5a62 76%,
+    #97a9ae 90%,
+    var(--bg) 100%);
 }
-/* No darkening: the overlay only fades the image's bottom into the page */
+/* Procedural sailboat scene (assets/js/ocean.js). Sits above the photo
+   fallback and below the overlay/seam fades so the water still melts
+   into the page. Fades in once the first frame paints; if JS is off,
+   the canvas stays empty and the photo behind it shows through. */
+.statement-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: -2;
+  opacity: 0;
+  transition: opacity 1.1s ease;
+}
+.statement-canvas.is-ready { opacity: 1; }
+/* Overlay neutralised: the bottom of the hero now stays dark sea (the Dryft Algo
+   panel surfaces from it), so we no longer fade the hero down to the page colour. */
 .statement-overlay {
   position: absolute; inset: 0;
-  background: linear-gradient(180deg, transparent 0%, transparent 52%, var(--bg) 100%);
+  background: linear-gradient(180deg, transparent 0%, transparent 100%);
   z-index: -1;
 }
-/* gradient transition: the dark ocean melts into the light section below, so the
-   landing → next-section seam is a soft fade rather than a hard color edge. Both
-   this and the overlay resolve to the exact page background (--bg) so there is no
-   shade mismatch at the seam. */
-.statement::after {
-  content: '';
-  position: absolute;
-  left: 0; right: 0; bottom: -1px;
-  height: 58%;
-  background: linear-gradient(180deg,
-    rgba(244, 246, 247, 0) 0%,
-    rgba(244, 246, 247, 0.35) 55%,
-    rgba(244, 246, 247, 0.85) 82%,
-    rgba(244, 246, 247, 1) 100%);
-  z-index: -1;
-  pointer-events: none;
-}
+/* Seam handled entirely by the canvas (which now settles to the deep-sea tone
+   #0c2a33 and holds it flat through its lower third) and the .how-section
+   gradient below, which continues that exact tone down to the page colour. No
+   separate overlay here, so there is no mismatched band at the hero's edge. */
+.statement::after { content: none; }
 
 /* Soft, static blue ambient light behind the headline, just enough to lift the
    type off the dark ocean with a little depth. No motion, no neon. */
@@ -364,9 +373,11 @@ body.menu-open { overflow: hidden; }
 .statement-sub {
   margin-top: 0.95rem;
   font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
-  /* stays on one line at every width, auto-shrinking on small screens */
+  /* stays on one line at every width, auto-shrinking on small screens.
+     coefficient + floor tuned so the longer concrete subhead never wraps
+     or bleeds off-screen on narrow phones (down to ~320px). */
   white-space: nowrap;
-  font-size: clamp(0.62rem, 3.4vw, 1.28rem);
+  font-size: clamp(0.55rem, 2.8vw, 1.28rem);
   font-weight: 400;
   letter-spacing: -0.01em;
   color: rgba(255, 255, 255, 0.95);
@@ -922,9 +933,9 @@ body.menu-open { overflow: hidden; }
 }
 .notif-app-icon svg { width: 12px; height: 12px; color: var(--bg); }
 .notif-time { font-family: 'JetBrains Mono', monospace; font-size: 0.5rem; color: var(--phone-muted); letter-spacing: 0.05em; }
-.notif-body { font-size: 0.62rem; line-height: 1.34; color: var(--phone-ink); font-weight: 400; }
-.notif-body strong { color: var(--brand); font-weight: 600; }
-.notif-body strong.warn { color: var(--dryft); }
+/* realistic iOS-style notification: bold title, regular body, no colored tags */
+.notif .notif-title { font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 0.64rem; font-weight: 600; color: var(--phone-ink); line-height: 1.26; margin: 0; }
+.notif-body { font-size: 0.6rem; line-height: 1.34; color: var(--phone-ink); font-weight: 400; margin: 1px 0 0; opacity: 0.88; }
 .notif-meta {
   display: flex; align-items: center; gap: 6px; margin-top: 5px;
   font-family: 'JetBrains Mono', monospace;
@@ -966,7 +977,7 @@ body.menu-open { overflow: hidden; }
   background: linear-gradient(160deg, var(--brand) 0%, #072e36 100%);
   box-shadow: 0 1px 3px rgba(13,14,16,0.18), inset 0 0 0 1px rgba(255,255,255,0.06);
 }
-.chat-avatar svg { width: 16px; height: 16px; color: var(--bg); }
+.chat-avatar svg { width: 21px; height: 21px; color: var(--bg); }
 .chat-id-text { line-height: 1; display: flex; align-items: center; }
 .chat-id-text strong { font-size: 0.85rem; color: var(--phone-ink); font-weight: 600; letter-spacing: -0.01em; }
 .chat-menu { color: var(--phone-muted); font-size: 1rem; text-align: right; }
@@ -1683,7 +1694,7 @@ nav#nav.nav-solid .nav-cta:hover { background: var(--brand); border-color: var(-
 
 /* =========================== FINAL CTA =========================== */
 .final-cta {
-  padding: 3.5rem 1.6rem 6.5rem;
+  padding: 3.5rem 1.6rem 4rem;
   background: radial-gradient(ellipse 70% 75% at 50% 55%, rgba(42,129,144,0.08), transparent 72%), var(--bg-alt);
   border-top: 1px solid var(--border);
   text-align: center;
@@ -1739,7 +1750,29 @@ nav#nav.nav-solid .nav-cta:hover { background: var(--brand); border-color: var(-
   color: var(--brand); padding: 0.95rem 1.4rem;
   border-radius: 999px; font-weight: 500; font-size: 0.95rem;
 }
-.cta-fine { margin-top: 1.3rem !important; font-size: clamp(0.5rem, 2.5vw, 0.82rem) !important; white-space: nowrap; color: var(--subtle) !important; }
+.cta-fine { margin-top: 1.05rem !important; font-size: clamp(0.4rem, 2vw, 0.82rem) !important; white-space: nowrap; color: var(--subtle) !important; }
+.cta-fine strong { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; font-weight: 600; color: var(--ink); }
+/* Reassurance under the form: three short jots on ONE line, separated by dots.
+   Fluid font + nowrap so they auto-shrink to stay on a single line on phones. */
+.cta-jots {
+  list-style: none; margin: 1rem auto 0; padding: 0;
+  display: flex; flex-wrap: nowrap; align-items: center; justify-content: center;
+  white-space: nowrap;
+  font-size: clamp(0.58rem, 2.1vw, 0.82rem); color: var(--muted);
+}
+.cta-jots li { display: inline-flex; align-items: center; }
+.cta-jots li:not(:first-child)::before {
+  content: ''; flex: none;
+  width: 3px; height: 3px; border-radius: 50%; background: var(--subtle);
+  opacity: 0.6; margin: 0 clamp(0.45rem, 1.6vw, 0.85rem);
+}
+.cta-legal {
+  margin: 0.7rem auto 0; max-width: 460px;
+  font-size: clamp(0.64rem, 1.4vw, 0.74rem); line-height: 1.5;
+  color: var(--subtle); opacity: 0.8;
+}
+.cta-legal a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.cta-legal a:hover { color: var(--brand); }
 
 /* ===== Final CTA two-column: centered copy on the left, tilted phone mockups on
    the right. Copy stays centered (text + form) above and below the waitlist form.
@@ -1874,8 +1907,8 @@ footer {
 @media (max-width: 720px) {
   nav#nav { padding: 0.85rem 1.1rem; gap: 1rem; }
   .nav-cta { font-size: 0.8rem; padding: 0.5rem 0.9rem; }
-  .brand-word { font-size: 1.2rem; }
-  .brand-mark { width: 22px; height: 22px; }
+  .brand-word { font-size: 1.3rem; }
+  .brand-mark { width: 25px; height: 25px; }
   /* Note: .statement padding is already overridden in the scroll-cue block above
      (4rem 1.2rem 2.5rem), do not re-set it here. */
   .statement-h1 { font-size: clamp(1.5rem, 5.04vw, 3.22rem); }
@@ -1992,9 +2025,8 @@ footer {
   .notif-app-icon { width: 14px; height: 14px; border-radius: 4px; }
   .notif-app-icon svg { width: 9px; height: 9px; }
   .notif-time { font-size: 0.4rem; }
+  .notif .notif-title { font-size: 0.54rem; }
   .notif-body { font-size: 0.5rem; line-height: 1.32; }
-  .notif-meta { font-size: 0.38rem; gap: 5px; margin-top: 4px; }
-  .notif-meta .tag { padding: 1px 4px; border-radius: 3px; }
 
   .lock-bottom { bottom: 11px; left: 11px; right: 11px; gap: 8px; }
   .lock-action-btn { width: 26px; height: 26px; }
@@ -2159,31 +2191,33 @@ footer {
 .hiw-connect svg { width: 56px; height: 14px; display: block; }
 
 /* Subtle stagger-in on the steps when the section becomes visible */
-.howitworks.reveal .hiw-step {
+/* reveal now lives on .hiw-flow (the step grid) so the algo panel above it stays
+   solid as it peeks above the fold; only the four tiles fade/stagger on scroll */
+.hiw-flow.reveal .hiw-step {
   opacity: 0; transform: translateY(8px);
   transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.2,.8,.2,1);
 }
-.howitworks.reveal.visible .hiw-step:nth-child(1) { transition-delay: 0.15s; opacity: 1; transform: none; }
-.howitworks.reveal.visible .hiw-step:nth-child(2) { transition-delay: 0.3s; opacity: 1; transform: none; }
-.howitworks.reveal.visible .hiw-step:nth-child(3) { transition-delay: 0.45s; opacity: 1; transform: none; }
-.howitworks.reveal.visible .hiw-step:nth-child(4) { transition-delay: 0.6s; opacity: 1; transform: none; }
+.hiw-flow.reveal.visible .hiw-step:nth-child(1) { transition-delay: 0.15s; opacity: 1; transform: none; }
+.hiw-flow.reveal.visible .hiw-step:nth-child(2) { transition-delay: 0.3s; opacity: 1; transform: none; }
+.hiw-flow.reveal.visible .hiw-step:nth-child(3) { transition-delay: 0.45s; opacity: 1; transform: none; }
+.hiw-flow.reveal.visible .hiw-step:nth-child(4) { transition-delay: 0.6s; opacity: 1; transform: none; }
 
 /* "on repeat" loop caption under the four steps. container-type makes the row a
    sizing context so the caption auto-shrinks to stay on ONE line at any width
    (smaller screen → smaller text) rather than wrapping. */
 .hiw-loop {
-  display: flex; align-items: center; justify-content: center;
-  gap: 0.6rem;
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
   margin-top: 1.4rem;
+  padding: 0 1.2rem;
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 0.04em;
   color: var(--muted);
-  container-type: inline-size;
 }
 .hiw-loop span {
-  white-space: nowrap;
-  font-size: 0.78rem;                       /* fallback if container-query units unsupported */
-  font-size: clamp(0.42rem, 2.4cqi, 0.78rem);
+  text-align: center;
+  max-width: 40ch;
+  font-size: clamp(0.62rem, 1.6vw, 0.8rem);
 }
 .hiw-loop svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
 
@@ -2198,14 +2232,20 @@ footer {
   overflow: hidden;
 }
 .al-bar {
-  display: flex; align-items: center; justify-content: center;
-  padding: 1rem 1.05rem;
+  display: flex; align-items: center; justify-content: flex-start;
+  padding: 0.85rem 1.05rem;
   border-bottom: 1px solid var(--border);
-  /* match the site's mono-label convention: uppercase + wide tracking */
-  font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
-  letter-spacing: 0.16em; text-transform: uppercase;
 }
-.al-live { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--ink); font-weight: 600; }
+/* clean text pill instead of the wide-tracked mono caps (no logo) */
+.al-live {
+  display: inline-flex; align-items: center;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 0.82rem; font-weight: 600; letter-spacing: -0.005em;
+  color: var(--brand);
+  background: var(--accent-soft);
+  border: 1px solid rgba(26, 130, 148, 0.22);
+  padding: 0.32rem 0.85rem; border-radius: 999px;
+}
 .al-arrow { color: var(--brand); font-weight: 700; }
 .al-dot { width: 7px; height: 7px; border-radius: 50%; background: #1bbf7a; box-shadow: 0 0 8px rgba(27,191,122,0.7); animation: dotBlink 1.8s ease-in-out infinite; }
 .al-acct { color: var(--muted); }
@@ -2233,10 +2273,10 @@ footer {
 .notif-icon {
   flex: none; width: 38px; height: 38px; border-radius: 9px;
   display: grid; place-items: center;
-  background: linear-gradient(150deg, #1c7293, #0e4754);
+  background: linear-gradient(150deg, #2a8190, #0e4754);
   box-shadow: 0 2px 6px rgba(13, 14, 16, 0.2);
 }
-.notif-icon svg { width: 22px; height: 22px; }
+.notif-icon svg { width: 31px; height: 31px; }
 .notif-icon svg path { fill: #ffffff; }
 .notif-content { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
 .notif-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
@@ -3137,19 +3177,21 @@ body.survey-open { overflow: hidden; }
 .outcome h2 { font-size: clamp(2.4rem, 5.5vw, 3.9rem); line-height: 1.02; margin: 0.6rem 0 0; }
 .outcome-sub { color: var(--muted); font-size: 1.12rem; line-height: 1.55; margin: 1.3rem auto 0; max-width: 42ch; }
 
-/* How-it-works: pulled up so the live algorithm panel straddles the hero seam,
-   the top of the graph peeking onto the ocean image while the rest sits on white */
+/* How-it-works: pulled up so the top ~third of the live algorithm panel peeks
+   above the fold. No background of its own: the hero canvas already lightens to
+   the page white and the wave texture carries that transition down, so the panel
+   simply sits over the lightening water / page with nothing to seam against. */
 .how-section {
   padding: 2.5rem 0;
   position: relative;
   z-index: 3;
-  margin-top: clamp(-290px, -23vw, -210px);
+  margin-top: clamp(-250px, -19vw, -200px);
 }
 
 /* ===========================================================
    TEAM
    =========================================================== */
-.team { padding: clamp(3.5rem, 8vw, 6rem) 0; position: relative; z-index: 3; }
+.team { padding: clamp(2rem, 4.5vw, 3.4rem) 0; position: relative; z-index: 3; }
 .team-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -3260,7 +3302,7 @@ body.survey-open { overflow: hidden; }
   transform: translateY(-2px);
   box-shadow: var(--shadow-card-sm);
 }
-.team-info { padding: 1.1rem 1.2rem 1.3rem; }
+.team-info { padding: 1.1rem 1.2rem 1.3rem; container-type: inline-size; }
 .team-name {
   font-size: 1.12rem;
   font-weight: 600;
@@ -3270,7 +3312,9 @@ body.survey-open { overflow: hidden; }
 .team-role {
   font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
   font-weight: 600;
-  font-size: 0.9rem;
+  /* auto-shrink to stay on one line, scaled to each card's width */
+  font-size: clamp(0.6rem, 7cqi, 0.9rem);
+  white-space: nowrap;
   color: var(--brand);
   margin-bottom: 0.55rem;
 }
@@ -3299,7 +3343,6 @@ body.survey-open { overflow: hidden; }
   .team-grid { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
   .team-info { padding: 0.9rem 0.95rem 1.05rem; }
   .team-name { font-size: 1rem; }
-  .team-role { font-size: 0.84rem; }
   .team-meta { font-size: 0.76rem; }
 }
 
@@ -3316,3 +3359,180 @@ body.survey-open { overflow: hidden; }
   .persona-visual.active .avg-line { stroke-dashoffset: 0 !important; }
   .persona-visual.active .avg-line circle { opacity: 1 !important; }
 }
+
+/* =========================== HERO CTA + SOCIAL PROOF ===========================
+   A primary above-the-fold action + a small "spots left" trust cue, layered on
+   the ocean hero. Both auto-scale and stay on one line at every width. */
+.statement-actions {
+  margin-top: clamp(1.3rem, 3.2vw, 2.1rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.7rem, 1.6vw, 1rem);
+}
+.statement-cta {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: clamp(0.92rem, 1.3vw, 1.06rem);
+  font-weight: 600; letter-spacing: -0.01em;
+  color: #0a1a22; background: #ffffff;
+  text-transform: none;
+  padding: clamp(0.7rem, 1.4vw, 0.9rem) clamp(1.5rem, 3vw, 2rem);
+  border-radius: 999px; text-decoration: none;
+  box-shadow: 0 12px 34px rgba(0,0,0,0.28);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.statement-cta:hover { background: #a8f0d1; transform: translateY(-2px); box-shadow: 0 16px 40px rgba(0,0,0,0.32); }
+.statement-cta:focus-visible { outline: 2px solid #ffffff; outline-offset: 3px; }
+.statement-proof {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: clamp(0.64rem, 2.2vw, 0.82rem);
+  font-weight: 500; letter-spacing: 0.01em;
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+  white-space: nowrap;
+}
+.sp-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #5fb4c2; flex: none;
+  box-shadow: 0 0 0 3px rgba(95,180,194,0.28);
+  animation: spDotPulse 2.6s ease-in-out infinite;
+}
+@keyframes spDotPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(95,180,194,0.28); }
+  50%      { box-shadow: 0 0 0 6px rgba(95,180,194,0.10); }
+}
+
+/* =========================== WHAT IT IS / ISN'T ===========================
+   Two-column comparison that handles the lapsed-spreadsheeter's objections
+   head-on. Collapses to a single column on small screens. */
+.isnt { padding: clamp(1.4rem, 3.2vw, 2.4rem) 0 clamp(3rem, 7vw, 5rem); background: var(--bg); position: relative; }
+.isnt .section-head { margin-bottom: clamp(1.6rem, 3.2vw, 2.4rem); }
+.isnt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1rem, 2.4vw, 1.8rem);
+  align-items: start;
+}
+.isnt-col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.4rem, 2.6vw, 2.1rem);
+  box-shadow: var(--shadow-card-sm);
+}
+.is-col { border-color: rgba(26,130,148,0.34); }
+.isnt-not { background: var(--surface-2); }
+.isnt-col-head { display: flex; align-items: center; gap: 0.7rem; margin-bottom: clamp(1rem, 2vw, 1.4rem); }
+.isnt-col-head h3 {
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: clamp(1.05rem, 2vw, 1.32rem);
+  font-weight: 600; letter-spacing: -0.02em; margin: 0;
+}
+.isnt-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 50%; flex: none;
+}
+.isnt-badge svg { width: 16px; height: 16px; }
+.isnt-badge.yes { background: var(--accent-soft); color: var(--good); }
+.isnt-badge.no  { background: #f1e4df; color: var(--damage); }
+.isnt-list { list-style: none; display: grid; gap: clamp(0.85rem, 1.8vw, 1.2rem); margin: 0; padding: 0; }
+.isnt-list li {
+  display: flex; align-items: center; gap: 0.65rem;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: clamp(0.98rem, 1.5vw, 1.12rem);
+  font-weight: 500; letter-spacing: -0.015em;
+  line-height: 1.3; color: var(--ink);
+}
+.isnt-list li::before {
+  flex: none; width: 1.15em; text-align: center;
+  font-weight: 800; font-size: 1.02em;
+}
+.is-col .isnt-list li::before { content: '✓'; color: var(--good); }
+.isnt-not .isnt-list li { color: var(--muted); }
+.isnt-not .isnt-list li::before { content: '✕'; color: var(--damage); }
+@media (max-width: 680px) {
+  .isnt-grid { grid-template-columns: 1fr; }
+}
+/* comparison sub stays on one line, shrinking on small screens */
+.isnt .section-head p { white-space: nowrap; max-width: none; font-size: clamp(1.1rem, 3.4vw, 1.55rem); color: var(--ink-2); }
+
+/* =========================== VOICES (interview quotes marquee) =========================== */
+/* interviews now live INSIDE the waitlist section, sharing its background.
+   Header kept small: a quiet credibility cue under the form, not a headline. */
+/* extra top margin gives breathing room between the demo phones and the reviews */
+.cta-voices { position: relative; z-index: 2; margin-top: clamp(4.5rem, 10vw, 7.5rem); }
+/* interviews title sits right above the cards */
+/* centered, sitting directly on top of the cards */
+.cta-voices-head { margin: 0 auto clamp(1.2rem, 2.6vw, 1.8rem); }
+.cta-voices-head h2 { font-size: clamp(1.25rem, 3vw, 1.7rem); margin-bottom: 0.35rem; }
+.cta-voices-head .section-label { font-size: 0.72rem; margin-bottom: 0.4rem; }
+/* full-bleed marquee regardless of the section's horizontal padding */
+.cta-voices .voices-marquee { width: 100vw; max-width: 100vw; margin-left: 50%; transform: translateX(-50%); }
+.voices-marquee {
+  position: relative; width: 100%; overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.voices-track { display: flex; gap: 1rem; width: max-content; animation: voicesScroll 60s linear infinite; }
+@keyframes voicesScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .voices-track { animation: none; } }
+.voice-card {
+  flex: 0 0 auto; width: clamp(238px, 72vw, 330px);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.3rem 1.45rem;
+  box-shadow: var(--shadow-card-sm);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; gap: 0.9rem;
+}
+.voice-quote {
+  margin: 0;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: clamp(0.98rem, 1.4vw, 1.12rem);
+  line-height: 1.4; letter-spacing: -0.015em; color: var(--ink);
+}
+.voice-who {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.82rem; letter-spacing: 0; text-transform: none;
+  color: var(--subtle); font-weight: 500;
+}
+
+/* CTA trust line (read-only reassurance, right at the form) */
+.cta-trust {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  margin-top: 1.1rem; white-space: nowrap;
+  font-size: clamp(0.8rem, 1.5vw, 0.9rem); color: var(--muted);
+}
+.cta-trust svg { color: var(--brand); flex: none; position: relative; top: 0.5px; }
+
+/* relocated invite-code link, quiet, near the waitlist form */
+.cta-invite { margin-top: 0.9rem; font-size: clamp(0.78rem, 1.4vw, 0.88rem); color: var(--subtle); }
+.cta-invite a { color: var(--brand); font-weight: 600; text-decoration: none; }
+.cta-invite a:hover { text-decoration: underline; }
+
+/* ===== Sticky mobile CTA =====
+   Mobile-only floating "Join Beta" pill so the waitlist is always one thumb-tap
+   away (our traffic is IG/TikTok = mobile). Hidden on desktop, and main.js adds
+   .hide while the #waitlist form itself is on screen so it never doubles up. */
+.sticky-cta {
+  display: none;
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+  z-index: 90;
+  background: var(--ink); color: var(--bg);
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-weight: 600; font-size: 0.95rem; text-decoration: none;
+  padding: 0.85rem 2.4rem; border-radius: 999px;
+  box-shadow: var(--shadow-lg);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+@media (max-width: 720px) {
+  .sticky-cta { display: inline-block; }
+}
+.sticky-cta.hide { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(180%); }
+@media (prefers-reduced-motion: reduce) {
+  .sticky-cta { transition: opacity 0.2s ease; }
+  .sticky-cta.hide { transform: translateX(-50%); }
+}
+

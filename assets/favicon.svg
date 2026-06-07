@@ -1,16 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!--
-    Single-path favicon that responds to the user's system color scheme.
-    The path is a rounded square with a D-shape cut out via fill-rule="evenodd".
-    Whatever sits behind the favicon (the browser tab background) shows through the cutout.
-      • Light system → black frame, D-shape reveals the light tab behind it.
-      • Dark  system → white frame, D-shape reveals the dark  tab behind it.
-  -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="30 32 196 196" width="256" height="256" role="img" aria-label="Dryft">
+  <title>Dryft</title>
   <style>
-    .frame { fill: #0d0e10; }
-    @media (prefers-color-scheme: dark) {
-      .frame { fill: #ffffff; }
-    }
+    .mark { fill: #111111; }
+    @media (prefers-color-scheme: dark) { .mark { fill: #ffffff; } }
   </style>
-  <path class="frame" fill-rule="evenodd" d="M 8 4 L 56 4 C 58 4, 60 6, 60 8 L 60 56 C 60 58, 58 60, 56 60 L 8 60 C 6 60, 4 58, 4 56 L 4 8 C 4 6, 6 4, 8 4 Z M 17 17 L 17 47 L 30 47 C 41 47, 47 41, 47 32 C 47 23, 41 17, 30 17 Z"/>
+  <g class="mark">
+    <path d="M126 38 L126 110 L64 174 Z"/>
+    <path d="M126 116 L126 176 L74 176 Z"/>
+    <path d="M140 70 L140 176 L206 176 Z"/>
+    <path d="M44 188 L212 188 L180 212 Q128 222 76 212 Z"/>
+  </g>
 </svg>

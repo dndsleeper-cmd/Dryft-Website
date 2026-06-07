@@ -11,6 +11,77 @@
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
+/* ---------------- analytics: funnel events ----------------
+   Fires Vercel Web Analytics custom events so we can see the funnel
+   (field focus -> submit attempt -> submit success -> survey complete) and tell
+   a bad ad from a bad page. window.va is the queue stub installed by the
+   analytics <script> in <head>; calls made before it finishes loading are
+   buffered. No-ops entirely if analytics is blocked or absent. */
+// Display name -> GA4 event name (snake/camel, no spaces).
+const EVENT_KEYS = {
+  'Hero View': 'heroView',
+  'Waitlist Field Focus': 'fieldFocus',
+  'Waitlist Submit Attempt': 'submitAttempt',
+  'Waitlist Submit Success': 'submitSuccess',
+  'Survey Complete': 'surveyComplete',
+};
+// Funnel + view events go ONLY to GA4 (free, scalable, batched by Google). We
+// deliberately do NOT write a row to our own DB per pageview/interaction, that
+// would be a constant stream of Firestore writes (and a single-doc hotspot).
+// The internal dashboard reads owned signup outcomes from Firestore on demand.
+function track(name, data) {
+  const variant = window.__dryftVariant || 'A';
+  const key = EVENT_KEYS[name] || name.toLowerCase().replace(/\s+/g, '_');
+  try {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', key, Object.assign({ variant: variant }, data || {}));
+    }
+  } catch (_) { /* analytics must never break the page */ }
+}
+
+/* ---------------- hero A/B test ----------------
+   50/50 split between two hero messages, sticky per visitor via a 1-year cookie
+   so a returning person always sees the same variant (and so repeat views don't
+   pollute the test). The variant rides on every analytics event (above) and on
+   the waitlist payload, so conversion can be compared per variant.
+     A = identity claim     B = "feel seen" claim
+   Default HTML is variant A (SEO + no-JS safe); variant B is swapped in here. */
+const AB_VARIANTS = {
+  A: {
+    line1: 'the app for people',
+    line2: 'who hate budgeting.',
+    sub: 'Dryft pings you before you overspend. no constant logging, no strict budget.',
+  },
+  B: {
+    line1: 'you were never going',
+    line2: 'to budget anyway.',
+    sub: 'so Dryft pings you before you overspend. no logging, no strict budget.',
+  },
+};
+function assignVariant() {
+  try {
+    const m = document.cookie.match(/(?:^|;\s*)dryft_ab=([AB])(?:;|$)/);
+    if (m) return m[1];
+  } catch (_) { /* cookies blocked, fall through to a fresh roll */ }
+  const v = Math.random() < 0.5 ? 'A' : 'B';
+  try { document.cookie = 'dryft_ab=' + v + '; path=/; max-age=31536000; samesite=lax'; } catch (_) {}
+  return v;
+}
+window.__dryftVariant = assignVariant();
+(function applyVariant() {
+  const cfg = AB_VARIANTS[window.__dryftVariant];
+  if (!cfg) return;
+  const l1 = document.querySelector('.statement-line1');
+  const l2 = document.querySelector('.statement-line2');
+  const sub = document.querySelector('.statement-sub');
+  if (l1) l1.textContent = cfg.line1;
+  if (l2) l2.textContent = cfg.line2;
+  if (sub) sub.textContent = cfg.sub;
+})();
+// One variant-tagged view event per load so per-variant conversion RATE is
+// computable in Vercel Analytics (Submit Success / Hero View, both tagged).
+track('Hero View');
+
 /* ---------------- nav scroll ---------------- */
 const nav = document.getElementById('nav');
 if (nav) {
@@ -54,6 +125,17 @@ const revealObserver = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
 reveals.forEach(r => revealObserver.observe(r));
+
+/* ---------------- sticky mobile CTA ----------------
+   Hide the floating "Join Beta" pill while the #waitlist form is on screen, so
+   it never sits on top of the form it points to. CSS keeps it mobile-only. */
+const stickyCta = document.getElementById('sticky-cta');
+const waitlistSection = document.getElementById('waitlist');
+if (stickyCta && waitlistSection && 'IntersectionObserver' in window) {
+  new IntersectionObserver((entries) => {
+    entries.forEach((e) => stickyCta.classList.toggle('hide', e.isIntersecting));
+  }, { threshold: 0.15 }).observe(waitlistSection);
+}
 
 /* ---------------- team cards: tap-to-reveal on touch ----------------
    On hover-capable devices the experience overlay shows on hover (CSS only).
@@ -246,6 +328,10 @@ async function handleWaitlistSubmit(form, source) {
     return;
   }
 
+  // Genuine human attempt (passed honeypot + dwell + throttle). Fired before
+  // validation so we also capture friction from invalid/incomplete numbers.
+  track('Waitlist Submit Attempt', { source: source });
+
   const { e164: phone, region } = readPhone(form);
   if (!isPlausiblePhone(phone)) { shakeForm(form, phoneInput); return; }
 
@@ -264,6 +350,7 @@ async function handleWaitlistSubmit(form, source) {
   // Show success + open the survey IMMEDIATELY. The POST is fired below as
   // fire-and-forget, we don't make the user wait on network latency.
   showSuccess(source);
+  track('Waitlist Submit Success', { source: source });
   openSurvey(phone, source);
   bumpJoinCount(); // optimistic +1, the signup is committed; no extra /api pull
 
@@ -277,7 +364,7 @@ async function handleWaitlistSubmit(form, source) {
   // banner. We still don't block the UI on it (the survey is already open);
   // errors surface in the console and the server write is idempotent.
   getRecaptchaToken('waitlist').then(function (recaptchaToken) {
-    const payload = { phone: phone, region: region, source: source, dwell_ms: now - PAGE_LOAD_TS, recaptchaToken: recaptchaToken };
+    const payload = { phone: phone, region: region, source: source, variant: window.__dryftVariant || 'A', dwell_ms: now - PAGE_LOAD_TS, recaptchaToken: recaptchaToken };
     if (referredByCode) payload.referredByCode = referredByCode;
     return fetch(WAITLIST_ENDPOINT, {
       method: 'POST',
@@ -298,6 +385,17 @@ Object.keys(FORM_SOURCES).forEach((id) => {
   if (!form) return;
   const source = FORM_SOURCES[id];
   form.setAttribute('novalidate', '');
+  // Top-of-funnel signal: the visitor engaged the phone field. Fire once per
+  // form so a single signup isn't counted as many focus events.
+  const telInput = form.querySelector('input[type="tel"]');
+  if (telInput) {
+    let focusTracked = false;
+    telInput.addEventListener('focus', () => {
+      if (focusTracked) return;
+      focusTracked = true;
+      track('Waitlist Field Focus', { source: source });
+    });
+  }
   form.addEventListener('submit', (e) => { e.preventDefault(); handleWaitlistSubmit(form, source); });
 });
 
@@ -783,6 +881,7 @@ if (surveyModal && surveyForm) {
     // close/beacon handlers don't overwrite the finished doc with a partial.
     saveSurveyDraft();
     surveyCompleted = true;
+    track('Survey Complete', { source: surveySource || '' });
 
     // Always show success, fire-and-forget per the no-cors fetch above
     surveyForm.style.display = 'none';
@@ -834,29 +933,26 @@ if (surveyModal && surveyForm) {
 // Goal: survive the next 4 months at university (make the money last the whole term).
 // Same predict → nudge → recover → adapt arc as the live graph, just on the phone.
 const NOTIFICATIONS = [
-  { app: 'Dryft', time: 'now', body: '<strong>Ayo, manz is drifting styll.</strong> Keep this pace and you’re broke 3 weeks before term done, deadass.', tag: { label: 'Fixable', cls: 'warn' }, extra: 'short by week 13' },
-  { app: 'Dryft', time: '2d ago', body: '<strong>Subscriptions hit before payday.</strong> Move one or delay it.', tag: { label: 'Risk', cls: 'warn' }, extra: '2 renewals' },
-  { app: 'Dryft', time: '5d ago', body: '<strong>Back on track.</strong> Your balance now stretches the full 4 months.', tag: { label: 'On plan', cls: 'ok' }, extra: 'covered to May' },
-  { app: 'Dryft', time: '1w ago', body: '<strong>Plan adjusted.</strong> $40 a week keeps you funded through finals.', tag: { label: 'Adjusted', cls: 'ok' }, extra: '16 weeks set' },
+  { app: 'Dryft', time: 'now', title: 'Takeout again tonight?', body: "That's your 3rd this week, $38 over your food plan." },
+  { app: 'Dryft', time: '9:12', title: 'Disney+ renews tomorrow', body: '$14.99 on Friday, easy to forget. Keep it?' },
+  { app: 'Dryft', time: 'Mon', title: 'Nice, you skipped it', body: "That's $60 closer to your trip this week." },
+  { app: 'Dryft', time: 'Sun', title: "You're on track for rent", body: "Nothing to log, I'm watching it for you." },
 ];
 
-function makeNotifNode({ app, time, body, tag, extra }) {
+function makeNotifNode({ app, time, title, body }) {
   const node = document.createElement('div');
   node.className = 'notif';
   node.innerHTML = `
     <div class="notif-head">
       <span class="notif-app">
         <span class="notif-app-icon">
-          <svg viewBox="0 0 64 64"><path d="M 8 4 L 56 4 C 58 4, 60 6, 60 8 L 60 56 C 60 58, 58 60, 56 60 L 8 60 C 6 60, 4 58, 4 56 L 4 8 C 4 6, 6 4, 8 4 Z M 14 14 L 14 50 L 30 50 C 42 50, 50 42, 50 32 C 50 22, 42 14, 30 14 Z" fill="currentColor" fill-rule="evenodd"/></svg>
+          <svg viewBox="30 32 196 196" fill="currentColor"><path d="M126 38 L126 110 L64 174 Z"/><path d="M126 116 L126 176 L74 176 Z"/><path d="M140 70 L140 176 L206 176 Z"/><path d="M44 188 L212 188 L180 212 Q128 222 76 212 Z"/></svg>
         </span>${app}
       </span>
       <span class="notif-time">${time}</span>
     </div>
+    <p class="notif-title">${title}</p>
     <p class="notif-body">${body}</p>
-    <div class="notif-meta">
-      <span class="tag ${tag.cls}">${tag.label}</span>
-      <span>${extra}</span>
-    </div>
   `;
   return node;
 }
@@ -902,13 +998,13 @@ async function runNotificationLoop(stack) {
 ================================================================= */
 // Two versions of the SAME conversation; the chat loop alternates between them.
 const CHAT_SEQUENCE = [
-  { typed: 'Can I order takeout tonight?', typeSpeed: 55, thinkLabel: 'Checking plan', thinkDuration: 1100, response: 'Yes, under $24 and skip Friday\'s.', streamSpeed: 18, afterPause: 1800 },
-  { typed: 'Why is food up this week?', typeSpeed: 60, thinkLabel: 'Finding the pattern', thinkDuration: 1300, response: 'Delivery is +38% vs last week.', streamSpeed: 20, showImpact: true, followup: 'Cap delivery to 2 this week.', followupSpeed: 16, afterPause: 2400 },
+  { typed: 'can I grab takeout tonight?', typeSpeed: 55, thinkLabel: 'Checking your week', thinkDuration: 1100, response: 'You\'ve got $24 left for food. Go for it.', streamSpeed: 18, afterPause: 1800 },
+  { typed: 'why am I always broke by Friday?', typeSpeed: 60, thinkLabel: 'Spotting the pattern', thinkDuration: 1300, response: 'Food delivery, up 38% this week.', streamSpeed: 20, showImpact: true, followup: 'Want me to flag the next one before you buy?', followupSpeed: 16, afterPause: 2400 },
 ];
-// Same convo, Toronto manz style.
+// Second loop: the impulse "talk me out of it" moment, accountability like a friend.
 const CHAT_SEQUENCE_TO = [
-  { typed: 'Can man order takeout tonight?', typeSpeed: 55, thinkLabel: 'Checking plan', thinkDuration: 1100, response: 'Yeah styll, under $24 and skip Friday\'s.', streamSpeed: 18, afterPause: 1800 },
-  { typed: 'Why’s food bare up this week?', typeSpeed: 60, thinkLabel: 'Finding the pattern', thinkDuration: 1300, response: 'Delivery’s +38% vs last week, fam.', streamSpeed: 20, showImpact: true, followup: 'Cap delivery to 2 this week, trust.', followupSpeed: 16, afterPause: 2400 },
+  { typed: 'about to buy these $90 shoes', typeSpeed: 55, thinkLabel: 'Checking your goal', thinkDuration: 1100, response: 'Your call, never a no. That\'s 2 weeks of your trip though.', streamSpeed: 18, afterPause: 1800 },
+  { typed: 'talk me out of UberEats', typeSpeed: 60, thinkLabel: 'Like a friend would', thinkDuration: 1300, response: 'You said you\'d cook tonight, and your fridge is stocked.', streamSpeed: 20, showImpact: true, followup: 'Skip it and you\'re $18 closer to your trip.', followupSpeed: 16, afterPause: 2400 },
 ];
 const CHAT_LOOPS = [CHAT_SEQUENCE, CHAT_SEQUENCE_TO];
 
@@ -1135,6 +1231,26 @@ function bumpJoinCount() {
   const ctx = canvas.getContext('2d');
   let cssW = 0, cssH = 0;
 
+  // Dryft origami-sail mark (256 viewBox) as a Path2D, for the little logo that
+  // rides the spending line just behind the "now" dot.
+  const MARK = (typeof Path2D !== 'undefined') ? new Path2D(
+    'M126 38 L126 110 L64 174 Z' +
+    'M126 116 L126 176 L74 176 Z' +
+    'M140 70 L140 176 L206 176 Z' +
+    'M44 188 L212 188 L180 212 Q128 222 76 212 Z'
+  ) : null;
+  // Draw the mark with its hull resting at (cx, baseY); `size` ≈ overall height.
+  function drawMark(cx, baseY, size, color) {
+    if (!MARK) return;
+    const s = size / 210;
+    ctx.save();
+    ctx.translate(cx - 128 * s, baseY - 214 * s);
+    ctx.scale(s, s);
+    ctx.fillStyle = color;
+    ctx.fill(MARK);
+    ctx.restore();
+  }
+
   function resize() {
     cssW = canvas.parentNode.clientWidth || 760;
     cssH = canvas.clientHeight || 208;
@@ -1156,24 +1272,24 @@ function bumpJoinCount() {
   //  harsh = nudge tone (tints the notification); dur = beat length in seconds
   const BEATS = [
     // ── Pass 1 · the gentle nudge is ignored ──
-    { read: 'Predicting the drift, before you feel it', card: 0, dur: 3.2,
+    { read: 'Spotting the drift, before you feel it', card: 0, dur: 3.2,
       level: 6, fc: 46, plan: 0, notif: null },
-    { read: 'Nudging you, before you buy again', card: 1, dur: 3.8,
+    { read: 'A gentle ping, before you buy', card: 1, dur: 3.8,
       level: 18, fc: 40, plan: 0, harsh: false,
-      notif: { t: 'No takeout tonight!', m: 'your habits are slowly coming back, stop before it compounds.' } },
-    { read: 'Watching… you bought anyway', card: 2, dur: 3.4,
+      notif: { t: 'Takeout again tonight?', m: 'your 3rd, $38 over. your call.' } },
+    { read: 'Learning… you bought it anyway', card: 2, dur: 3.4,
       level: 36, fc: 44, plan: 0, notif: null },
-    { read: 'That nudge missed, trying a sharper one', card: 3, dur: 2.8,
+    { read: 'That gentle ping missed, adjusting', card: 3, dur: 2.8,
       level: 39, fc: 42, plan: 0, notif: null },
     // ── Pass 2 · a sharper nudge lands ──
-    { read: 'Nudging again, with a slightly different tone', card: 1, dur: 3.8,
+    { read: 'Pinging again, with a different tone', card: 1, dur: 3.8,
       level: 38, fc: 40, plan: 0, harsh: true,
-      notif: { t: 'Lock In, Fam', m: 'You grab takeout tonight, that goal is finished.' } },
-    { read: 'Watching… you stopped this time', card: 2, dur: 3.6,
+      notif: { t: 'Heads up', m: 'skip it, or rent won\'t be covered.' } },
+    { read: 'Learning… you held off this time', card: 2, dur: 3.6,
       level: 4, fc: 3, plan: 0, notif: null },
-    { read: 'Adapting, dryft learned what works for you', card: 3, dur: 3.8,
+    { read: 'Tuning the plan, just for you', card: 3, dur: 3.8,
       level: -14, fc: -16, plan: 1,
-      notif: { t: 'Plan updated for you', m: 'The toronto manz nudge works best for you.' } },
+      notif: { t: 'Plan tuned to you', m: 'a ping with a consequence works best.' } },
   ];
   let beat = -1;
   let levelCur = 6, levelTgt = 6;       // the live "above-limit" value at "now" (neg = under)
@@ -1219,7 +1335,7 @@ function bumpJoinCount() {
     ctx.setLineDash([5, 6]); ctx.strokeStyle = 'rgba(13,14,16,0.26)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(x0, py(x0)); ctx.lineTo(x1, py(x1)); ctx.stroke(); ctx.setLineDash([]);
     ctx.font = '600 10px JetBrains Mono, monospace'; ctx.fillStyle = 'rgba(13,14,16,0.38)';
-    ctx.fillText('FOOD LIMIT', x0 + 2, py(x0) - 6);
+    ctx.fillText('PLAN', x0 + 2, py(x0) - 6);
     const amp = 7;
     // Spending doesn't oscillate evenly; it holds at a level for a while, then
     // steps to a new one (a quiet stretch, then a spendy one). We build that as a
@@ -1258,20 +1374,20 @@ function bumpJoinCount() {
     const stepX = (nowX - x0) / Math.max(1, wn - 1);
     const wy = (j) => py(x0 + j * stepX) - waveHist[j];           // oldest at x0, newest at nowX
     const grad = ctx.createLinearGradient(0, top, 0, bot);
-    grad.addColorStop(0, 'rgba(28,114,147,0.16)'); grad.addColorStop(1, 'rgba(28,114,147,0)');
+    grad.addColorStop(0, 'rgba(42,129,144,0.16)'); grad.addColorStop(1, 'rgba(42,129,144,0)');
     ctx.beginPath(); ctx.moveTo(x0, bot);
     for (let j = 0; j < wn; j++) ctx.lineTo(x0 + j * stepX, wy(j));
     ctx.lineTo(nowX, bot); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
-    ctx.shadowColor = 'rgba(28,114,147,0.3)'; ctx.shadowBlur = 7;
-    ctx.strokeStyle = '#1c7293'; ctx.lineWidth = 2.6; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.shadowColor = 'rgba(42,129,144,0.3)'; ctx.shadowBlur = 7;
+    ctx.strokeStyle = '#2a8190'; ctx.lineWidth = 2.6; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     ctx.beginPath();
     for (let j = 0; j < wn; j++) { const y = wy(j); if (j === 0) ctx.moveTo(x0, y); else ctx.lineTo(x0 + j * stepX, y); }
     ctx.stroke(); ctx.shadowBlur = 0;
     const cy = wy(wn - 1), planEnd = py(x1);
     const fEndY = planEnd - fcCur;            // forecast end; above the limit when fcCur > 0
     const drift = fcCur > 8;
-    const fcol = drift ? 'rgba(196,77,60,0.82)' : 'rgba(28,114,147,0.72)';
-    const mcol = drift ? 'rgba(196,77,60,' : 'rgba(28,114,147,';
+    const fcol = drift ? 'rgba(196,77,60,0.82)' : 'rgba(42,129,144,0.72)';
+    const mcol = drift ? 'rgba(196,77,60,' : 'rgba(42,129,144,';
     ctx.setLineDash([4, 5]); ctx.lineWidth = 1.8; ctx.strokeStyle = fcol;
     ctx.beginPath(); ctx.moveTo(nowX, cy);
     ctx.quadraticCurveTo((nowX + x1) / 2, (cy + fEndY) / 2 + (drift ? -20 : 10), x1, fEndY);
@@ -1279,11 +1395,13 @@ function bumpJoinCount() {
     const pulse = 0.5 + 0.5 * Math.sin(tSec * 2.4);
     ctx.fillStyle = mcol + (0.55 + 0.45 * pulse) + ')';
     ctx.beginPath(); ctx.arc(x1 - 2, fEndY, 4.6, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#0e4754'; ctx.beginPath(); ctx.arc(nowX, cy, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.beginPath(); ctx.arc(nowX, cy, 5, 0, Math.PI * 2); ctx.stroke();
-    const rr = 5 + ((tSec * 16) % 20);
-    ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(28,114,147,' + Math.max(0, 1 - (rr - 5) / 20) + ')';
+    // expanding ripple, drawn first so it sits behind the marker
+    const rr = 7 + ((tSec * 16) % 22);
+    ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(42,129,144,' + Math.max(0, 1 - (rr - 7) / 22) + ')';
     ctx.beginPath(); ctx.arc(nowX, cy, rr, 0, Math.PI * 2); ctx.stroke();
+    // the Dryft sail marks "now" on the line (replaces the dot), 50% larger; the
+    // mark stays a single solid ink per brand, not recoloured to teal
+    drawMark(nowX, cy + 1, 32, '#0a1a22');
   }
 
   // beats have their own lengths; walk a looping timeline to find the current one
@@ -1309,9 +1427,11 @@ function bumpJoinCount() {
   // initial static frame: the nudge beat (drift + notification), never blank
   setBeat(1); levelCur = levelTgt; fcCur = fcTgt; planCur = planTgt; draw(2.0);
   if (reduceMotion) return;
+  // threshold 0: the panel now peeks up into the hero, so start the live render
+  // the moment any sliver is on screen (else a small peek renders blank/stale).
   const io = new IntersectionObserver(function (es) {
     es.forEach(function (e) { if (e.isIntersecting) start(); else stop(); });
-  }, { threshold: 0.2 });
+  }, { threshold: 0 });
   io.observe(section);
 })();
 
@@ -1463,4 +1583,3 @@ if (chatPhone) runChatLoop(chatPhone);
 
   start();   // no loader screen, begin the hero phrase rotator on load
 })();
-

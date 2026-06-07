@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /dashboard
 Disallow: /.well-known/
 Disallow: /docs/
 

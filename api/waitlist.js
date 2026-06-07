@@ -27,6 +27,7 @@ const {
   isPlausiblePhone,
   sanitizeRegion,
   sanitizeSource,
+  sanitizeVariant,
   sanitizeReferralCode,
   makeReferralCode,
   priorityScore,
@@ -59,6 +60,7 @@ module.exports = async function handler(req, res) {
   const phone = sanitizePhone(body.phone);
   const region = sanitizeRegion(body.region);
   const source = sanitizeSource(body.source);
+  const variant = sanitizeVariant(body.variant);
   const dwell = sanitizeInt(body.dwell_ms);
 
   if (!isPlausiblePhone(phone)) return res.status(400).json({ ok: false, reason: 'phone' });
@@ -147,6 +149,8 @@ module.exports = async function handler(req, res) {
           priorityScore: score,
         };
         if (referrerRef) payload.referredByCode = referredByCode;
+        // First-touch only: the hero variant that actually converted this signup.
+        if (variant) payload.variant = variant;
         tx.set(userRef, payload, { merge: true });
         tx.set(counterRef, { waitlistSeq: seq }, { merge: true });
         tx.set(

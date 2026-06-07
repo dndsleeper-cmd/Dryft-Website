@@ -58,6 +58,17 @@ function sanitizeSource(v) {
   return VALID_SOURCES.has(s) ? s : '';
 }
 
+// Hero A/B test bucket. Whitelisted single letter so a tampered value can't
+// pollute the dashboard's per-variant breakdown.
+const VALID_VARIANTS = new Set(['A', 'B']);
+function sanitizeVariant(v) {
+  const s = String(v == null ? '' : v)
+    .trim()
+    .toUpperCase()
+    .slice(0, 1);
+  return VALID_VARIANTS.has(s) ? s : '';
+}
+
 // --- Referral codes --------------------------------------------------------
 // Codes are Crockford base32 (no I/L/O/U, unambiguous when read aloud or
 // hand-typed). Generated deterministically from the canonical contact (the
@@ -406,6 +417,7 @@ module.exports = {
   isPlausiblePhone,
   sanitizeRegion,
   sanitizeSource,
+  sanitizeVariant,
   sanitizeReferralCode,
   makeReferralCode,
   priorityScore,
