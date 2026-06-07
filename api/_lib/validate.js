@@ -61,7 +61,9 @@ function sanitizeSource(v) {
 // Traffic-source channel (first-touch), classified client-side from the
 // referrer/UTM and sent on both the pageview ping and the signup. Whitelisted
 // so a tampered value can't pollute the per-channel breakdown.
-const VALID_CHANNELS = new Set(['Direct', 'Organic Search', 'Social', 'Referral', 'Other']);
+const VALID_CHANNELS = new Set([
+  'Direct', 'Organic Search', 'Instagram', 'TikTok', 'Social', 'Other',
+]);
 function sanitizeChannel(v) {
   const s = String(v == null ? '' : v).trim().slice(0, 16);
   return VALID_CHANNELS.has(s) ? s : '';

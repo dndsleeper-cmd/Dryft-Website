@@ -122,16 +122,29 @@ function detectChannel() {
     var params = new URLSearchParams(location.search);
     var utm = (params.get('utm_source') || '').toLowerCase();
     var ref = document.referrer || '';
+    var ua = navigator.userAgent || '';
     var host = '';
     try { host = ref ? new URL(ref).hostname.replace(/^www\./, '') : ''; } catch (_) { host = ''; }
     if (host && host === location.hostname.replace(/^www\./, '')) return null; // internal nav
-    var social = /(instagram|tiktok|twitter|x\.com|t\.co|facebook|fb\.com|linkedin|reddit|youtube|snapchat|pinterest|threads)/;
-    var search = /(google|bing|duckduckgo|yahoo|ecosia|baidu|brave|qwant)/;
     var src = utm || host;
-    if (!src) return 'Direct';
-    if (social.test(src)) return 'Social';
-    if (search.test(src)) return 'Organic Search';
-    return 'Referral';
+    // Named platforms get their own bucket; everything else social folds to 'Social'.
+    if (src) {
+      if (/instagram/.test(src)) return 'Instagram';
+      if (/(tiktok|musical)/.test(src)) return 'TikTok';
+      var social = /(twitter|x\.com|t\.co|facebook|fb\.com|linkedin|reddit|youtube|snapchat|pinterest|threads)/;
+      if (social.test(src)) return 'Social';
+      var search = /(google|bing|duckduckgo|yahoo|ecosia|baidu|brave|qwant)/;
+      if (search.test(src)) return 'Organic Search';
+      // Unknown external referrer: not tracked as its own bucket (signups are
+      // attributed via referral CODE, not link), so fold into Direct.
+      return 'Direct';
+    }
+    // No referrer/UTM: in-app browsers strip the referrer, so fall back to the
+    // app's own User-Agent signature to recover IG/TikTok/FB taps from 'Direct'.
+    if (/Instagram/i.test(ua)) return 'Instagram';
+    if (/(musical_ly|BytedanceWebview|TikTok|Trill)/i.test(ua)) return 'TikTok';
+    if (/(FBAN|FBAV|FB_IAB)/i.test(ua)) return 'Social'; // Facebook in-app
+    return 'Direct';
   } catch (_) { return 'Direct'; }
 }
 function firstTouchChannel() {

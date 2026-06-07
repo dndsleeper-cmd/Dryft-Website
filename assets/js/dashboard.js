@@ -324,11 +324,14 @@ function render(d) {
   renderTrend(d.series || []);
   renderConvTrend(d.series || []);
   renderVariants(d.byVariant || {}, d.byVariantVisits || {});
-  renderChannelConv(d.byChannel || []);
+
+  // Traffic-source panels exclude the catch-all 'Referral' bucket.
+  const channels = (d.byChannel || []).filter((r) => r.channel !== 'Referral');
+  renderChannelConv(channels);
 
   // Visits by traffic source: raw visit volume per channel (first-party).
-  // d.byChannel is already sorted by visits desc; show arms with visits.
-  statList($('visits-by-channel'), (d.byChannel || [])
+  // channels is already sorted by visits desc; show arms with visits.
+  statList($('visits-by-channel'), channels
     .filter((r) => r.visits > 0)
     .map((r) => ({ k: r.channel, v: String(r.visits) })));
 
