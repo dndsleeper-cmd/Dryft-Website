@@ -997,14 +997,15 @@ async function runNotificationLoop(stack) {
    HERO PHONE, CHAT (looping conversation)
 ================================================================= */
 // Two versions of the SAME conversation; the chat loop alternates between them.
+// First loop: ask a question, and check how your budget changed.
 const CHAT_SEQUENCE = [
   { typed: 'can I grab takeout tonight?', typeSpeed: 55, thinkLabel: 'Checking your week', thinkDuration: 1100, response: 'You\'ve got $24 left for food. Go for it.', streamSpeed: 18, afterPause: 1800 },
-  { typed: 'why am I always broke by Friday?', typeSpeed: 60, thinkLabel: 'Spotting the pattern', thinkDuration: 1300, response: 'Food delivery, up 38% this week.', streamSpeed: 20, showImpact: true, followup: 'Want me to flag the next one before you buy?', followupSpeed: 16, afterPause: 2400 },
+  { typed: 'what changed in my budget this week?', typeSpeed: 60, thinkLabel: 'Pulling it up', thinkDuration: 1300, response: 'Groceries came in low, so you\'ve got $40 extra.', streamSpeed: 20, showImpact: true, followup: 'Want me to roll it toward your trip?', followupSpeed: 16, afterPause: 2400 },
 ];
-// Second loop: the impulse "talk me out of it" moment, accountability like a friend.
+// Second loop: update your goal or your plan, and Dryft adjusts.
 const CHAT_SEQUENCE_TO = [
-  { typed: 'about to buy these $90 shoes', typeSpeed: 55, thinkLabel: 'Checking your goal', thinkDuration: 1100, response: 'Your call, never a no. That\'s 2 weeks of your trip though.', streamSpeed: 18, afterPause: 1800 },
-  { typed: 'talk me out of UberEats', typeSpeed: 60, thinkLabel: 'Like a friend would', thinkDuration: 1300, response: 'You said you\'d cook tonight, and your fridge is stocked.', streamSpeed: 20, showImpact: true, followup: 'Skip it and you\'re $18 closer to your trip.', followupSpeed: 16, afterPause: 2400 },
+  { typed: 'I want to save for a trip in August', typeSpeed: 55, thinkLabel: 'Building your plan', thinkDuration: 1100, response: 'Done. $35 a week gets you there.', streamSpeed: 18, afterPause: 1800 },
+  { typed: 'bump my coffee budget up a little', typeSpeed: 60, thinkLabel: 'Adjusting your plan', thinkDuration: 1300, response: 'Got it, $20 more a month for coffee.', streamSpeed: 20, showImpact: true, followup: 'Your trip date moves to September 2nd.', followupSpeed: 16, afterPause: 2400 },
 ];
 const CHAT_LOOPS = [CHAT_SEQUENCE, CHAT_SEQUENCE_TO];
 
