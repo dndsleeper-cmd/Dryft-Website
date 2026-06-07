@@ -8,6 +8,13 @@
 const TOKEN_KEY = 'dryft_dash_token';
 const $ = (id) => document.getElementById(id);
 
+// The two hero headlines under test, so the dashboard can label which message is
+// A vs B. Keep in sync with AB_VARIANTS in assets/js/main.js.
+const VARIANT_COPY = {
+  A: 'the app for people who hate budgeting.',
+  B: 'you were never going to budget anyway.',
+};
+
 const gate = $('gate');
 const app = $('app');
 const actions = $('actions');
@@ -57,6 +64,39 @@ function card(label, value, note) {
   return c;
 }
 
+// 0.1234 -> "12.3%"
+function pct1(r) {
+  return ((Number(r) || 0) * 100).toFixed(1) + '%';
+}
+
+// A bar row: label, proportional fill, right-aligned value, optional sub-note.
+function bar(container, label, fillPct, value, note) {
+  const row = el('div', 'row wide');
+  row.appendChild(el('div', 'k', label));
+  const track = el('div', 'track');
+  const fill = el('div', 'fill');
+  fill.style.width = Math.max(0, Math.min(100, Math.round(fillPct))) + '%';
+  track.appendChild(fill);
+  row.appendChild(track);
+  row.appendChild(el('div', 'v', value));
+  container.appendChild(row);
+  if (note) {
+    const n = el('div', 'hint', note);
+    n.style.margin = '-.15rem 0 .6rem';
+    container.appendChild(n);
+  }
+}
+
+// Pretty section labels for the "where attention drops" panel.
+const SECTION_LABELS = {
+  top: 'Hero',
+  'how-section': 'How it works',
+  'what-it-is': 'What it is',
+  waitlist: 'Waitlist',
+  team: 'Team',
+  faq: 'FAQ / trust',
+};
+
 // Horizontal bar rows from a {key: count} map, sorted desc.
 function barRows(container, map, order) {
   container.textContent = '';
@@ -102,9 +142,8 @@ function renderChart(series) {
 function renderVariants(byVariant, variantSurvey) {
   const wrap = $('variants');
   wrap.textContent = '';
-  const keys = ['A', 'B'].filter((k) => k in byVariant).concat(
-    Object.keys(byVariant).filter((k) => k !== 'A' && k !== 'B'),
-  );
+  // Only the live A/B arms; pre-test signups (no variant) are already excluded.
+  const keys = ['A', 'B'].filter((k) => k in byVariant);
   if (!keys.length) {
     wrap.appendChild(el('p', 'empty', 'No signups yet.'));
     return;
@@ -122,8 +161,12 @@ function renderVariants(byVariant, variantSurvey) {
     row.appendChild(track);
     row.appendChild(el('div', 'v', String(signups)));
     wrap.appendChild(row);
+    const head = el('div', 'hint');
+    head.style.margin = '-.2rem 0 0';
+    head.textContent = '“' + (VARIANT_COPY[k] || '') + '”';
+    wrap.appendChild(head);
     const note = el('div', 'hint');
-    note.style.margin = '-.2rem 0 .5rem';
+    note.style.margin = '.05rem 0 .6rem';
     note.textContent = surveys + ' completed the survey';
     wrap.appendChild(note);
   });
@@ -229,9 +272,74 @@ function renderVariantConv(site) {
     row.appendChild(track);
     row.appendChild(el('div', 'v', (dd.rate * 100).toFixed(1) + '%'));
     wrap.appendChild(row);
+    const head = el('div', 'hint', '“' + (VARIANT_COPY[label] || '') + '”');
+    head.style.margin = '-.15rem 0 0';
+    wrap.appendChild(head);
     const note = el('div', 'hint', dd.signups + ' signups / ' + dd.views + ' views');
-    note.style.margin = '-.15rem 0 .55rem';
+    note.style.margin = '.05rem 0 .6rem';
     wrap.appendChild(note);
+  });
+}
+
+// Visit→signup rate per traffic channel (GA4 sessionDefaultChannelGroup).
+function renderBySource(site) {
+  const wrap = $('by-source');
+  wrap.textContent = '';
+  const list = site && site.bySource;
+  if (!list || !list.length) {
+    wrap.appendChild(el('p', 'empty', site ? 'No source data yet.' : 'GA4 not connected yet.'));
+    return;
+  }
+  const max = Math.max.apply(null, list.map((r) => r.rate)) || 0.0001;
+  list.forEach((r) => {
+    bar(wrap, r.key, (r.rate / max) * 100, pct1(r.rate), r.signups + ' signups / ' + r.views + ' views');
+  });
+}
+
+// Visit→signup rate split by device category (GA4 deviceCategory).
+function renderByDevice(site) {
+  const wrap = $('by-device');
+  wrap.textContent = '';
+  const list = site && site.byDevice;
+  if (!list || !list.length) {
+    wrap.appendChild(el('p', 'empty', site ? 'No device data yet.' : 'GA4 not connected yet.'));
+    return;
+  }
+  const max = Math.max.apply(null, list.map((r) => r.rate)) || 0.0001;
+  list.forEach((r) => {
+    const label = r.key.charAt(0).toUpperCase() + r.key.slice(1);
+    bar(wrap, label, (r.rate / max) * 100, pct1(r.rate), r.signups + ' signups / ' + r.views + ' views');
+  });
+}
+
+// Scroll-depth distribution, each depth as a share of the deepest (25%) bucket.
+function renderScrollDepth(site) {
+  const wrap = $('scroll-depth');
+  wrap.textContent = '';
+  const list = site && site.scrollDepth;
+  if (!list || !list.length) {
+    wrap.appendChild(el('p', 'empty', site ? 'No scroll data yet (register the `depth` dimension).' : 'GA4 not connected yet.'));
+    return;
+  }
+  const base = (list[0] && list[0].count) || Math.max.apply(null, list.map((r) => r.count)) || 1;
+  list.forEach((r) => {
+    const share = base ? r.count / base : 0;
+    bar(wrap, r.depth + '% depth', share * 100, String(r.count), pct1(share) + ' of those who reached 25%');
+  });
+}
+
+// Section reach: share of visitors whose screen reached each section, top→bottom.
+function renderSections(site) {
+  const wrap = $('sections');
+  wrap.textContent = '';
+  const list = site && site.sections;
+  if (!list || !list.length) {
+    wrap.appendChild(el('p', 'empty', site ? 'No section data yet (register the `section` dimension).' : 'GA4 not connected yet.'));
+    return;
+  }
+  list.forEach((r) => {
+    const label = SECTION_LABELS[r.section] || r.section;
+    bar(wrap, label, r.pctOfHero * 100, pct1(r.pctOfHero), String(r.views) + ' reached');
   });
 }
 
@@ -245,9 +353,29 @@ function render(d) {
   cards.appendChild(card('Referral signups', String(d.usedReferral), 'joined via a code'));
   cards.appendChild(card('Referrals given', String(d.referralsGiven), 'total invites credited'));
 
+  // GA4-derived headline rates (only when GA4 is connected).
+  if (d.site) {
+    cards.appendChild(card(
+      'Visit → waitlist rate',
+      pct1(d.site.visitToWaitlistRate),
+      d.site.submitSuccess + ' signups / ' + d.site.heroView + ' hero views',
+    ));
+    if (d.site.cta) {
+      cards.appendChild(card(
+        'Hero CTA click rate',
+        pct1(d.site.cta.heroRate),
+        d.site.cta.hero + ' hero CTA clicks / ' + d.site.heroView + ' hero views',
+      ));
+    }
+  }
+
   renderChart(d.series || []);
   renderFunnel(d.site || null);
   renderVariantConv(d.site || null);
+  renderBySource(d.site || null);
+  renderByDevice(d.site || null);
+  renderScrollDepth(d.site || null);
+  renderSections(d.site || null);
   renderVerdict(d.byVariant || {});
   renderVariants(d.byVariant || {}, d.variantSurvey || {});
   barRows($('sources'), d.bySource || {}, ['hero', 'final', 'referral']);

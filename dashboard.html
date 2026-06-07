@@ -110,11 +110,38 @@
     </section>
     <div class="grid2">
       <section class="panel">
+        <h2>Waitlist rate by traffic source</h2>
+        <div id="by-source"></div>
+        <p class="hint">Visit→signup rate per channel (last 28 days). The bar is the
+        rate; the note shows signups / hero views. Tells you which channels actually convert.</p>
+      </section>
+      <section class="panel">
+        <h2>Mobile vs desktop conversion</h2>
+        <div id="by-device"></div>
+        <p class="hint">Same visit→signup rate, split by device. A big gap usually means a
+        layout or form problem on the weaker device.</p>
+      </section>
+      <section class="panel">
+        <h2>Scroll depth distribution</h2>
+        <div id="scroll-depth"></div>
+        <p class="hint">Share of visitors who reach each depth of the page. A cliff between
+        two marks is where you're losing attention.</p>
+      </section>
+      <section class="panel">
+        <h2>Section reach · where attention drops</h2>
+        <div id="sections"></div>
+        <p class="hint">Share of visitors whose screen reached each section, top→bottom.
+        The biggest drop between two sections is the closest thing to a single-page "exit point."</p>
+      </section>
+    </div>
+    <div class="grid2">
+      <section class="panel">
         <h2>A/B test · which message wins</h2>
         <div id="ab-verdict" class="verdict"></div>
         <div id="variants"></div>
-        <p class="hint">The hero split is ~50/50, so more signups = the better-converting
-        message. Exact view→signup rate per variant is in the GA4 funnel above.</p>
+        <p class="hint">Each visitor is randomly assigned A or B at a fixed 50/50 split,
+        sticky per visitor for a year, so with roughly equal views more signups = the
+        better-converting message. Exact view→signup rate per variant is in the GA4 funnel above.</p>
       </section>
       <section class="panel">
         <h2>Signups by form (button)</h2>
@@ -138,7 +165,7 @@
       all live in GA4, with no extra load on the site. What to watch:</p>
       <ul>
         <li><strong>Where people drop:</strong> compare <code>heroView → fieldFocus → submitAttempt → submitSuccess</code>. The biggest gap is your #1 thing to fix.</li>
-        <li><strong>A/B by true rate:</strong> register <code>variant</code> as a custom dimension, then split those events by it.</li>
+        <li><strong>Register these event-scoped custom dimensions</strong> (Admin → Custom definitions) so the panels above fill in: <code>variant</code>, <code>location</code>, <code>depth</code>, <code>section</code>. Source and device need no setup (built-in).</li>
         <li><strong>Where to look:</strong> GA4 → Reports → Realtime, or Engagement → Events.</li>
       </ul>
     </section>
@@ -146,6 +173,6 @@
 
   <p class="msg" id="msg"></p>
 </div>
-<script defer src="/assets/js/dashboard.js?v=20260607d"></script>
+<script defer src="/assets/js/dashboard.js?v=20260607g"></script>
 </body>
 </html>

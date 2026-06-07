@@ -34,7 +34,13 @@ function safeEqual(a, b) {
 // Viewer on the GA4 property). Returns null if GA4_PROPERTY_ID isn't set or the
 // call fails, so the dashboard still works without it. Not real-time: GA4
 // processed data lags ~a day, which is fine for an admin refresh.
-const GA_EVENTS = ['heroView', 'fieldFocus', 'submitAttempt', 'submitSuccess', 'surveyComplete'];
+const GA_EVENTS = [
+  'heroView', 'fieldFocus', 'submitAttempt', 'submitSuccess', 'surveyComplete',
+  'ctaClick', 'scrollDepth', 'sectionView',
+];
+// Order top-level sections so the "section reach" panel reads top→bottom.
+const SECTION_ORDER = ['top', 'how-section', 'what-it-is', 'waitlist', 'team', 'faq'];
+
 async function fetchGa4() {
   const propId = process.env.GA4_PROPERTY_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -52,30 +58,49 @@ async function fetchGa4() {
     'https://analyticsdata.googleapis.com/v1beta/properties/' +
     encodeURIComponent(propId) +
     ':runReport';
-  const base = {
-    dateRanges: [{ startDate: '28daysAgo', endDate: 'today' }],
-    metrics: [{ name: 'eventCount' }],
-    dimensionFilter: {
-      filter: { fieldName: 'eventName', inListFilter: { values: GA_EVENTS } },
-    },
-    limit: 200,
-  };
-  const run = async (dimensions) => {
+
+  // Generic runReport: count eventCount over `dimensions`, restricted to the
+  // given event names. Throws on non-2xx so callers can try/catch per query.
+  const run = async (dimensions, eventNames) => {
     const resp = await fetch(url, {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.assign({ dimensions: dimensions }, base)),
+      body: JSON.stringify({
+        dateRanges: [{ startDate: '28daysAgo', endDate: 'today' }],
+        metrics: [{ name: 'eventCount' }],
+        dimensions: dimensions,
+        dimensionFilter: {
+          filter: { fieldName: 'eventName', inListFilter: { values: eventNames } },
+        },
+        limit: 250,
+      }),
     });
     if (!resp.ok) throw new Error('ga4 ' + resp.status + ': ' + (await resp.text()).slice(0, 180));
     return resp.json();
   };
+  const val = (r, i) => (r.dimensionValues[i] && r.dimensionValues[i].value) || '';
+  const cnt = (r) => Number(r.metricValues[0].value) || 0;
+  const rate = (signups, views) => (views ? +(signups / views).toFixed(4) : 0);
+
+  // Pivot eventName × <dim> rows into [{ key, views, signups, rate }], desc by views.
+  const pivot = (rows) => {
+    const m = {};
+    (rows || []).forEach((r) => {
+      const ev = val(r, 0);
+      const key = val(r, 1) || '(not set)';
+      m[key] = m[key] || { views: 0, signups: 0 };
+      if (ev === 'heroView') m[key].views += cnt(r);
+      if (ev === 'submitSuccess') m[key].signups += cnt(r);
+    });
+    return Object.keys(m)
+      .map((k) => ({ key: k, views: m[k].views, signups: m[k].signups, rate: rate(m[k].signups, m[k].views) }))
+      .sort((a, b) => b.views - a.views);
+  };
 
   // Funnel totals by event name.
-  const totals = await run([{ name: 'eventName' }]);
+  const totals = await run([{ name: 'eventName' }], GA_EVENTS);
   const counts = {};
-  (totals.rows || []).forEach((r) => {
-    counts[r.dimensionValues[0].value] = Number(r.metricValues[0].value) || 0;
-  });
+  (totals.rows || []).forEach((r) => { counts[val(r, 0)] = cnt(r); });
   const num = (k) => counts[k] || 0;
   const site = {
     heroView: num('heroView'),
@@ -83,35 +108,76 @@ async function fetchGa4() {
     submitAttempt: num('submitAttempt'),
     submitSuccess: num('submitSuccess'),
     surveyComplete: num('surveyComplete'),
+    visitToWaitlistRate: rate(num('submitSuccess'), num('heroView')),
     perVariant: null,
+    cta: null,
+    scrollDepth: null,
+    bySource: null,
+    byDevice: null,
+    sections: null,
     days: 28,
   };
 
-  // Per-variant view→signup rate. Needs the `variant` custom dimension to be
+  // Per-variant view→signup rate. Needs the `variant` custom dimension
   // registered in GA4; if it isn't, this throws and we just skip it.
   try {
-    const byVar = await run([{ name: 'eventName' }, { name: 'customEvent:variant' }]);
-    const pv = {};
-    (byVar.rows || []).forEach((r) => {
-      const ev = r.dimensionValues[0].value;
-      const va = r.dimensionValues[1].value || 'unknown';
-      const c = Number(r.metricValues[0].value) || 0;
-      pv[va] = pv[va] || { heroView: 0, submitSuccess: 0 };
-      if (ev === 'heroView') pv[va].heroView += c;
-      if (ev === 'submitSuccess') pv[va].submitSuccess += c;
-    });
-    const mk = (v) => {
-      const d = pv[v] || { heroView: 0, submitSuccess: 0 };
-      return {
-        views: d.heroView,
-        signups: d.submitSuccess,
-        rate: d.heroView ? +(d.submitSuccess / d.heroView).toFixed(4) : 0,
-      };
-    };
-    site.perVariant = { A: mk('A'), B: mk('B') };
-  } catch (e) {
-    /* variant custom dimension not registered yet, funnel totals still returned */
-  }
+    const byVar = pivot((await run(
+      [{ name: 'eventName' }, { name: 'customEvent:variant' }],
+      ['heroView', 'submitSuccess'],
+    )).rows);
+    const find = (k) => byVar.find((r) => r.key === k) || { views: 0, signups: 0, rate: 0 };
+    site.perVariant = { A: find('A'), B: find('B') };
+  } catch (e) { /* variant dimension not registered yet */ }
+
+  // Waitlist rate by traffic source (channel group is built-in, no setup).
+  try {
+    site.bySource = pivot((await run(
+      [{ name: 'eventName' }, { name: 'sessionDefaultChannelGroup' }],
+      ['heroView', 'submitSuccess'],
+    )).rows).slice(0, 8);
+  } catch (e) { /* leave null */ }
+
+  // Mobile vs desktop conversion (deviceCategory is built-in).
+  try {
+    site.byDevice = pivot((await run(
+      [{ name: 'eventName' }, { name: 'deviceCategory' }],
+      ['heroView', 'submitSuccess'],
+    )).rows);
+  } catch (e) { /* leave null */ }
+
+  // Hero CTA click rate. Needs the `location` custom dimension registered.
+  try {
+    const rows = (await run([{ name: 'customEvent:location' }], ['ctaClick'])).rows || [];
+    let total = 0;
+    let hero = 0;
+    rows.forEach((r) => { const c = cnt(r); total += c; if (val(r, 0) === 'hero') hero += c; });
+    site.cta = { total, hero, heroRate: rate(hero, site.heroView) };
+  } catch (e) { /* location dimension not registered yet */ }
+
+  // Scroll-depth distribution. Needs the `depth` custom dimension registered.
+  try {
+    const rows = (await run([{ name: 'customEvent:depth' }], ['scrollDepth'])).rows || [];
+    const dist = {};
+    rows.forEach((r) => { dist[val(r, 0)] = (dist[val(r, 0)] || 0) + cnt(r); });
+    site.scrollDepth = ['25', '50', '75', '100'].map((d) => ({ depth: d, count: dist[d] || 0 }));
+  } catch (e) { /* depth dimension not registered yet */ }
+
+  // Section reach (exit approximation). Needs the `section` custom dimension.
+  try {
+    const rows = (await run([{ name: 'customEvent:section' }], ['sectionView'])).rows || [];
+    const m = {};
+    rows.forEach((r) => { m[val(r, 0)] = (m[val(r, 0)] || 0) + cnt(r); });
+    const base = site.heroView || m.top || 1;
+    const ordered = SECTION_ORDER.filter((s) => s in m).concat(
+      Object.keys(m).filter((s) => SECTION_ORDER.indexOf(s) === -1),
+    );
+    site.sections = ordered.map((s) => ({
+      section: s,
+      views: m[s],
+      pctOfHero: +(m[s] / base).toFixed(4),
+    }));
+  } catch (e) { /* section dimension not registered yet */ }
+
   return site;
 }
 
@@ -179,12 +245,14 @@ module.exports = async function handler(req, res) {
       const reg = d.region || 'unknown';
       byRegion[reg] = (byRegion[reg] || 0) + 1;
 
-      const v = d.variant || 'unknown';
-      byVariant[v] = (byVariant[v] || 0) + 1;
+      // Only A/B count toward the test. Signups with no (or any other) variant
+      // predate the A/B split, so they're excluded from the variant breakdown.
+      const v = d.variant === 'A' || d.variant === 'B' ? d.variant : null;
+      if (v) byVariant[v] = (byVariant[v] || 0) + 1;
 
       if (d.surveyComplete) {
         surveyComplete++;
-        variantSurvey[v] = (variantSurvey[v] || 0) + 1;
+        if (v) variantSurvey[v] = (variantSurvey[v] || 0) + 1;
       }
       if (d.usedReferral) usedReferral++;
 

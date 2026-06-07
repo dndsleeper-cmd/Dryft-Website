@@ -24,6 +24,9 @@ const EVENT_KEYS = {
   'Waitlist Submit Attempt': 'submitAttempt',
   'Waitlist Submit Success': 'submitSuccess',
   'Survey Complete': 'surveyComplete',
+  'CTA Click': 'ctaClick',
+  'Scroll Depth': 'scrollDepth',
+  'Section View': 'sectionView',
 };
 // Funnel + view events go ONLY to GA4 (free, scalable, batched by Google). We
 // deliberately do NOT write a row to our own DB per pageview/interaction, that
@@ -81,6 +84,59 @@ window.__dryftVariant = assignVariant();
 // One variant-tagged view event per load so per-variant conversion RATE is
 // computable in Vercel Analytics (Submit Success / Hero View, both tagged).
 track('Hero View');
+
+/* ---------------- engagement instrumentation ----------------
+   Three lightweight, fire-once signals that power the daily dashboard. All go
+   through track() to GA4 only (no DB writes). The dashboard reads them back as:
+   hero CTA click rate, scroll-depth distribution, and section reach (an in-house
+   stand-in for "where people drop off / exit"). */
+
+// CTA clicks that drive to the waitlist, tagged by placement. `hero` is the
+// primary hero CTA; nav/sticky let us compare placements later.
+document.querySelectorAll('a[href="#waitlist"]').forEach(function (a) {
+  var loc = a.classList.contains('statement-cta') ? 'hero'
+    : a.classList.contains('nav-cta') ? 'nav'
+      : a.classList.contains('sticky-cta') ? 'sticky' : 'other';
+  a.addEventListener('click', function () { track('CTA Click', { location: loc }); }, { passive: true });
+});
+
+// Scroll-depth milestones, each fired at most once per page load.
+(function scrollDepth() {
+  var marks = [25, 50, 75, 100];
+  var hit = {};
+  var ticking = false;
+  function check() {
+    var height = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = height > 0 ? (window.scrollY / height) * 100 : 100;
+    marks.forEach(function (m) {
+      if (!hit[m] && pct >= m) { hit[m] = true; track('Scroll Depth', { depth: String(m) }); }
+    });
+    if (hit[100]) window.removeEventListener('scroll', onScroll);
+  }
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function () { check(); ticking = false; });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  check();
+})();
+
+// Section reach: fire once when each top-level section first enters view. The
+// drop between consecutive sections approximates where attention is lost.
+(function sectionViews() {
+  var sections = document.querySelectorAll('#main-content > section');
+  if (!('IntersectionObserver' in window) || !sections.length) return;
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      var name = e.target.id || (e.target.className || '').split(/\s+/)[0] || 'section';
+      track('Section View', { section: name });
+      obs.unobserve(e.target);
+    });
+  }, { threshold: 0.4 });
+  sections.forEach(function (s) { obs.observe(s); });
+})();
 
 /* ---------------- nav scroll ---------------- */
 const nav = document.getElementById('nav');
