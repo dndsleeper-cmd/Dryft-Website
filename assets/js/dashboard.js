@@ -252,14 +252,19 @@ function renderVariants(byVariant, views) {
     wrap.appendChild(el('p', 'empty', 'No signups yet.'));
     return;
   }
+  // Pick one display mode for the whole panel so both arms stay comparable.
+  // If any arm has first-party visits, show the conversion rate for every arm
+  // (a visit-less arm reads '—' but still shows its signup/visit counts);
+  // otherwise fall back to raw signup counts for every arm.
+  const haveVisits = keys.some((k) => (views[k] || 0) > 0);
   keys.forEach((k) => {
     const signups = byVariant[k] || 0;
     const v = views[k] || 0;
     const c = el('div', 'card');
     c.appendChild(el('div', 'label', 'Variant ' + k));
     const value = el('div', 'value');
-    if (v > 0) {
-      value.appendChild(document.createTextNode(pct1(Math.min(1, signups / v))));
+    if (haveVisits) {
+      value.appendChild(document.createTextNode(v > 0 ? pct1(Math.min(1, signups / v)) : '—'));
       value.appendChild(el('span', 'sub-stat', signups + ' / ' + v + ' visits'));
     } else {
       value.appendChild(document.createTextNode(String(signups)));
