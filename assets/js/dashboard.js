@@ -326,6 +326,12 @@ function render(d) {
   renderVariants(d.byVariant || {}, d.byVariantVisits || {});
   renderChannelConv(d.byChannel || []);
 
+  // Visits by traffic source: raw visit volume per channel (first-party).
+  // d.byChannel is already sorted by visits desc; show arms with visits.
+  statList($('visits-by-channel'), (d.byChannel || [])
+    .filter((r) => r.visits > 0)
+    .map((r) => ({ k: r.channel, v: String(r.visits) })));
+
   // Visit distributions (first-party).
   statList($('by-device'), Object.keys(d.byDevice || {})
     .sort((a, b) => d.byDevice[b] - d.byDevice[a])
