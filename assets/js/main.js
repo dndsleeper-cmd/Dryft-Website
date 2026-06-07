@@ -1548,10 +1548,39 @@ function bumpJoinCount() {
 const notifPhone = document.querySelector('[data-phone="notif"]');
 const chatPhone  = document.querySelector('[data-phone="chat"]');
 const notifStack = notifPhone && notifPhone.querySelector('[data-notif-stack]');
-// The notification phone inside the pinned scene is driven by that scene
-// (scroll-scrub -> timed); don't also auto-start the loop here.
-if (notifStack && !notifPhone.hasAttribute('data-pz-phone')) runNotificationLoop(notifStack);
-if (chatPhone) runChatLoop(chatPhone);
+// Start the hero phone demos. The notification phone inside a pinned scene is
+// driven by that scene (scroll-scrub), so don't also auto-loop it here.
+function startPhoneDemos() {
+  if (notifStack && !notifPhone.hasAttribute('data-pz-phone')) runNotificationLoop(notifStack);
+  if (chatPhone) runChatLoop(chatPhone);
+}
+// Lazy: these phones live below the fold, so only kick off the cascade/chat
+// loops once they near the viewport. Visitors who never scroll there never pay
+// for the animation. One-shot, then the observer disconnects.
+(function lazyStartPhoneDemos() {
+  const stage = document.querySelector('.cta-demo') || notifPhone || chatPhone;
+  if (!stage) return;
+  if (reduceMotion) { startPhoneDemos(); return; }
+  let started = false;
+  let io = null;
+  function go() {
+    if (started) return;
+    started = true;
+    if (io) io.disconnect();
+    window.removeEventListener('scroll', go);
+    startPhoneDemos();
+  }
+  // Primary: start when the (below-the-fold) phones near the viewport.
+  if ('IntersectionObserver' in window) {
+    io = new IntersectionObserver(function (entries) {
+      if (entries.some(function (e) { return e.isIntersecting; })) go();
+    }, { rootMargin: '200px' });
+    io.observe(stage);
+  }
+  // Fallback: the first scroll guarantees they start. Still lazy, a visitor who
+  // never scrolls (and never reaches the phones) never pays for the loops.
+  window.addEventListener('scroll', go, { passive: true });
+})();
 
 /* ---------------- rotating statement phrase ----------------
    "save without ___" cycles. The first phrase the user sees is always
