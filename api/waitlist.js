@@ -27,6 +27,7 @@ const {
   isPlausiblePhone,
   sanitizeRegion,
   sanitizeSource,
+  sanitizeChannel,
   sanitizeVariant,
   sanitizeReferralCode,
   makeReferralCode,
@@ -60,6 +61,7 @@ module.exports = async function handler(req, res) {
   const phone = sanitizePhone(body.phone);
   const region = sanitizeRegion(body.region);
   const source = sanitizeSource(body.source);
+  const channel = sanitizeChannel(body.channel);
   const variant = sanitizeVariant(body.variant);
   const dwell = sanitizeInt(body.dwell_ms);
 
@@ -149,8 +151,10 @@ module.exports = async function handler(req, res) {
           priorityScore: score,
         };
         if (referrerRef) payload.referredByCode = referredByCode;
-        // First-touch only: the hero variant that actually converted this signup.
+        // First-touch only: the hero variant + traffic channel that converted
+        // this signup (lets the dashboard compute conversion per channel).
         if (variant) payload.variant = variant;
+        if (channel) payload.channel = channel;
         tx.set(userRef, payload, { merge: true });
         tx.set(counterRef, { waitlistSeq: seq }, { merge: true });
         tx.set(

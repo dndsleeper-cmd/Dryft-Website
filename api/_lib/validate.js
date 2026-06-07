@@ -58,6 +58,15 @@ function sanitizeSource(v) {
   return VALID_SOURCES.has(s) ? s : '';
 }
 
+// Traffic-source channel (first-touch), classified client-side from the
+// referrer/UTM and sent on both the pageview ping and the signup. Whitelisted
+// so a tampered value can't pollute the per-channel breakdown.
+const VALID_CHANNELS = new Set(['Direct', 'Organic Search', 'Social', 'Referral', 'Other']);
+function sanitizeChannel(v) {
+  const s = String(v == null ? '' : v).trim().slice(0, 16);
+  return VALID_CHANNELS.has(s) ? s : '';
+}
+
 // Hero A/B test bucket. Whitelisted single letter so a tampered value can't
 // pollute the dashboard's per-variant breakdown.
 const VALID_VARIANTS = new Set(['A', 'B']);
@@ -417,6 +426,7 @@ module.exports = {
   isPlausiblePhone,
   sanitizeRegion,
   sanitizeSource,
+  sanitizeChannel,
   sanitizeVariant,
   sanitizeReferralCode,
   makeReferralCode,

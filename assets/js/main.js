@@ -114,6 +114,49 @@ function setSubText(node, text) {
 // computable in Vercel Analytics (Submit Success / Hero View, both tagged).
 track('Hero View');
 
+/* ---------------- traffic source (first-touch) + first-party pageview ----------------
+   Classify the first-touch channel from referrer/UTM, remember it for a year,
+   and tag both the pageview ping and the eventual signup with it. */
+function detectChannel() {
+  try {
+    var params = new URLSearchParams(location.search);
+    var utm = (params.get('utm_source') || '').toLowerCase();
+    var ref = document.referrer || '';
+    var host = '';
+    try { host = ref ? new URL(ref).hostname.replace(/^www\./, '') : ''; } catch (_) { host = ''; }
+    if (host && host === location.hostname.replace(/^www\./, '')) return null; // internal nav
+    var social = /(instagram|tiktok|twitter|x\.com|t\.co|facebook|fb\.com|linkedin|reddit|youtube|snapchat|pinterest|threads)/;
+    var search = /(google|bing|duckduckgo|yahoo|ecosia|baidu|brave|qwant)/;
+    var src = utm || host;
+    if (!src) return 'Direct';
+    if (social.test(src)) return 'Social';
+    if (search.test(src)) return 'Organic Search';
+    return 'Referral';
+  } catch (_) { return 'Direct'; }
+}
+function firstTouchChannel() {
+  try {
+    var m = document.cookie.match(/(?:^|;\s*)dryft_ch=([^;]+)/);
+    if (m) return decodeURIComponent(m[1]);
+  } catch (_) { /* cookies blocked */ }
+  var ch = detectChannel() || 'Direct';
+  try { document.cookie = 'dryft_ch=' + encodeURIComponent(ch) + '; path=/; max-age=31536000; samesite=lax'; } catch (_) {}
+  return ch;
+}
+window.__dryftChannel = firstTouchChannel();
+// First-party pageview ping (same-origin → ad blockers don't block it), for true
+// owned visit counts. Skipped on local so dev/preview never inflates the numbers.
+if (!IS_LOCAL_HOST) {
+  try {
+    var pvBody = JSON.stringify({ channel: window.__dryftChannel, variant: window.__dryftVariant || '' });
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/pageview', new Blob([pvBody], { type: 'application/json' }));
+    } else {
+      fetch('/api/pageview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pvBody, keepalive: true }).catch(function () {});
+    }
+  } catch (_) { /* never break the page on analytics */ }
+}
+
 /* ---------------- engagement instrumentation ----------------
    Three lightweight, fire-once signals that power the daily dashboard. All go
    through track() to GA4 only (no DB writes). The dashboard reads them back as:
@@ -449,7 +492,7 @@ async function handleWaitlistSubmit(form, source) {
   // banner. We still don't block the UI on it (the survey is already open);
   // errors surface in the console and the server write is idempotent.
   getRecaptchaToken('waitlist').then(function (recaptchaToken) {
-    const payload = { phone: phone, region: region, source: source, variant: window.__dryftVariant || 'A', dwell_ms: now - PAGE_LOAD_TS, recaptchaToken: recaptchaToken };
+    const payload = { phone: phone, region: region, source: source, variant: window.__dryftVariant || 'A', channel: window.__dryftChannel || 'Direct', dwell_ms: now - PAGE_LOAD_TS, recaptchaToken: recaptchaToken };
     if (referredByCode) payload.referredByCode = referredByCode;
     return fetch(WAITLIST_ENDPOINT, {
       method: 'POST',

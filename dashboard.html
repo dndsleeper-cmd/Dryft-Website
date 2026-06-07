@@ -48,10 +48,22 @@
   #gate button{width:100%;}
   /* cards */
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.9rem;margin-bottom:1.4rem;}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.2rem;box-shadow:var(--shadow);}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.2rem;box-shadow:var(--shadow);text-align:center;}
   .card .label{color:var(--subtle);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
   .card .value{font-family:'Inter Tight','Inter',sans-serif;font-size:2rem;font-weight:600;letter-spacing:-.02em;margin-top:.25rem;}
-  .card .note{color:var(--muted);font-size:.8rem;margin-top:.1rem;}
+  .card .value .sub-stat{display:block;font-size:.46em;font-weight:500;letter-spacing:0;color:var(--subtle);margin-top:.2rem;}
+  .card .note{color:var(--muted);font-size:.8rem;margin-top:.15rem;line-height:1.35;}
+  .card .note.good{color:var(--good);font-weight:600;}
+  .card .note.bad{color:#c4493c;font-weight:600;}
+  /* line chart */
+  .trend-legend{display:flex;gap:1.4rem;justify-content:center;flex-wrap:wrap;margin-bottom:.7rem;font-size:.8rem;color:var(--muted);}
+  .tl-item{display:inline-flex;align-items:center;gap:.4rem;}
+  .tl-dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .trend-x{display:flex;margin-top:.4rem;}
+  .trend-x span{flex:1;text-align:center;font-size:.62rem;color:var(--subtle);white-space:nowrap;}
+  .trend-guide{position:absolute;width:1px;background:var(--subtle);opacity:.45;pointer-events:none;z-index:4;}
+  .trend-tip{position:absolute;transform:translate(-50%,-112%);background:var(--ink);color:#fff;
+    font-size:.72rem;font-weight:600;padding:.28rem .5rem;border-radius:6px;white-space:nowrap;pointer-events:none;z-index:5;}
   /* panels */
   .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.1rem;}
   .panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.2rem 1.3rem;box-shadow:var(--shadow);margin-bottom:1.1rem;}
@@ -78,6 +90,7 @@
   .statrow:last-child{border-bottom:none;}
   .statrow .sk{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .statrow .sv{font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);}
+  .chan-sub{color:var(--subtle);font-size:.78em;font-weight:400;}
   .verdict{font-size:.92rem;font-weight:600;color:var(--ink);margin-bottom:.8rem;line-height:1.4;}
   .verdict.muted-verdict{font-weight:500;color:var(--muted);}
   .ga-pointer p{color:var(--muted);font-size:.88rem;line-height:1.5;margin:0;}
@@ -131,12 +144,12 @@
   <div id="app" hidden>
     <div class="cards" id="cards"></div>
     <section class="panel">
-      <h2 id="chart-title">Signups · last 30 days</h2>
+      <h2 id="chart-title">Visits &amp; signups · last 30 days</h2>
       <div class="chart" id="chart"></div>
     </section>
     <section class="panel">
-      <h2 id="funnel-title">Visitor funnel · last 30 days</h2>
-      <div class="cards" id="funnel"></div>
+      <h2 id="conv-title">Visit → signup rate · last 30 days</h2>
+      <div class="chart" id="conv-chart"></div>
     </section>
     <section class="panel">
       <h2>A/B test · conversion by message</h2>
@@ -144,20 +157,22 @@
     </section>
     <div class="grid2">
       <section class="panel">
-        <h2>Conversion by device</h2>
-        <div class="cards" id="by-device"></div>
-      </section>
-      <section class="panel">
         <h2>Conversion by traffic source</h2>
-        <div id="by-source"></div>
+        <div id="by-channel"></div>
       </section>
       <section class="panel">
-        <h2>Signups by form</h2>
-        <div id="sources"></div>
+        <h2>Visits by device</h2>
+        <div id="by-device"></div>
       </section>
       <section class="panel">
-        <h2>Signups by region</h2>
-        <div id="regions"></div>
+        <h2>Visits by country</h2>
+        <div id="by-country"></div>
+      </section>
+    </div>
+    <div class="grid2">
+      <section class="panel">
+        <h2>Referrals</h2>
+        <div id="referral-stats"></div>
       </section>
       <section class="panel">
         <h2>Top referrers</h2>
@@ -168,6 +183,6 @@
 
   <p class="msg" id="msg"></p>
 </div>
-<script defer src="/assets/js/dashboard.js?v=20260607n"></script>
+<script defer src="/assets/js/dashboard.js?v=20260607u"></script>
 </body>
 </html>

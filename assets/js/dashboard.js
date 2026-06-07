@@ -97,117 +97,243 @@ function statList(container, items) {
 }
 
 // Signups trend, one bar per day across the selected window.
-function renderChart(series) {
+// Dual line chart: website visits + signups per day, on one shared scale so the
+// gap between the lines visualises the conversion journey. Pure inline SVG (CSP-safe).
+const SVGNS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs) {
+  const n = document.createElementNS(SVGNS, tag);
+  Object.keys(attrs || {}).forEach((k) => n.setAttribute(k, attrs[k]));
+  return n;
+}
+// Hover readout for a line chart: a vertical guide + tooltip showing the value
+// of the nearest day. fmt(dayDatum) -> plain string. CSP-safe (no inline JS).
+function attachLineHover(svg, container, series, fmt) {
+  const n = series.length;
+  if (!n) return;
+  container.style.position = 'relative';
+  const guide = el('div', 'trend-guide'); guide.style.display = 'none';
+  const tip = el('div', 'trend-tip'); tip.style.display = 'none';
+  container.appendChild(guide);
+  container.appendChild(tip);
+  svg.addEventListener('mousemove', (e) => {
+    const sr = svg.getBoundingClientRect();
+    const cr = container.getBoundingClientRect();
+    let frac = (e.clientX - sr.left) / sr.width;
+    frac = Math.max(0, Math.min(1, frac));
+    const d = series[Math.round(frac * (n - 1))];
+    tip.textContent = fmt(d);
+    const px = e.clientX - cr.left;
+    tip.style.left = px + 'px';
+    tip.style.top = svg.offsetTop + 'px';
+    guide.style.left = px + 'px';
+    guide.style.top = svg.offsetTop + 'px';
+    guide.style.height = svg.offsetHeight + 'px';
+    tip.style.display = 'block';
+    guide.style.display = 'block';
+  });
+  svg.addEventListener('mouseleave', () => { tip.style.display = 'none'; guide.style.display = 'none'; });
+}
+function renderTrend(series) {
   const chart = $('chart');
   chart.textContent = '';
+  chart.style.display = 'block';
+  chart.style.height = 'auto';
+  if (!series.length) { chart.appendChild(el('p', 'empty', 'No data yet.')); return; }
+
+  const totV = series.reduce((s, d) => s + (d.visits || 0), 0);
+  const totS = series.reduce((s, d) => s + (d.count || 0), 0);
+
+  // Legend.
+  const legend = el('div', 'trend-legend');
+  const item = (color, label) => {
+    const w = el('span', 'tl-item');
+    const dot = el('span', 'tl-dot'); dot.style.background = color;
+    w.appendChild(dot); w.appendChild(el('span', null, label));
+    return w;
+  };
+  legend.appendChild(item('#9fb8c0', 'Website visits (' + totV + ')'));
+  legend.appendChild(item('#0e4754', 'Signups (' + totS + ')'));
+  chart.appendChild(legend);
+
+  // SVG line plot, stretched to container width (non-scaling strokes keep lines crisp).
+  const W = 1000, H = 200, padL = 6, padR = 6, padT = 12, padB = 6;
   const n = series.length;
-  // Long ranges (90/365d) have many bars: tighten the gap so they don't overflow
-  // and thin the labels to ~14 so they don't overlap.
-  chart.style.gap = n > 60 ? '1px' : (n > 30 ? '2px' : '4px');
-  const labelEvery = Math.max(1, Math.ceil(n / 14));
-  const max = Math.max.apply(null, series.map((d) => d.count)) || 1;
+  const maxY = Math.max(1, Math.max.apply(null, series.map((d) => Math.max(d.visits || 0, d.count || 0))));
+  const x = (i) => (n === 1 ? W / 2 : padL + (i / (n - 1)) * (W - padL - padR));
+  const y = (v) => padT + (1 - v / maxY) * (H - padT - padB);
+  const svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio: 'none' });
+  svg.style.width = '100%'; svg.style.height = '200px'; svg.style.display = 'block';
+  const line = (key, color, wdth) => svgEl('polyline', {
+    points: series.map((d, i) => x(i) + ',' + y(d[key] || 0)).join(' '),
+    fill: 'none', stroke: color, 'stroke-width': wdth,
+    'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'vector-effect': 'non-scaling-stroke',
+  });
+  svg.appendChild(line('visits', '#9fb8c0', 2));
+  svg.appendChild(line('count', '#0e4754', 2.5));
+  chart.appendChild(svg);
+
+  // X-axis date labels, thinned to ~8 and aligned under the points.
+  const labels = el('div', 'trend-x');
+  const every = Math.max(1, Math.ceil(n / 8));
   series.forEach((d, i) => {
-    const col = el('div', 'col');
-    col.title = d.day + ': ' + d.count;
-    const cbar = el('div', 'cbar');
-    cbar.style.height = Math.round((d.count / max) * 100) + '%';
-    col.appendChild(cbar);
-    // Label from the right edge so the most recent day is always labelled.
-    const showLabel = (n - 1 - i) % labelEvery === 0;
-    col.appendChild(el('div', 'clab', showLabel ? d.day.slice(5) : '')); // MM-DD
-    chart.appendChild(col);
+    labels.appendChild(el('span', null, (n - 1 - i) % every === 0 ? d.day.slice(5) : ''));
   });
+  chart.appendChild(labels);
+
+  attachLineHover(svg, chart, series, (d) =>
+    d.day.slice(5) + '  ·  Visits ' + (d.visits || 0) + '  ·  Signups ' + (d.count || 0));
 }
 
-// Visitor funnel as clean stat tiles: each step's count and share of visits.
-function renderFunnel(site) {
-  const wrap = $('funnel');
-  wrap.textContent = '';
-  if (!site) {
-    wrap.appendChild(el('p', 'empty', 'GA4 not connected.'));
-    return;
+// Conversion rate (signups ÷ visits) per day, with a dashed 20% goal line.
+function renderConvTrend(series) {
+  const chart = $('conv-chart');
+  if (!chart) return;
+  chart.textContent = '';
+  chart.style.display = 'block';
+  chart.style.height = 'auto';
+  const pts = series
+    .map((d, i) => (d.visits > 0 ? { i: i, v: Math.min(1, d.count / d.visits) } : null))
+    .filter(Boolean);
+  if (!pts.length) { chart.appendChild(el('p', 'empty', 'No data yet.')); return; }
+
+  const legend = el('div', 'trend-legend');
+  const item = (color, label, dashed) => {
+    const w = el('span', 'tl-item');
+    const dot = el('span', 'tl-dot');
+    if (dashed) { dot.style.background = 'none'; dot.style.border = '2px dashed ' + color; }
+    else { dot.style.background = color; }
+    w.appendChild(dot); w.appendChild(el('span', null, label));
+    return w;
+  };
+  legend.appendChild(item('#0e4754', 'Conversion rate'));
+  legend.appendChild(item('#c98a2b', '20% goal', true));
+  chart.appendChild(legend);
+
+  const W = 1000, H = 200, padL = 6, padR = 6, padT = 12, padB = 6;
+  const n = series.length;
+  const maxY = Math.max(0.25, Math.max.apply(null, pts.map((p) => p.v))) * 1.1;
+  const x = (i) => (n === 1 ? W / 2 : padL + (i / (n - 1)) * (W - padL - padR));
+  const y = (v) => padT + (1 - v / maxY) * (H - padT - padB);
+  const svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio: 'none' });
+  svg.style.width = '100%'; svg.style.height = '200px'; svg.style.display = 'block';
+  if (0.2 <= maxY) {
+    svg.appendChild(svgEl('line', {
+      x1: 0, y1: y(0.2), x2: W, y2: y(0.2), stroke: '#c98a2b', 'stroke-width': 1.5,
+      'stroke-dasharray': '6 5', 'vector-effect': 'non-scaling-stroke',
+    }));
   }
-  const base = site.heroView || 1;
-  const steps = [
-    ['Visits', site.heroView],
-    ['Field focus', site.fieldFocus],
-    ['Submit attempt', site.submitAttempt],
-    ['Signups', site.submitSuccess],
-    ['Survey complete', site.surveyComplete],
-  ];
-  steps.forEach(([k, v], i) => {
-    wrap.appendChild(card(k, String(v), i === 0 ? '100% of visits' : pct1((v || 0) / base) + ' of visits'));
+  svg.appendChild(svgEl('polyline', {
+    points: pts.map((p) => x(p.i) + ',' + y(p.v)).join(' '),
+    fill: 'none', stroke: '#0e4754', 'stroke-width': 2.5,
+    'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'vector-effect': 'non-scaling-stroke',
+  }));
+  chart.appendChild(svg);
+
+  const labels = el('div', 'trend-x');
+  const every = Math.max(1, Math.ceil(n / 8));
+  series.forEach((d, i) => {
+    labels.appendChild(el('span', null, (n - 1 - i) % every === 0 ? d.day.slice(5) : ''));
   });
+  chart.appendChild(labels);
+
+  attachLineHover(svg, chart, series, (d) =>
+    d.day.slice(5) + '  ·  ' + (d.visits > 0 ? pct1(Math.min(1, d.count / d.visits)) : 'no visits'));
 }
 
-// A/B arms as conversion-rate tiles (visit→signup), labelled by their headline.
-// Needs GA4's per-variant data; falls back to raw signup counts otherwise.
-function renderVariants(site, byVariant) {
+// A/B per arm: visit→signup conversion (owned signups ÷ owned first-party
+// visits), with the visit count shown small beside it. Falls back to signup
+// counts if visits aren't recorded yet.
+function renderVariants(byVariant, views) {
   const wrap = $('variants');
   wrap.textContent = '';
-  const pv = site && site.perVariant && (site.perVariant.A.views + site.perVariant.B.views) > 0
-    ? site.perVariant : null;
-  const keys = ['A', 'B'].filter((k) => (k in byVariant) || (pv && pv[k]));
+  views = views || {};
+  const keys = ['A', 'B'].filter((k) => (k in byVariant) || views[k]);
   if (!keys.length) {
     wrap.appendChild(el('p', 'empty', 'No signups yet.'));
     return;
   }
   keys.forEach((k) => {
-    const value = pv ? pct1(pv[k].rate) : String(byVariant[k] || 0);
-    wrap.appendChild(card('Variant ' + k, value, VARIANT_COPY[k] || ''));
+    const signups = byVariant[k] || 0;
+    const v = views[k] || 0;
+    const c = el('div', 'card');
+    c.appendChild(el('div', 'label', 'Variant ' + k));
+    const value = el('div', 'value');
+    if (v > 0) {
+      value.appendChild(document.createTextNode(pct1(Math.min(1, signups / v))));
+      value.appendChild(el('span', 'sub-stat', signups + ' / ' + v + ' visits'));
+    } else {
+      value.appendChild(document.createTextNode(String(signups)));
+      value.appendChild(el('span', 'sub-stat', 'signups'));
+    }
+    c.appendChild(value);
+    c.appendChild(el('div', 'note', VARIANT_COPY[k] || ''));
+    wrap.appendChild(c);
   });
 }
 
-// Conversion rate by device, as tiles.
-function renderByDevice(site) {
-  const wrap = $('by-device');
+// Conversion per traffic channel: channel · signups/visits · rate.
+function renderChannelConv(list) {
+  const wrap = $('by-channel');
   wrap.textContent = '';
-  const list = site && site.byDevice;
   if (!list || !list.length) {
-    wrap.appendChild(el('p', 'empty', site ? 'No device data.' : 'GA4 not connected.'));
+    wrap.appendChild(el('p', 'empty', 'No data yet.'));
     return;
   }
   list.forEach((r) => {
-    const label = r.key.charAt(0).toUpperCase() + r.key.slice(1);
-    wrap.appendChild(card(label, pct1(r.rate)));
+    const row = el('div', 'statrow');
+    const left = el('div', 'sk', r.channel);
+    left.appendChild(el('span', 'chan-sub', '  ' + r.signups + '/' + r.visits));
+    row.appendChild(left);
+    row.appendChild(el('div', 'sv', pct1(r.rate)));
+    wrap.appendChild(row);
   });
 }
 
+// Country names for the common codes; fall back to the raw code.
+const COUNTRY_NAMES = { CA: 'Canada', US: 'United States', GB: 'United Kingdom', unknown: 'Unknown' };
+
 function render(d) {
-  const site = d.site || null;
   const days = d.days || getDays();
+  const visits = typeof d.visits === 'number' ? d.visits : null;
 
-  // Reflect the selected window in the panel titles.
-  const setTitle = (id, text) => { const n = $(id); if (n) n.textContent = text; };
-  setTitle('chart-title', 'Signups · last ' + days + ' days');
-  setTitle('funnel-title', 'Visitor funnel · last ' + days + ' days');
+  const chartTitle = $('chart-title');
+  if (chartTitle) chartTitle.textContent = 'Visits & signups · last ' + days + ' days';
+  const convTitle = $('conv-title');
+  if (convTitle) convTitle.textContent = 'Visit → signup rate · last ' + days + ' days';
 
-  // Headline KPIs (GA4 tiles show "—" until connected).
+  // Headline KPIs, all owned / first-party data.
   const cards = $('cards');
   cards.textContent = '';
-  cards.appendChild(card('Total website visits', site ? String(site.heroView) : '—'));
+  cards.appendChild(card('Total website visits', visits != null ? String(visits) : '—'));
   cards.appendChild(card('Total SMS signups', String(d.total)));
-  cards.appendChild(card('Visit → signup rate', site ? pct1(site.visitToWaitlistRate) : '—'));
-  cards.appendChild(card('Hero CTA click rate', site && site.cta ? pct1(site.cta.heroRate) : '—'));
-  cards.appendChild(card('Survey completion rate', pct1(d.surveyRate || 0)));
-  cards.appendChild(card('Referral signups', String(d.usedReferral)));
-  cards.appendChild(card('Referrals given', String(d.referralsGiven)));
+  // Accurate conversion: real signups ÷ first-party visits. Goal is ≥20%.
+  const convRate = visits ? d.total / visits : null;
+  const conv = card('Visit → signup rate', convRate != null ? pct1(convRate) : '—');
+  if (convRate != null) {
+    const goal = el('div', 'note ' + (convRate >= 0.2 ? 'good' : 'bad'),
+      convRate >= 0.2 ? 'on target (≥20%)' : 'below 20% goal');
+    conv.appendChild(goal);
+  }
+  cards.appendChild(conv);
 
-  renderChart(d.series || []);
-  renderFunnel(site);
-  renderVariants(site, d.byVariant || {});
-  renderByDevice(site);
+  renderTrend(d.series || []);
+  renderConvTrend(d.series || []);
+  renderVariants(d.byVariant || {}, d.byVariantVisits || {});
+  renderChannelConv(d.byChannel || []);
 
-  // Distributions as clean stat lists (no bars).
-  statList($('by-source'), (site && site.bySource ? site.bySource : []).map(
-    (r) => ({ k: r.key, v: pct1(r.rate) }),
-  ));
-  statList($('sources'), ['hero', 'final', 'referral']
-    .filter((k) => d.bySource && k in d.bySource)
-    .map((k) => ({ k: k, v: String(d.bySource[k]) })));
-  statList($('regions'), Object.keys(d.byRegion || {})
-    .sort((a, b) => d.byRegion[b] - d.byRegion[a])
-    .map((k) => ({ k: k, v: String(d.byRegion[k]) })));
+  // Visit distributions (first-party).
+  statList($('by-device'), Object.keys(d.byDevice || {})
+    .sort((a, b) => d.byDevice[b] - d.byDevice[a])
+    .map((k) => ({ k: k.charAt(0).toUpperCase() + k.slice(1), v: String(d.byDevice[k]) })));
+  statList($('by-country'), Object.keys(d.byCountry || {})
+    .sort((a, b) => d.byCountry[b] - d.byCountry[a])
+    .map((k) => ({ k: COUNTRY_NAMES[k] || k, v: String(d.byCountry[k]) })));
+
+  // Referrals card (sits next to top referrers).
+  statList($('referral-stats'), [
+    { k: 'Referral signups', v: String(d.usedReferral) },
+    { k: 'Referrals given', v: String(d.referralsGiven) },
+  ]);
   statList($('referrers'), (d.topReferrers || []).map((r) => ({ k: r.code, v: String(r.count) })));
 
   showMessage(
