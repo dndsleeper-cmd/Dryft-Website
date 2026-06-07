@@ -88,7 +88,7 @@
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    horizonY = Math.round(H * 0.56);
+    horizonY = Math.round(H * 0.585);
     buildStars();
   }
 

@@ -295,11 +295,11 @@ body.menu-open { overflow: hidden; }
   z-index: -3;
   background: linear-gradient(180deg,
     #03070b 0%,
-    #071c28 30%,
-    #0e3a45 50%,
-    #0c3742 58%,
-    #3e5a62 76%,
-    #97a9ae 90%,
+    #071c28 32%,
+    #0e3a45 58%,
+    #0c3742 62%,
+    #3e5a62 82%,
+    #97a9ae 92%,
     var(--bg) 100%);
 }
 /* Procedural sailboat scene (assets/js/ocean.js). Sits above the photo

@@ -1192,11 +1192,19 @@ function renderJoinCount(n) {
   if (typeof n !== 'number' || n < 1) return;
   joinCount = n;
   const left = Math.max(0, BETA_CAP - n);
+  // legacy inline fragment (kept harmless wherever present)
   const frag = left > 0 ? ' · ' + left.toLocaleString() + ' spots left' : ' · spots full';
   document.querySelectorAll('[data-join-count]').forEach(function (el) {
     el.textContent = frag;
     el.hidden = false;
   });
+  // reassurance jot under the form: "<N> spots left" (hidden until we have a count)
+  const slot = document.querySelector('[data-spots-left]');
+  const li = document.querySelector('[data-spots-li]');
+  if (slot && li && left > 0) {
+    slot.textContent = left.toLocaleString() + ' spots left';
+    li.hidden = false;
+  }
 }
 // Optimistic +1 after a successful join, no extra /api call. No-op until the
 // base count has loaded, so we never render a misleading "1 joined".
@@ -1205,7 +1213,7 @@ function bumpJoinCount() {
 }
 
 (function loadJoinCount() {
-  if (!document.querySelector('[data-join-count]')) return;
+  if (!document.querySelector('[data-join-count], [data-spots-li]')) return;
   fetch(STATS_ENDPOINT, { headers: { Accept: 'application/json' } })
     .then(function (r) { return r && r.ok ? r.json() : null; })
     .then(function (data) { if (data && data.ok) renderJoinCount(data.count); })
