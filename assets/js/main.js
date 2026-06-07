@@ -95,8 +95,21 @@ window.__dryftVariant = assignVariant();
   const sub = document.querySelector('.statement-sub');
   if (l1) l1.textContent = cfg.line1;
   if (l2) l2.textContent = cfg.line2;
-  if (sub) sub.textContent = cfg.sub;
+  if (sub) setSubText(sub, cfg.sub);
 })();
+// Render the subhead with a sentence-boundary <br class="sub-break">. The break
+// is hidden on desktop (one line) and shown on mobile (two lines), so the sub
+// never spans wider than the squeezed hero. Built with DOM nodes (no innerHTML).
+function setSubText(node, text) {
+  const m = text.match(/^(.*?\.)\s+(.*)$/);
+  node.textContent = '';
+  if (!m) { node.textContent = text; return; }
+  node.appendChild(document.createTextNode(m[1] + ' ')); // trailing space keeps the gap when break is hidden
+  const br = document.createElement('br');
+  br.className = 'sub-break';
+  node.appendChild(br);
+  node.appendChild(document.createTextNode(m[2]));
+}
 // One variant-tagged view event per load so per-variant conversion RATE is
 // computable in Vercel Analytics (Submit Success / Hero View, both tagged).
 track('Hero View');

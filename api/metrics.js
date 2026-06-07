@@ -41,7 +41,7 @@ const GA_EVENTS = [
 // Order top-level sections so the "section reach" panel reads top→bottom.
 const SECTION_ORDER = ['top', 'how-section', 'what-it-is', 'waitlist', 'team', 'faq'];
 
-async function fetchGa4() {
+async function fetchGa4(days) {
   const propId = process.env.GA4_PROPERTY_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -66,7 +66,7 @@ async function fetchGa4() {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        dateRanges: [{ startDate: '28daysAgo', endDate: 'today' }],
+        dateRanges: [{ startDate: days + 'daysAgo', endDate: 'today' }],
         metrics: [{ name: 'eventCount' }],
         dimensions: dimensions,
         dimensionFilter: {
@@ -115,7 +115,7 @@ async function fetchGa4() {
     bySource: null,
     byDevice: null,
     sections: null,
-    days: 28,
+    days: days,
   };
 
   // Per-variant view→signup rate. Needs the `variant` custom dimension
@@ -206,6 +206,12 @@ module.exports = async function handler(req, res) {
     return res.status(429).json({ ok: false, reason: 'rate-limited' });
   }
 
+  // Timeline window (days). Dropdown-driven; defaults to 30 if missing/invalid.
+  const ALLOWED_DAYS = [7, 14, 30, 90, 365];
+  const reqDays = parseInt((req.query && req.query.days) || '', 10);
+  const days = ALLOWED_DAYS.indexOf(reqDays) !== -1 ? reqDays : 30;
+  const cutoff = Date.now() - days * 86400000;
+
   try {
     const database = db();
     const CAP = 5000; // pre-launch volumes are tiny; cap keeps the read bounded.
@@ -237,6 +243,12 @@ module.exports = async function handler(req, res) {
 
     snap.forEach((doc) => {
       const d = doc.data() || {};
+
+      // Scope owned metrics to the selected window. Docs with no parseable
+      // createdAt can't be time-bucketed, so they're excluded from the range.
+      const ts = d.createdAt;
+      const t = ts && typeof ts.toDate === 'function' ? ts.toDate().getTime() : null;
+      if (t === null || t < cutoff) return;
       total++;
 
       const src = d.source || 'unknown';
@@ -260,11 +272,8 @@ module.exports = async function handler(req, res) {
       referralsGiven += rc;
       if (rc > 0 && d.referralCode) referrers.push({ code: d.referralCode, count: rc });
 
-      const ts = d.createdAt;
-      if (ts && typeof ts.toDate === 'function') {
-        const day = ts.toDate().toISOString().slice(0, 10);
-        byDay[day] = (byDay[day] || 0) + 1;
-      }
+      const day = new Date(t).toISOString().slice(0, 10);
+      byDay[day] = (byDay[day] || 0) + 1;
     });
 
     referrers.sort((a, b) => b.count - a.count);
@@ -272,15 +281,16 @@ module.exports = async function handler(req, res) {
     // GA4 funnel (best-effort, on-demand). Never breaks the owned-data response.
     let site = null;
     try {
-      site = await fetchGa4();
+      site = await fetchGa4(days);
     } catch (e) {
       console.warn('[metrics] GA4 fetch failed:', e && e.message);
     }
 
-    // Last 14 days as a dense series (UTC), zero-filled so the chart is stable.
+    // Dense daily series across the selected window (UTC), zero-filled so the
+    // chart is stable. The frontend thins labels for long ranges.
     const series = [];
     const now = Date.now();
-    for (let i = 13; i >= 0; i--) {
+    for (let i = days - 1; i >= 0; i--) {
       const day = new Date(now - i * 86400000).toISOString().slice(0, 10);
       series.push({ day, count: byDay[day] || 0 });
     }
@@ -288,6 +298,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({
       ok: true,
+      days,
       truncated: total >= CAP,
       total,
       surveyComplete,
