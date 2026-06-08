@@ -34,6 +34,15 @@ function mergeCounts(target, src) {
   Object.keys(src).forEach((k) => { target[k] = (target[k] || 0) + (Number(src[k]) || 0); });
 }
 
+// Product launch. EVERY dashboard metric counts from this instant — nothing
+// before it shows. Signups carry precise timestamps so they're cut at the exact
+// moment; visits are stored as one counter per UTC day (no per-visit times), so
+// they start from the launch DAY — and that day's counter also includes any
+// pre-launch visits from earlier that day, since a day can't be sub-split.
+// Override per deploy with LAUNCH_AT (ISO 8601). Nothing is deleted, pre-launch
+// data is just excluded, so it's fully reversible by moving this date.
+const LAUNCH_AT_DEFAULT = '2026-06-08T17:00:00Z'; // Jun 8, 2026 · 1:00pm ET (EDT, UTC-4)
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
@@ -83,6 +92,14 @@ module.exports = async function handler(req, res) {
   const cutoff = now - days * 86400000;
   const dayStr = (ms) => new Date(ms).toISOString().slice(0, 10);
 
+  // Launch epoch (see LAUNCH_AT_DEFAULT note). Read per-request so it can be
+  // overridden. The effective start is the LATER of the selected window and
+  // launch, so nothing before launch ever shows, whatever range is picked.
+  const launchAt = process.env.LAUNCH_AT || LAUNCH_AT_DEFAULT;
+  const launchMs = Date.parse(launchAt);
+  const launchDay = dayStr(launchMs); // UTC day, for the day-granular visit counters
+  const startMs = Math.max(cutoff, launchMs);
+
   try {
     const database = db();
     const CAP = 5000; // pre-launch volumes are tiny; cap keeps the read bounded.
@@ -109,11 +126,12 @@ module.exports = async function handler(req, res) {
     snap.forEach((doc) => {
       const d = doc.data() || {};
 
-      // Scope owned metrics to the selected window. Docs with no parseable
-      // createdAt can't be time-bucketed, so they're excluded from the range.
+      // Scope owned metrics to [launch, now] intersected with the selected
+      // window (startMs = the later of the two). Docs with no parseable createdAt
+      // can't be time-bucketed, so they're excluded.
       const ts = d.createdAt;
       const t = ts && typeof ts.toDate === 'function' ? ts.toDate().getTime() : null;
-      if (t === null || t < cutoff) return;
+      if (t === null || t < startMs) return;
       total++;
 
       const reg = d.region || 'unknown';
@@ -121,8 +139,8 @@ module.exports = async function handler(req, res) {
 
       if (d.channel) byChannelSignups[d.channel] = (byChannelSignups[d.channel] || 0) + 1;
 
-      // Only A/B count toward the test. Signups with no (or any other) variant
-      // predate the A/B split, so they're excluded from the variant breakdown.
+      // Only A/B variants count toward the test (the loop already excludes
+      // pre-launch signups, so these are post-launch by construction).
       const v = d.variant === 'A' || d.variant === 'B' ? d.variant : null;
       if (v) byVariant[v] = (byVariant[v] || 0) + 1;
 
@@ -153,6 +171,9 @@ module.exports = async function handler(req, res) {
         .endAt(lastDay)
         .get();
       pvSnap.forEach((doc) => {
+        // Day-granular launch filter: a day's counter can't be sub-split, so the
+        // launch day is included whole (may hold a few pre-launch visits).
+        if (doc.id < launchDay) return;
         const x = doc.data() || {};
         pv.total += Number(x.total) || 0;
         pv.byDay[doc.id] = Number(x.total) || 0;
@@ -178,10 +199,13 @@ module.exports = async function handler(req, res) {
       })
       .sort((a, b) => b.visits - a.visits);
 
-    // Dense daily series across the window (visits + signups), zero-filled.
+    // Dense daily series from launch (or the window start, whichever is later)
+    // to today, zero-filled. Days before launch are dropped so the chart doesn't
+    // open with a flat run of empty pre-launch days.
     const series = [];
     for (let i = days - 1; i >= 0; i--) {
       const day = dayStr(now - i * 86400000);
+      if (day < launchDay) continue;
       series.push({ day: day, count: byDay[day] || 0, visits: pv.byDay[day] || 0 });
     }
 
@@ -189,6 +213,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       days,
+      launchAt: launchAt,
       truncated: total >= CAP,
       total,
       surveyComplete,

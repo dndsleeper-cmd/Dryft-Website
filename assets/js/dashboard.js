@@ -81,6 +81,15 @@ function pct1(r) {
   return ((Number(r) || 0) * 100).toFixed(1) + '%';
 }
 
+// ISO instant -> "Jun 8, 2026" (UTC parts; the time-of-day cutoff lives server-side).
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function fmtLaunchDate(iso) {
+  const t = Date.parse(iso);
+  if (!t) return String(iso);
+  const dt = new Date(t);
+  return MONTHS[dt.getUTCMonth()] + ' ' + dt.getUTCDate() + ', ' + dt.getUTCFullYear();
+}
+
 // A clean stat list: rows of "label … value", no bars. items = [{k, v}].
 function statList(container, items) {
   container.textContent = '';
@@ -305,6 +314,15 @@ function render(d) {
   if (chartTitle) chartTitle.textContent = 'Visitors & signups · last ' + days + ' days';
   const convTitle = $('conv-title');
   if (convTitle) convTitle.textContent = 'Visitor → signup rate · last ' + days + ' days';
+
+  // Every metric counts from product launch (server-side); surface that so the
+  // numbers aren't mistaken for all-time. The range dropdown still narrows
+  // within the post-launch window.
+  const sub = $('dash-sub');
+  if (sub) {
+    sub.textContent = 'Waitlist & survey signal · owned data'
+      + (d.launchAt ? ' · since launch ' + fmtLaunchDate(d.launchAt) : '');
+  }
 
   // Headline KPIs, all owned / first-party data.
   const cards = $('cards');

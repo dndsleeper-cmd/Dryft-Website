@@ -1254,6 +1254,57 @@ async function run() {
     process.env.DASHBOARD_TOKEN = DASH_TOKEN;
   }
 
+  console.log('\n\x1b[1m== /api/metrics launch epoch (all metrics) ==\x1b[0m');
+
+  // EVERY metric counts from the product launch instant; everything before it is
+  // excluded across the board (signups, visits, device + variant breakdowns).
+  // Dates are relative to now so the test is independent of the wall clock.
+  {
+    const DAY = 86400000;
+    const now = Date.now();
+    const dayStr = (ms) => new Date(ms).toISOString().slice(0, 10);
+    const ts = (ms) => ({ toDate: () => new Date(ms) });
+    const launchMs = now - 2 * DAY;             // launch was 2 days ago
+    const launchAt = new Date(launchMs).toISOString();
+    const launchDay = dayStr(launchMs);
+
+    // Signups: one BEFORE launch (excluded), one A + one B AFTER (counted).
+    docStore.set('waitlist/lx_pre', { variant: 'A', region: 'CA', createdAt: ts(now - 5 * DAY) });
+    docStore.set('waitlist/lx_postA', { variant: 'A', region: 'CA', createdAt: ts(now - 1 * DAY) });
+    docStore.set('waitlist/lx_postB', { variant: 'B', region: 'US', createdAt: ts(now) });
+    // Visits: a pre-launch day (excluded), the launch day, and a post day.
+    docStore.set('pageviews/' + dayStr(now - 5 * DAY), { total: 5, byVariant: { A: 5 }, byDevice: { mobile: 5 } });
+    docStore.set('pageviews/' + launchDay, { total: 3, byVariant: { A: 1 }, byDevice: { desktop: 3 } });
+    docStore.set('pageviews/' + dayStr(now - 1 * DAY), { total: 4, byVariant: { A: 2, B: 1 }, byDevice: { mobile: 4 } });
+
+    process.env.LAUNCH_AT = launchAt; // handler reads this per-request
+    const { req, res } = fakeReqRes('GET', null, {
+      ip: '198.51.100.77',
+      headers: { authorization: 'Bearer ' + process.env.DASHBOARD_TOKEN },
+    });
+    req.query = { days: '365' }; // wide range, so only the launch epoch excludes pre-data
+    await metrics(req, res);
+    const b = res.body || {};
+
+    ok(res.statusCode === 200, 'metrics 200 with seeded launch data', 'got ' + res.statusCode);
+    ok(b.launchAt === launchAt, 'response advertises the launch instant');
+    // Signups: pre-launch excluded everywhere.
+    ok(b.total === 2, 'signups count only post-launch (got ' + b.total + ')');
+    ok((b.byVariant && b.byVariant.A) === 1, 'variant A signups post-launch only (got ' + (b.byVariant && b.byVariant.A) + ')');
+    ok((b.byVariant && b.byVariant.B) === 1, 'variant B signups post-launch only (got ' + (b.byVariant && b.byVariant.B) + ')');
+    // Visits + breakdowns: pre-launch day fully excluded.
+    ok(b.visits === 7, 'visits exclude the pre-launch day (3+4=7, got ' + b.visits + ')');
+    ok((b.byVariantVisits && b.byVariantVisits.A) === 3, 'variant A visits post-launch (1+2=3, got ' + (b.byVariantVisits && b.byVariantVisits.A) + ')');
+    ok((b.byVariantVisits && b.byVariantVisits.B) === 1, 'variant B visits post-launch (got ' + (b.byVariantVisits && b.byVariantVisits.B) + ')');
+    ok((b.byDevice && b.byDevice.desktop) === 3, 'device breakdown is launch-gated: desktop 3 (got ' + (b.byDevice && b.byDevice.desktop) + ')');
+    ok((b.byDevice && b.byDevice.mobile) === 4, 'device breakdown excludes pre-launch mobile (got ' + (b.byDevice && b.byDevice.mobile) + ')');
+
+    delete process.env.LAUNCH_AT;
+    ['waitlist/lx_pre', 'waitlist/lx_postA', 'waitlist/lx_postB',
+      'pageviews/' + dayStr(now - 5 * DAY), 'pageviews/' + launchDay, 'pageviews/' + dayStr(now - 1 * DAY)]
+      .forEach((k) => docStore.delete(k));
+  }
+
   // -- Done
   console.log('\n' + '─'.repeat(40));
   console.log(`\x1b[1m${pass} passed, ${fail} failed\x1b[0m`);
