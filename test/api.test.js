@@ -23,6 +23,7 @@ process.env.FIREBASE_CLIENT_EMAIL = 'mock@mock.iam.gserviceaccount.com';
 process.env.FIREBASE_PRIVATE_KEY =
   '-----BEGIN PRIVATE KEY-----\\nMOCK\\n-----END PRIVATE KEY-----\\n';
 process.env.IP_HASH_SALT = 'a'.repeat(64);
+process.env.DASHBOARD_TOKEN = 'test-dashboard-token-0123456789';
 
 // --- Mock firebase-admin --------------------------------------------------
 const writes = [];
@@ -64,8 +65,40 @@ function makeDocRef(name, id) {
   };
 }
 
+// Minimal read-query builder for /api/metrics, which chains
+// .select().limit().get() over `waitlist` and
+// .orderBy(documentId).startAt().endAt().get() over `pageviews`. Filters by
+// doc id lexicographically (matches how metrics ranges pageview day-docs).
+function makeQuery(name, opts = {}) {
+  const q = (extra) => makeQuery(name, { ...opts, ...extra });
+  return {
+    select: () => q({}),
+    limit: (n) => q({ limit: n }),
+    orderBy: () => q({ ordered: true }),
+    startAt: (v) => q({ startAt: v }),
+    endAt: (v) => q({ endAt: v }),
+    async get() {
+      const rows = [];
+      for (const [k, v] of docStore) {
+        if (!k.startsWith(name + '/')) continue;
+        const id = k.slice(name.length + 1);
+        if (opts.startAt != null && id < opts.startAt) continue;
+        if (opts.endAt != null && id > opts.endAt) continue;
+        rows.push({ id, data: () => v });
+      }
+      if (opts.ordered) rows.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+      const out = opts.limit ? rows.slice(0, opts.limit) : rows;
+      return { forEach: (fn) => out.forEach(fn) };
+    },
+  };
+}
+
 function makeCollection(name) {
   return {
+    // Query entry points used by /api/metrics.
+    select: (...f) => makeQuery(name).select(...f),
+    orderBy: (...a) => makeQuery(name).orderBy(...a),
+    limit: (n) => makeQuery(name).limit(n),
     async add(doc) {
       const id = 'doc_' + crypto.randomBytes(4).toString('hex');
       writes.push({ collection: name, id, doc });
@@ -137,6 +170,9 @@ mockAdmin.firestore.FieldValue = {
   serverTimestamp: () => '<SERVER_TIMESTAMP>',
   increment: (n) => ({ __increment: n }),
 };
+mockAdmin.firestore.FieldPath = {
+  documentId: () => '__name__',
+};
 
 // Inject into require.cache BEFORE the handlers are loaded.
 // Path is computed from __dirname so the test works regardless of where
@@ -159,6 +195,7 @@ const waitlist = require(path.join(projectRoot, 'api', 'waitlist.js'));
 const survey = require(path.join(projectRoot, 'api', 'survey.js'));
 const lookup = require(path.join(projectRoot, 'api', 'lookup.js'));
 const stats = require(path.join(projectRoot, 'api', 'stats.js'));
+const metrics = require(path.join(projectRoot, 'api', 'metrics.js'));
 // Pull the real helpers so tests assert against the actual implementations.
 const { phoneDocId, makeReferralCode, sanitizeReferralCode, priorityScore } = require(
   path.join(projectRoot, 'api', '_lib', 'validate.js'),
@@ -1138,6 +1175,83 @@ async function run() {
     );
     await survey(req, res);
     ok(res.statusCode === 200, 'survey bucket is independent of waitlist bucket');
+  }
+
+  console.log('\n\x1b[1m== /api/metrics auth + brute-force lockout ==\x1b[0m');
+
+  const DASH_TOKEN = process.env.DASHBOARD_TOKEN;
+  const metricsReq = (ip, bearer) =>
+    fakeReqRes('GET', null, {
+      ip,
+      headers: bearer == null ? {} : { authorization: 'Bearer ' + bearer },
+    });
+
+  // -- Correct token from a fresh IP → 200 (passes auth, reads owned data)
+  {
+    const { req, res } = metricsReq('198.51.100.1', DASH_TOKEN);
+    await metrics(req, res);
+    ok(res.statusCode === 200, 'valid token → 200', 'got ' + res.statusCode);
+    ok(res.body && res.body.ok === true, 'valid token → ok:true payload');
+  }
+
+  // -- Wrong token → 401 (and never reaches the data reads)
+  {
+    const { req, res } = metricsReq('198.51.100.2', 'definitely-not-the-token');
+    await metrics(req, res);
+    ok(res.statusCode === 401, 'wrong token → 401 unauthorized', 'got ' + res.statusCode);
+  }
+
+  // -- Missing Authorization header → 401
+  {
+    const { req, res } = metricsReq('198.51.100.3', null);
+    await metrics(req, res);
+    ok(res.statusCode === 401, 'no Authorization header → 401', 'got ' + res.statusCode);
+  }
+
+  // -- Brute-force lockout: 8 wrong guesses from one IP are 401, the 9th is 429
+  const attackerIp = '198.51.100.50';
+  {
+    const statuses = [];
+    for (let i = 0; i < 9; i++) {
+      const { req, res } = metricsReq(attackerIp, 'guess-' + i);
+      await metrics(req, res);
+      statuses.push(res.statusCode);
+    }
+    const got401 = statuses.filter((s) => s === 401).length;
+    const got429 = statuses.filter((s) => s === 429).length;
+    ok(got401 === 8, 'first 8 wrong guesses → 401 (got ' + got401 + ')');
+    ok(got429 === 1, '9th wrong guess → 429 locked-out (got ' + got429 + ')');
+  }
+
+  // -- Lockout 429 carries a Retry-After header
+  {
+    const { req, res } = metricsReq(attackerIp, 'guess-again');
+    await metrics(req, res);
+    ok(res.statusCode === 429, 'still locked out within the window', 'got ' + res.statusCode);
+    ok(
+      typeof res.headers['retry-after'] === 'string' && parseInt(res.headers['retry-after']) > 0,
+      'Retry-After header set on lockout 429',
+    );
+  }
+
+  // -- The real admin (correct token) is NOT locked out by an attacker's misses:
+  //    only failures are counted, so the valid token still gets through (200).
+  {
+    const { req, res } = metricsReq(attackerIp, DASH_TOKEN);
+    await metrics(req, res);
+    ok(
+      res.statusCode === 200,
+      'correct token bypasses the brute-force lockout (got ' + res.statusCode + ')',
+    );
+  }
+
+  // -- 503 when DASHBOARD_TOKEN isn't configured (server-side env missing)
+  {
+    delete process.env.DASHBOARD_TOKEN;
+    const { req, res } = metricsReq('198.51.100.4', 'anything');
+    await metrics(req, res);
+    ok(res.statusCode === 503, 'unset DASHBOARD_TOKEN → 503 not-configured', 'got ' + res.statusCode);
+    process.env.DASHBOARD_TOKEN = DASH_TOKEN;
   }
 
   // -- Done

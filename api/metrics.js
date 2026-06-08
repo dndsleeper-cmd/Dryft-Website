@@ -3,9 +3,11 @@
  *
  * Admin-only feed for the /dashboard. 100% owned/first-party data, no GA4:
  *   - Signups & survey/referral signal: aggregated from the `waitlist` collection.
- *   - Visits, country, device, traffic channel, A/B visits: from the first-party
+ *   - Visitors, country, device, traffic channel, A/B visits: from the first-party
  *     `pageviews` daily counters (written by /api/pageview, which ad blockers
  *     don't block — so these counts are complete, unlike GA4/Vercel beacons).
+ *     These are DAILY-UNIQUE devices: the client only pings on a device's first
+ *     load of each UTC day, so `visits` here means unique visitors, not raw loads.
  * Returns COUNTS ONLY; no phone numbers or PII leave Firestore.
  *
  * Auth: Authorization: Bearer <DASHBOARD_TOKEN> (env var; 503 if unset).
@@ -41,17 +43,33 @@ module.exports = async function handler(req, res) {
   const token = process.env.DASHBOARD_TOKEN || '';
   if (!token) return res.status(503).json({ ok: false, reason: 'not-configured' });
 
+  const ip = clientIp(req);
+  const ipKey = hashIp(ip) || ip || 'unknown';
+
   const auth = String(req.headers.authorization || '');
   const bearer = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   if (!safeEqual(bearer, token)) {
+    // Brute-force lockout. Count ONLY wrong-token attempts (this gate runs
+    // before the general limiter below, which never saw failed auth). After
+    // MAX_AUTH_FAILS misses from one IP inside the window, further guesses get
+    // a 429 instead of a 401, so the token can't be hammered. Because only
+    // failures are counted, a legit admin with the correct token is never
+    // blocked, and an attacker can't lock the real admin out either.
+    const MAX_AUTH_FAILS = 8;
+    const lock = await rateLimit('rl:metrics:auth:' + ipKey, {
+      max: MAX_AUTH_FAILS,
+      windowSec: 900, // 15-minute lockout window
+    });
+    if (!lock.allowed) {
+      res.setHeader('Retry-After', String(Math.ceil((lock.retryAfterMs || 900000) / 1000)));
+      return res.status(429).json({ ok: false, reason: 'locked-out' });
+    }
     return res.status(401).json({ ok: false, reason: 'unauthorized' });
   }
 
-  const ip = clientIp(req);
-  const rl = await rateLimit('rl:metrics:' + (hashIp(ip) || ip || 'unknown'), {
-    max: 30,
-    windowSec: 60,
-  });
+  // General per-IP throttle on authenticated traffic (bounds the Firestore
+  // reads a single dashboard / token holder can drive).
+  const rl = await rateLimit('rl:metrics:' + ipKey, { max: 30, windowSec: 60 });
   if (!rl.allowed) {
     res.setHeader('Retry-After', '60');
     return res.status(429).json({ ok: false, reason: 'rate-limited' });

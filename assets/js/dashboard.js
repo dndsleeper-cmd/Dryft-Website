@@ -151,7 +151,7 @@ function renderTrend(series) {
     w.appendChild(dot); w.appendChild(el('span', null, label));
     return w;
   };
-  legend.appendChild(item('#9fb8c0', 'Website visits (' + totV + ')'));
+  legend.appendChild(item('#9fb8c0', 'Unique visitors (' + totV + ')'));
   legend.appendChild(item('#0e4754', 'Signups (' + totS + ')'));
   chart.appendChild(legend);
 
@@ -181,7 +181,7 @@ function renderTrend(series) {
   chart.appendChild(labels);
 
   attachLineHover(svg, chart, series, (d) =>
-    d.day.slice(5) + '  ·  Visits ' + (d.visits || 0) + '  ·  Signups ' + (d.count || 0));
+    d.day.slice(5) + '  ·  Visitors ' + (d.visits || 0) + '  ·  Signups ' + (d.count || 0));
 }
 
 // Conversion rate (signups ÷ visits) per day, with a dashed 20% goal line.
@@ -237,7 +237,7 @@ function renderConvTrend(series) {
   chart.appendChild(labels);
 
   attachLineHover(svg, chart, series, (d) =>
-    d.day.slice(5) + '  ·  ' + (d.visits > 0 ? pct1(Math.min(1, d.count / d.visits)) : 'no visits'));
+    d.day.slice(5) + '  ·  ' + (d.visits > 0 ? pct1(Math.min(1, d.count / d.visits)) : 'no visitors'));
 }
 
 // A/B per arm: visit→signup conversion (owned signups ÷ owned first-party
@@ -265,7 +265,7 @@ function renderVariants(byVariant, views) {
     const value = el('div', 'value');
     if (haveVisits) {
       value.appendChild(document.createTextNode(v > 0 ? pct1(Math.min(1, signups / v)) : '—'));
-      value.appendChild(el('span', 'sub-stat', signups + ' / ' + v + ' visits'));
+      value.appendChild(el('span', 'sub-stat', signups + ' / ' + v + ' visitors'));
     } else {
       value.appendChild(document.createTextNode(String(signups)));
       value.appendChild(el('span', 'sub-stat', 'signups'));
@@ -302,18 +302,18 @@ function render(d) {
   const visits = typeof d.visits === 'number' ? d.visits : null;
 
   const chartTitle = $('chart-title');
-  if (chartTitle) chartTitle.textContent = 'Visits & signups · last ' + days + ' days';
+  if (chartTitle) chartTitle.textContent = 'Visitors & signups · last ' + days + ' days';
   const convTitle = $('conv-title');
-  if (convTitle) convTitle.textContent = 'Visit → signup rate · last ' + days + ' days';
+  if (convTitle) convTitle.textContent = 'Visitor → signup rate · last ' + days + ' days';
 
   // Headline KPIs, all owned / first-party data.
   const cards = $('cards');
   cards.textContent = '';
-  cards.appendChild(card('Total website visits', visits != null ? String(visits) : '—'));
+  cards.appendChild(card('Unique visitors', visits != null ? String(visits) : '—', 'one per device per day'));
   cards.appendChild(card('Total SMS signups', String(d.total)));
-  // Accurate conversion: real signups ÷ first-party visits. Goal is ≥20%.
+  // Accurate conversion: real signups ÷ unique first-party visitors. Goal is ≥20%.
   const convRate = visits ? d.total / visits : null;
-  const conv = card('Visit → signup rate', convRate != null ? pct1(convRate) : '—');
+  const conv = card('Visitor → signup rate', convRate != null ? pct1(convRate) : '—');
   if (convRate != null) {
     const goal = el('div', 'note ' + (convRate >= 0.2 ? 'good' : 'bad'),
       convRate >= 0.2 ? 'on target (≥20%)' : 'below 20% goal');
@@ -329,8 +329,8 @@ function render(d) {
   const channels = (d.byChannel || []).filter((r) => r.channel !== 'Referral');
   renderChannelConv(channels);
 
-  // Visits by traffic source: raw visit volume per channel (first-party).
-  // channels is already sorted by visits desc; show arms with visits.
+  // Visitors by traffic source: unique-visitor volume per channel (first-party).
+  // channels is already sorted by visitors desc; show arms with visitors.
   statList($('visits-by-channel'), channels
     .filter((r) => r.visits > 0)
     .map((r) => ({ k: r.channel, v: String(r.visits) })));

@@ -158,8 +158,24 @@ function firstTouchChannel() {
 }
 window.__dryftChannel = firstTouchChannel();
 // First-party pageview ping (same-origin → ad blockers don't block it), for true
-// owned visit counts. Skipped on local so dev/preview never inflates the numbers.
-if (!IS_LOCAL_HOST) {
+// owned visitor counts. We count UNIQUE DEVICES, not raw loads: the ping fires
+// only on a device's FIRST visit of each UTC day, deduped via the `dryft_seen`
+// cookie (its value is the last UTC date we counted). So the dashboard's daily
+// counters are daily-unique visitors — one device opening the site many times in
+// a day is counted once. Cookies blocked → the cookie never sticks → every load
+// counts (the best we can do without a device id; bots are filtered server-side).
+// Skipped on local so dev/preview never inflates the numbers.
+function firstVisitToday() {
+  var today = new Date().toISOString().slice(0, 10); // UTC YYYY-MM-DD, matches the server's day bucket
+  try {
+    var m = document.cookie.match(/(?:^|;\s*)dryft_seen=([0-9-]+)/);
+    if (m && m[1] === today) return false; // this device already counted today
+  } catch (_) { /* cookies blocked → fall through and treat as a fresh visit */ }
+  // 2-day TTL bridges an overnight return; the value self-corrects each new day.
+  try { document.cookie = 'dryft_seen=' + today + '; path=/; max-age=172800; samesite=lax'; } catch (_) {}
+  return true;
+}
+if (!IS_LOCAL_HOST && firstVisitToday()) {
   try {
     var pvBody = JSON.stringify({ channel: window.__dryftChannel, variant: window.__dryftVariant || '' });
     if (navigator.sendBeacon) {

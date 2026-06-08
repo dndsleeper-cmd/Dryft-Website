@@ -1,17 +1,21 @@
 /**
  * POST /api/pageview
  *
- * First-party pageview counter. The site pings this on every load. Because it's
- * same-origin (not a known third-party tracker), ad blockers don't block it, so
- * these counts are far more complete than GA4/Vercel client beacons.
+ * First-party visitor counter. The client pings this only on a device's FIRST
+ * load of each UTC day (it dedupes via the `dryft_seen` cookie), so every ping
+ * we receive is one UNIQUE DEVICE for that day — no double-counting when someone
+ * opens the site repeatedly. Because it's same-origin (not a known third-party
+ * tracker), ad blockers don't block it, so these counts are far more complete
+ * than GA4/Vercel client beacons.
  *
  * It writes COUNTS ONLY into one document per UTC day (`pageviews/{YYYY-MM-DD}`),
- * incrementing nested maps. No PII, no per-visit rows:
+ * incrementing nested maps. No PII, no per-visit rows. Counts are daily-unique
+ * devices:
  *   { total, byCountry{CC}, byDevice{mobile|tablet|desktop}, byChannel{...}, byVariant{A|B} }
  *
  * Country comes from Vercel's free `x-vercel-ip-country` geo header; device from
  * the User-Agent; channel + variant from the request body (client-classified,
- * server-revalidated). The dashboard reads these for true visit counts.
+ * server-revalidated). The dashboard reads these as daily-unique visitor counts.
  */
 const { db, serverTimestamp, increment } = require('./_lib/firestore');
 const {
